@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Startup {
+  id             String   @id @default(uuid())
+  founderName    String
+  companyName    String
+  registrationId String
+  email          String   @unique
+  password       String
+  category       String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  jobs           Job[]
+}
+
+model Otp {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  otp       String
+  createdAt DateTime @default(now())
+}
+
+model User {
+  id           String   @id @default(uuid())
+  fullName     String
+  email        String   @unique
+  password     String
+  phone        String?
+  location     String?
+  profilePhoto String?
+  resumeFile   String?
+  skills       String[]
+  education    Json?
+  experience   Json?
+  portfolioUrl String?
+  githubUrl    String?
+  linkedinUrl  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  applications Application[]
+}
+
+model Admin {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  role      String   @default("master")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Job {
+  id           String   @id @default(uuid())
+  title        String
+  location     String
+  type         String   @default("Full-time")
+  salary       String?
+  description  String
+  requirements String[]
+  status       String   @default("ACTIVE")
+  startupId    String
+  startup      Startup  @relation(fields: [startupId], references: [id])
+  applications Application[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Application {
+  id        String   @id @default(uuid())
+  jobId     String
+  job       Job      @relation(fields: [jobId], references: [id])
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  fullName  String?
+  email     String?
+  phone     String?
+  resumeUrl String?
+  status    String   @default("PENDING")
+  appliedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
