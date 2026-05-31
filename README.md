@@ -1,21 +1,22 @@
-# Thodakkam – Full-Stack Web Application
+# Thodakkam – Mobile Application
 
-A comprehensive web platform that connects job seekers with opportunities through skill-based matching and personalized guidance.
+A comprehensive mobile platform that connects job seekers with opportunities through skill-based matching and personalized guidance. Built with React Native and Expo.
 
 ## 🚀 Live Demo
 
 Visit the live application:
-[https://thodakkam.vercel.app](https://thodakkam.vercel.app)
+[https://thodakkam.vercel.app](https://thodakkam.vercel.app) *(Note: Web deployment of the Expo app)*
 
 ## 🛠️ Tech Stack
 
 ### Frontend
-- **Framework:** Next.js 14 (App Router)
+- **Framework:** React Native & Expo (Expo Router)
 - **Language:** TypeScript
-- **Styling:** Tailwind CSS
-- **State Management:** Redux Toolkit, Zustand
-- **UI Components:** Radix UI, Custom Components
-- **Utilities:** date-fns, zod, react-icons
+- **Styling:** React Native StyleSheet
+- **Icons:** lucide-react-native
+- **Navigation:** Expo Router (File-based navigation)
+- **Image Picker:** expo-image-picker
+- **Build System:** Expo EAS
 
 ### Backend
 - **Runtime:** Node.js
@@ -38,16 +39,13 @@ thodakkam-server/
 ├── uploads/             # User-uploaded files (optional)
 └── package.json         # Dependencies
 
-app/                    # Next.js frontend
-├── (tabs)/              # Page groups (auth, main, landing)
-│   ├── auth/            # Login, register, password reset
-│   ├── main/            # Dashboard, jobs, guidance, profile
-│   └── landing/         # Public marketing pages
-├── components/          # Reusable UI components
-├── store/               # Redux store configuration
-├── features/            # Feature-specific logic (auth, jobs, etc.)
-├── lib/                 # Utility functions
-├── styles/              # Global styles
+thodakkam-app/              # React Native / Expo frontend
+├── src/                 
+│   ├── app/             # Expo Router Pages (screens like startup-community.tsx, student-dashboard.tsx)
+│   ├── components/      # Reusable UI components (StudentHeader, StartupHeader, etc.)
+│   └── utils/           # Utility functions (userStore, etc.)
+├── assets/              # Static assets and images
+├── app.json             # Expo configuration
 └── package.json         # Dependencies
 ```
 

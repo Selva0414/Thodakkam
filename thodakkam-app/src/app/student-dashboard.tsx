@@ -10,6 +10,8 @@ import {
   Mail, Settings
 } from 'lucide-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import StudentHeader from '../components/StudentHeader';
+import { userStore, updateGlobalUser } from '../utils/userStore';
 
 const PRIMARY = '#5A279B';
 const BG = '#f4f5f7';
@@ -19,53 +21,7 @@ const GRAY = '#6b7280';
 
 // ─── Sub-components ────────────────────────────────────────────────────────────
 
-function TopNav({ user }: { user?: { name: string, profilePhoto?: string | null } }) {
-  const defaultUser = user || { name: 'Shabari', profilePhoto: null };
-  const firstLetter = defaultUser.name ? defaultUser.name.charAt(0).toUpperCase() : 'S';
-
-  return (
-    <View style={navStyles.headerContainer}>
-      <View style={navStyles.headerTop}>
-        <View style={navStyles.logoRow}>
-          <View style={navStyles.logoBox}>
-            <GraduationCap size={14} color={WHITE} />
-          </View>
-          <Text style={navStyles.logoText}>Student Portal</Text>
-        </View>
-        <View style={navStyles.headerIcons}>
-          <View style={navStyles.bellWrapper}>
-            <Bell size={18} color={DARK} />
-            <View style={navStyles.bellDot} />
-          </View>
-          <View style={navStyles.avatar}>
-            {defaultUser.profilePhoto ? (
-              <Image source={{ uri: defaultUser.profilePhoto }} style={navStyles.avatarImage} />
-            ) : (
-              <Text style={navStyles.avatarText}>{firstLetter}</Text>
-            )}
-          </View>
-        </View>
-      </View>
-
-      <View style={navStyles.searchRow}>
-        <View style={navStyles.searchBar}>
-          <Search size={14} color={GRAY} />
-          <TextInput 
-            style={navStyles.searchInput}
-            placeholder="Search for jobs, companies..."
-            placeholderTextColor={GRAY}
-          />
-        </View>
-        <TouchableOpacity style={navStyles.iconBtn}>
-          <Mail size={18} color={GRAY} />
-        </TouchableOpacity>
-        <TouchableOpacity style={navStyles.iconBtn}>
-          <Settings size={18} color={GRAY} />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-}
+// ─── Sub-components ────────────────────────────────────────────────────────────
 
 function WelcomeSection({ user }: { user?: { name: string } }) {
   const defaultUser = user || { name: 'Shabari' };
@@ -249,8 +205,8 @@ function BottomTabBar() {
   const tabs = [
     { label: 'Dashboard', icon: LayoutDashboard },
     { label: 'Jobs Board', icon: Briefcase, path: '/student-jobs' as any },
-    { label: 'Messages', icon: MessageSquare },
-    { label: 'Community', icon: Users },
+    { label: 'Messages', icon: MessageSquare, path: null },
+    { label: 'Community', icon: Users, path: '/student-community' },
   ];
   return (
     <View style={tabBarStyles.container}>
@@ -275,7 +231,7 @@ function BottomTabBar() {
 export default function StudentDashboard() {
   const params = useLocalSearchParams();
   const [loading, setLoading] = useState(true);
-  const [userData, setUserData] = useState({ name: 'Student', profilePhoto: null as string | null });
+  const [userData, setUserData] = useState(userStore);
 
   useEffect(() => {
     async function fetchUser() {
@@ -283,10 +239,16 @@ export default function StudentDashboard() {
         const userId = params.userId;
         if (!userId) {
           // If no ID is passed, fallback to params if they exist, or defaults
-          setUserData({
-            name: (params.userName as string) || 'Student',
-            profilePhoto: (params.profilePhoto as string) || null,
-          });
+          if (params.userName) {
+            const newUserData = {
+              name: (params.userName as string),
+              profilePhoto: (params.profilePhoto as string) || null,
+              email: '',
+              phone: ''
+            };
+            setUserData(newUserData as any);
+            updateGlobalUser(newUserData);
+          }
           setLoading(false);
           return;
         }
@@ -294,7 +256,7 @@ export default function StudentDashboard() {
         const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
         const response = await fetch(`${baseUrl}/api/user/${userId}`);
         const resJson = await response.json();
-        
+
         if (resJson.success && resJson.user) {
           let photoUrl = resJson.user.profilePhoto;
           if (photoUrl && !photoUrl.startsWith('http')) {
@@ -302,11 +264,15 @@ export default function StudentDashboard() {
             const filename = photoUrl.split(/[/\\]/).pop();
             photoUrl = `${baseUrl}/uploads/${filename}`;
           }
-          
-          setUserData({
+
+          const newUserData = {
             name: resJson.user.fullName,
-            profilePhoto: photoUrl
-          });
+            profilePhoto: photoUrl,
+            email: resJson.user.email || '',
+            phone: resJson.user.phone || ''
+          };
+          setUserData(newUserData as any);
+          updateGlobalUser(newUserData);
         }
       } catch (err) {
         console.error('Failed to fetch user:', err);
@@ -314,7 +280,7 @@ export default function StudentDashboard() {
         setLoading(false);
       }
     }
-    
+
     fetchUser();
   }, [params.userId, params.userName, params.profilePhoto]);
 
@@ -328,7 +294,7 @@ export default function StudentDashboard() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <TopNav user={userData} />
+      <StudentHeader user={userData} />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <WelcomeSection user={userData} />
         <ApplicationOverview />
@@ -352,28 +318,7 @@ const styles = StyleSheet.create({
   scrollContent: { padding: 16, gap: 16, paddingBottom: 32 },
 });
 
-const navStyles = StyleSheet.create({
-  headerContainer: {
-    backgroundColor: WHITE,
-    borderBottomWidth: 3, borderBottomColor: '#3b82f6',
-    paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 50 : 20, paddingBottom: 16,
-  },
-  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  logoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  logoBox: { width: 24, height: 24, borderRadius: 6, backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center' },
-  logoText: { fontSize: 13, fontWeight: '800', color: DARK },
-  headerIcons: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  bellWrapper: { position: 'relative' },
-  bellDot: { position: 'absolute', top: 0, right: 2, width: 6, height: 6, borderRadius: 3, backgroundColor: '#ef4444', borderWidth: 1, borderColor: WHITE },
-  avatar: { width: 28, height: 28, borderRadius: 14, backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
-  avatarText: { color: WHITE, fontSize: 12, fontWeight: '700' },
-  avatarImage: { width: '100%', height: '100%' },
-  
-  searchRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  searchBar: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: BG, borderRadius: 8, paddingHorizontal: 10, height: 36 },
-  searchInput: { flex: 1, marginLeft: 6, fontSize: 12, color: DARK },
-  iconBtn: { padding: 4 },
-});
+
 
 const welcomeStyles = StyleSheet.create({
   container: { paddingVertical: 4 },

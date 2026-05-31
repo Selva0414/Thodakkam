@@ -120,7 +120,7 @@ export default function AdminLoginScreen() {
             <View style={styles.inputContainer}>
               <View style={styles.passwordLabelRow}>
                 <Text style={styles.inputLabel}>PASSWORD</Text>
-                <TouchableOpacity>
+                <TouchableOpacity onPress={() => router.push({ pathname: '/forgot-password', params: { role: 'admin' } })}>
                   <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
                 </TouchableOpacity>
               </View>

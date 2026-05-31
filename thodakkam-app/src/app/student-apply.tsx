@@ -5,9 +5,13 @@ import {
 } from 'react-native';
 import {
   Bell, Search, Mail, Settings, LayoutDashboard, Briefcase,
-  MessageSquare, Users, CloudUpload, Send, GraduationCap
+  MessageSquare, Users, CloudUpload, Send, ArrowLeft, UploadCloud, CheckCircle, AlertCircle
 } from 'lucide-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import * as DocumentPicker from 'expo-document-picker';
+import { globalNotificationStore } from '../utils/notificationStore';
+import { userStore } from '../utils/userStore';
+import StudentHeader from '../components/StudentHeader';
 
 const PRIMARY = '#6a1b9a';
 const BG = '#f8f9fa';
@@ -23,16 +27,16 @@ function BottomTabBar() {
     { label: 'Dashboard', icon: LayoutDashboard, path: '/student-dashboard' },
     { label: 'Jobs Search', icon: Briefcase, path: '/student-jobs' },
     { label: 'Messages', icon: MessageSquare, path: null },
-    { label: 'Community', icon: Users, path: null },
+    { label: 'Community', icon: Users, path: '/student-community' },
   ];
   return (
     <View style={tabBarStyles.container}>
       {tabs.map(({ label, icon: Icon, path }) => {
         const isActive = active === label;
         return (
-          <TouchableOpacity 
-            key={label} 
-            style={tabBarStyles.tab} 
+          <TouchableOpacity
+            key={label}
+            style={tabBarStyles.tab}
             onPress={() => {
               if (path) router.push(path as any);
             }}
@@ -53,15 +57,51 @@ export default function StudentApply() {
   const jobTitle = (params.jobTitle as string) || "Internship";
 
   const [form, setForm] = useState({
-    fullName: 'Shabari E S',
-    email: 'shabari@example.com',
-    phone: '+91 6369035633',
+    fullName: '',
+    email: '',
+    phone: '',
+    resumeName: '',
+    resumeUri: '',
   });
   const [loading, setLoading] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [alreadyApplied, setAlreadyApplied] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
+
+  React.useEffect(() => {
+    const checkApplication = async () => {
+      try {
+        const jId = jobId || "mock-job-id";
+        const email = userStore.email || form.email;
+        if (!email) {
+          setIsChecking(false);
+          return;
+        }
+
+        const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
+        const response = await fetch(`${baseUrl}/api/apply/check?jobId=${jId}&email=${email}`);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const resJson = await response.json();
+        
+        if (resJson.success && resJson.applied) {
+          setAlreadyApplied(true);
+        }
+      } catch (err) {
+        console.warn("Failed to check application status:", err);
+      } finally {
+        setIsChecking(false);
+      }
+    };
+    checkApplication();
+  }, [jobId]);
 
   const handleSubmit = async () => {
-    if (!form.fullName || !form.email) {
-      Alert.alert("Missing Fields", "Please fill out all required fields.");
+    if (!form.fullName || !form.email || !form.resumeUri) {
+      Alert.alert("Missing Fields", "Please fill out all required fields and upload a resume.");
       return;
     }
 
@@ -76,17 +116,26 @@ export default function StudentApply() {
           fullName: form.fullName,
           email: form.email,
           phone: form.phone,
-          resumeUrl: "uploaded-resume.pdf"
+          resumeUrl: form.resumeName
         }),
       });
 
       const resJson = await response.json();
       if (resJson.success) {
-        Alert.alert("Success", "Your application has been submitted!", [
-          { text: "OK", onPress: () => router.back() }
-        ]);
+        setIsSubmitted(true);
+        // Notify the company through global store
+        globalNotificationStore.addNotification({
+          title: `New Application for ${jobTitle}`,
+          description: `${form.fullName} has submitted an application for the ${jobTitle} position.`,
+          type: 'info',
+          targetRole: 'startup'
+        });
       } else {
-        Alert.alert("Error", resJson.message || "Failed to submit application");
+        if (resJson.message === 'You have already applied for this job') {
+          setAlreadyApplied(true);
+        } else {
+          Alert.alert("Error", resJson.message || "Failed to submit application");
+        }
       }
     } catch (err) {
       console.error(err);
@@ -98,47 +147,9 @@ export default function StudentApply() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      
-      {/* Top Header */}
-      <View style={navStyles.headerContainer}>
-        <View style={navStyles.headerTop}>
-          <View style={navStyles.logoRow}>
-            <View style={navStyles.logoBox}>
-              <GraduationCap size={14} color={WHITE} />
-            </View>
-            <Text style={navStyles.logoText}>Student Portal</Text>
-          </View>
-          <View style={navStyles.headerIcons}>
-            <View style={navStyles.bellWrapper}>
-              <Bell size={18} color={DARK} />
-              <View style={navStyles.bellDot} />
-            </View>
-            <View style={navStyles.avatar}>
-              <Image source={{ uri: 'https://i.pravatar.cc/100?img=11' }} style={navStyles.avatarImage} />
-            </View>
-          </View>
-        </View>
-
-        <View style={navStyles.searchRow}>
-          <View style={navStyles.searchBar}>
-            <Search size={14} color={GRAY} />
-            <TextInput 
-              style={navStyles.searchInput}
-              placeholder="Search for jobs, companies..."
-              placeholderTextColor={GRAY}
-            />
-          </View>
-          <TouchableOpacity style={navStyles.iconBtn}>
-            <Mail size={18} color={GRAY} />
-          </TouchableOpacity>
-          <TouchableOpacity style={navStyles.iconBtn}>
-            <Settings size={18} color={GRAY} />
-          </TouchableOpacity>
-        </View>
-      </View>
-
+      <StudentHeader />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        
+
         {/* Page Titles */}
         <View style={styles.titleSection}>
           <Text style={styles.pageTitle}>Apply for {jobTitle}</Text>
@@ -146,58 +157,110 @@ export default function StudentApply() {
         </View>
 
         {/* Application Form Card */}
-        <View style={styles.formCard}>
-          <Text style={styles.cardTitle}>Apply for Position</Text>
-          <Text style={styles.cardSubtitle}>
-            {jobTitle} - Engineering & Design
-          </Text>
-
-          {/* Full Name */}
-          <Text style={styles.label}>Full Name</Text>
-          <TextInput
-            style={styles.input}
-            value={form.fullName}
-            onChangeText={(t) => setForm({ ...form, fullName: t })}
-          />
-
-          {/* Email */}
-          <Text style={styles.label}>Email Address</Text>
-          <TextInput
-            style={styles.input}
-            value={form.email}
-            keyboardType="email-address"
-            onChangeText={(t) => setForm({ ...form, email: t })}
-          />
-
-          {/* Phone Number */}
-          <Text style={styles.label}>Phone Number</Text>
-          <TextInput
-            style={styles.input}
-            value={form.phone}
-            keyboardType="phone-pad"
-            onChangeText={(t) => setForm({ ...form, phone: t })}
-          />
-
-          {/* Resume Upload */}
-          <Text style={styles.label}>Resume / CV</Text>
-          <TouchableOpacity style={styles.uploadBox}>
-            <View style={styles.uploadIconWrap}>
-              <CloudUpload size={20} color={DARK} />
+        {isChecking ? (
+          <View style={[styles.formCard, { alignItems: 'center', paddingVertical: 40 }]}>
+            <Text style={{ color: GRAY }}>Checking application status...</Text>
+          </View>
+        ) : alreadyApplied ? (
+          <View style={[styles.formCard, { alignItems: 'center', paddingVertical: 40 }]}>
+            <View style={[styles.successIconBox, { backgroundColor: '#fef2f2' }]}>
+              <AlertCircle size={36} color="#ef4444" />
             </View>
-            <Text style={styles.uploadText}>Click to upload or drag and drop</Text>
-            <Text style={styles.uploadSubtext}>PDF, DOCX up to 10MB</Text>
-          </TouchableOpacity>
+            <Text style={styles.successTitle}>Already Applied!</Text>
+            <Text style={styles.successSubtitle}>
+              You have already submitted an application for the {jobTitle} position. Please wait for the company to review your profile.
+            </Text>
+            <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+              <Text style={styles.backBtnText}>Back to Jobs</Text>
+            </TouchableOpacity>
+          </View>
+        ) : isSubmitted ? (
+          <View style={[styles.formCard, { alignItems: 'center', paddingVertical: 40 }]}>
+            <View style={styles.successIconBox}>
+              <CheckCircle size={36} color="#16a34a" />
+            </View>
+            <Text style={styles.successTitle}>Application Submitted!</Text>
+            <Text style={styles.successSubtitle}>
+              Your application for {jobTitle} has been successfully sent. We will review your profile and get back to you soon.
+            </Text>
+            <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+              <Text style={styles.backBtnText}>Back to Jobs</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={styles.formCard}>
+            <Text style={styles.cardTitle}>Apply for Position</Text>
+            <Text style={styles.cardSubtitle}>
+              {jobTitle} - Engineering & Design
+            </Text>
 
-          {/* Submit Button */}
-          <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit} disabled={loading}>
-            <Text style={styles.submitBtnText}>{loading ? 'Submitting...' : 'Submit Application'}</Text>
-            {!loading && <Send size={14} color={WHITE} style={{ marginLeft: 6 }} />}
-          </TouchableOpacity>
+            {/* Full Name */}
+            <Text style={styles.label}>Full Name</Text>
+            <TextInput
+              style={styles.input}
+              value={form.fullName}
+              onChangeText={(t) => setForm({ ...form, fullName: t })}
+            />
 
-          <Text style={styles.termsText}>
-            BY SUBMITTING, YOU AGREE TO OUR TERMS OF SERVICE
-          </Text>
-        </View>
+            {/* Email */}
+            <Text style={styles.label}>Email Address</Text>
+            <TextInput
+              style={styles.input}
+              value={form.email}
+              keyboardType="email-address"
+              onChangeText={(t) => setForm({ ...form, email: t })}
+            />
+
+            {/* Phone Number */}
+            <Text style={styles.label}>Phone Number</Text>
+            <TextInput
+              style={styles.input}
+              value={form.phone}
+              keyboardType="phone-pad"
+              onChangeText={(t) => setForm({ ...form, phone: t })}
+            />
+
+            {/* Resume Upload */}
+            <Text style={styles.label}>Resume / CV</Text>
+            <TouchableOpacity style={styles.uploadBox} onPress={async () => {
+              try {
+                const result = await DocumentPicker.getDocumentAsync({
+                  type: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+                  copyToCacheDirectory: true,
+                });
+                if (result.canceled === false && result.assets && result.assets.length > 0) {
+                  setForm({
+                    ...form,
+                    resumeName: result.assets[0].name,
+                    resumeUri: result.assets[0].uri
+                  });
+                }
+              } catch (err) {
+                console.warn("Document picker error:", err);
+              }
+            }}>
+              <View style={styles.uploadIconWrap}>
+                <CloudUpload size={20} color={DARK} />
+              </View>
+              {form.resumeName ? (
+                <Text style={[styles.uploadText, { color: PRIMARY, fontWeight: '600' }]}>{form.resumeName}</Text>
+              ) : (
+                <Text style={styles.uploadText}>Click to upload or drag and drop</Text>
+              )}
+              <Text style={styles.uploadSubtext}>PDF, DOCX up to 10MB</Text>
+            </TouchableOpacity>
+
+            {/* Submit Button */}
+            <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit} disabled={loading}>
+              <Text style={styles.submitBtnText}>{loading ? 'Submitting...' : 'Submit Application'}</Text>
+              {!loading && <Send size={14} color={WHITE} style={{ marginLeft: 6 }} />}
+            </TouchableOpacity>
+
+            <Text style={styles.termsText}>
+              BY SUBMITTING, YOU AGREE TO OUR TERMS OF SERVICE
+            </Text>
+          </View>
+        )}
 
       </ScrollView>
 
@@ -212,7 +275,7 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: BG },
   scroll: { flex: 1 },
   scrollContent: { padding: 16, paddingBottom: 40 },
-  
+
   titleSection: { marginBottom: 16, marginTop: 4 },
   pageTitle: { fontSize: 22, fontWeight: '800', color: DARK, marginBottom: 6 },
   pageSubtitle: { fontSize: 13, color: GRAY },
@@ -262,12 +325,23 @@ const styles = StyleSheet.create({
     fontSize: 9, fontWeight: '700', color: '#94a3b8', textAlign: 'center',
     letterSpacing: 0.5, lineHeight: 14,
   },
+
+  successIconBox: {
+    width: 72, height: 72, borderRadius: 36, backgroundColor: '#dcfce7',
+    justifyContent: 'center', alignItems: 'center', marginBottom: 20,
+  },
+  successTitle: { fontSize: 20, fontWeight: '800', color: DARK, marginBottom: 12 },
+  successSubtitle: { fontSize: 13, color: GRAY, textAlign: 'center', marginBottom: 32, lineHeight: 20, paddingHorizontal: 10 },
+  backBtn: {
+    backgroundColor: '#f1f5f9', borderRadius: 10, paddingVertical: 14, width: '100%',
+    alignItems: 'center',
+  },
+  backBtnText: { color: DARK, fontSize: 14, fontWeight: '700' },
 });
 
 const navStyles = StyleSheet.create({
   headerContainer: {
     backgroundColor: WHITE,
-    borderBottomWidth: 3, borderBottomColor: '#3b82f6',
     paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 50 : 20, paddingBottom: 16,
   },
   headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
@@ -280,7 +354,7 @@ const navStyles = StyleSheet.create({
   avatar: { width: 28, height: 28, borderRadius: 14, backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
   avatarText: { color: WHITE, fontSize: 12, fontWeight: '700' },
   avatarImage: { width: '100%', height: '100%' },
-  
+
   searchRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   searchBar: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: BG, borderRadius: 8, paddingHorizontal: 10, height: 36 },
   searchInput: { flex: 1, marginLeft: 6, fontSize: 12, color: DARK },

@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, TouchableOpacity,
-  SafeAreaView, TextInput, Platform, Image, ActivityIndicator
+  SafeAreaView, TextInput, Platform, Image, ActivityIndicator, Modal, Linking
 } from 'react-native';
 import {
   Search, Mail, Bell, Settings, Briefcase, Users,
   Calendar, MessageSquare, LayoutGrid, Plus,
-  List as ListIcon, BarChart2, Edit2, MapPin, MoreHorizontal
+  List as ListIcon, BarChart2, Edit2, MapPin, MoreHorizontal, X, ExternalLink
 } from 'lucide-react-native';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
+import StartupHeader from '../components/StartupHeader';
 import Svg, { Path, Circle } from 'react-native-svg';
 
 const PRIMARY = '#662483';
@@ -25,6 +26,8 @@ export default function StartupJobs() {
   const [viewMode, setViewMode] = useState<'List' | 'Analytics'>('List');
   const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedJob, setSelectedJob] = useState<any>(null);
+  const [isModalVisible, setIsModalVisible] = useState(false);
 
   const companyName = (params.companyName as string) || 'Echo Digital';
 
@@ -67,6 +70,12 @@ export default function StartupJobs() {
     setActiveTab(label);
     if (label === 'Dashboard') {
       router.replace({ pathname: '/startup-dashboard' as any, params: { companyName } });
+    } else if (label === 'Candidates') {
+      router.replace({ pathname: '/startup-candidates' as any, params: { companyName } });
+    } else if (label === 'Interviews') {
+      router.replace({ pathname: '/startup-interviews' as any, params: { companyName } });
+    } else if (label === 'Community') {
+      router.replace({ pathname: '/startup-community' as any, params: { companyName } });
     }
   };
 
@@ -84,43 +93,11 @@ export default function StartupJobs() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <StartupHeader companyName={companyName} />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         
-        {/* Header Section */}
+        {/* Job Actions Header */}
         <View style={styles.headerCard}>
-          <View style={styles.headerTop}>
-            <View style={styles.adminInfo}>
-              <View style={styles.logoBox}>
-                <Text style={styles.logoText}>{companyInitials}</Text>
-              </View>
-              <View>
-                <Text style={styles.companyTitle}>{companyName}</Text>
-                <Text style={styles.companySubtitle}>PREMIUM PLAN</Text>
-              </View>
-            </View>
-            <View style={styles.headerActions}>
-              <TouchableOpacity style={styles.actionIcon}>
-                <Mail size={20} color={TEXT_GRAY} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.actionIcon}>
-                <Bell size={20} color={TEXT_GRAY} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.actionIcon}>
-                <Settings size={20} color={TEXT_GRAY} />
-              </TouchableOpacity>
-            </View>
-          </View>
-          
-          <View style={[styles.searchBarContainer, viewMode === 'Analytics' && { marginBottom: 24 }]}>
-            <View style={styles.searchBar}>
-              <Search size={16} color={TEXT_GRAY} />
-              <TextInput 
-                style={styles.searchInput}
-                placeholder="Search analytics, candidates..."
-                placeholderTextColor={TEXT_GRAY}
-              />
-            </View>
-          </View>
 
           {/* Job Filter Tabs */}
           {viewMode === 'List' && (
@@ -196,7 +173,24 @@ export default function StartupJobs() {
                         </View>
                         <Text style={styles.postedText}>Posted recently</Text>
                       </View>
-                      <TouchableOpacity style={styles.editBtn}>
+                      <TouchableOpacity 
+                        style={styles.editBtn}
+                        onPress={() => {
+                          router.push({
+                            pathname: '/startup-edit-job' as any,
+                            params: {
+                              companyName,
+                              jobId: job.id,
+                              title: job.title,
+                              location: job.location,
+                              type: job.type,
+                              salary: job.salary,
+                              description: job.description,
+                              requirements: (job.requirements || []).join(', ')
+                            }
+                          });
+                        }}
+                      >
                         <Edit2 size={14} color={TEXT_GRAY} />
                       </TouchableOpacity>
                     </View>
@@ -209,13 +203,8 @@ export default function StartupJobs() {
 
                     <View style={styles.jobStatsRow}>
                       <View style={styles.applicantsCol}>
-                        <Text style={styles.applicantsNumber}>0</Text>
+                        <Text style={styles.applicantsNumber}>{job.applications?.length || 0}</Text>
                         <Text style={styles.applicantsLabel}>APPLICANTS</Text>
-                      </View>
-                      <View style={styles.avatarsWrapper}>
-                        <View style={[styles.avatarMore, { zIndex: 1 }]}>
-                          <Text style={styles.avatarMoreText}>+0</Text>
-                        </View>
                       </View>
                       <View style={{ flex: 1 }} />
                       <View style={styles.miniChart}>
@@ -226,7 +215,13 @@ export default function StartupJobs() {
                     </View>
 
                     <View style={styles.cardActions}>
-                      <TouchableOpacity style={[styles.primaryActionBtn, { backgroundColor: PRIMARY, shadowColor: PRIMARY, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 }]}>
+                      <TouchableOpacity 
+                        style={[styles.primaryActionBtn, { backgroundColor: PRIMARY, shadowColor: PRIMARY, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 }]}
+                        onPress={() => {
+                          setSelectedJob(job);
+                          setIsModalVisible(true);
+                        }}
+                      >
                         <Text style={[styles.actionBtnText, { color: WHITE }]}>View Applicants</Text>
                       </TouchableOpacity>
                       <TouchableOpacity style={styles.moreBtn}>
@@ -403,6 +398,49 @@ export default function StartupJobs() {
         )}
       </ScrollView>
 
+      {/* Modal for viewing applicants */}
+      <Modal
+        visible={isModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setIsModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Applicants for {selectedJob?.title}</Text>
+              <TouchableOpacity onPress={() => setIsModalVisible(false)} style={styles.closeBtn}>
+                <X size={20} color={TEXT_DARK} />
+              </TouchableOpacity>
+            </View>
+            
+            <ScrollView style={styles.modalScroll}>
+              {!selectedJob?.applications || selectedJob.applications.length === 0 ? (
+                <Text style={{ textAlign: 'center', color: TEXT_GRAY, marginTop: 40 }}>No applicants yet.</Text>
+              ) : (
+                selectedJob.applications.map((app: any) => (
+                  <View key={app.id} style={styles.applicantCard}>
+                    <View style={styles.applicantMeta}>
+                      <Text style={styles.applicantName}>{app.fullName}</Text>
+                      <Text style={styles.applicantContact}>{app.email} • {app.phone}</Text>
+                    </View>
+                    {app.resumeUrl && (
+                      <TouchableOpacity 
+                        style={styles.resumeBtn}
+                        onPress={() => Linking.openURL(app.resumeUrl)}
+                      >
+                        <ExternalLink size={14} color={PRIMARY} />
+                        <Text style={styles.resumeBtnText}>Resume</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                ))
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
       {/* Floating Elements */}
       <View style={styles.floatingContainer}>
         <View style={styles.floatingTopRow}>
@@ -464,9 +502,11 @@ const styles = StyleSheet.create({
   
   headerCard: {
     backgroundColor: WHITE,
-    paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 80 : 70,
     borderBottomWidth: 1, borderBottomColor: '#f1f5f9',
-    position: 'relative'
+    position: 'relative',
+    zIndex: 100,
+    elevation: 10
   },
   headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   adminInfo: { flexDirection: 'row', alignItems: 'center' },
@@ -480,7 +520,7 @@ const styles = StyleSheet.create({
   searchBarContainer: { marginBottom: 64 },
   searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f1f5f9', borderRadius: 12, paddingHorizontal: 12, height: 44 },
   searchInput: { flex: 1, marginLeft: 8, fontSize: 13, color: TEXT_DARK },
-  addJobBtn: { position: 'absolute', right: 16, bottom: 48, zIndex: 10, width: 56, height: 56, borderRadius: 28, backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center', shadowColor: PRIMARY, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
+  addJobBtn: { position: 'absolute', right: 20, top: 16, zIndex: 10, width: 56, height: 56, borderRadius: 28, backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center', shadowColor: PRIMARY, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
 
   filterTabs: { flexDirection: 'row', alignItems: 'flex-end', borderBottomWidth: 1, borderBottomColor: '#e2e8f0', width: '100%' },
   filterTab: { paddingVertical: 12, paddingHorizontal: 16, borderBottomWidth: 2, borderBottomColor: 'transparent' },
@@ -529,7 +569,7 @@ const styles = StyleSheet.create({
   actionBtnText: { fontSize: 13, fontWeight: '700' },
   moreBtn: { width: 44, height: 44, borderRadius: 8, borderWidth: 1, borderColor: '#e2e8f0', justifyContent: 'center', alignItems: 'center' },
 
-  floatingContainer: { position: 'absolute', bottom: Platform.OS === 'ios' ? 90 : 70, left: 20, right: 20, zIndex: 10, pointerEvents: 'box-none' },
+  floatingContainer: { position: 'absolute', bottom: Platform.OS === 'ios' ? 140 : 120, left: 20, right: 20, zIndex: 10, pointerEvents: 'box-none' },
   floatingTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   addJobFloatingBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center', shadowColor: PRIMARY, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
   msgPill: { backgroundColor: PRIMARY, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderRadius: 24, shadowColor: PRIMARY, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
@@ -589,4 +629,17 @@ const styles = StyleSheet.create({
   sourceBarFill: { height: '100%', backgroundColor: PRIMARY, borderRadius: 4 },
   viewSourceBtn: { marginTop: 8, paddingVertical: 12, borderRadius: 8, borderWidth: 1, borderColor: '#f1f5f9', alignItems: 'center' },
   viewSourceBtnText: { color: PRIMARY, fontSize: 12, fontWeight: '700' },
+
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: WHITE, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, minHeight: '60%', maxHeight: '90%' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', color: TEXT_DARK },
+  closeBtn: { padding: 8 },
+  modalScroll: { flex: 1 },
+  applicantCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f8fafc', padding: 16, borderRadius: 12, marginBottom: 12 },
+  applicantMeta: { flex: 1 },
+  applicantName: { fontSize: 15, fontWeight: '700', color: TEXT_DARK },
+  applicantContact: { fontSize: 12, color: TEXT_GRAY, marginTop: 4 },
+  resumeBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#fdf4ff', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
+  resumeBtnText: { color: PRIMARY, fontSize: 12, fontWeight: '700' }
 });

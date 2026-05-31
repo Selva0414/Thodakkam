@@ -9,6 +9,7 @@ import {
   ArrowRight, Upload, MessageCircle, GraduationCap
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import StudentHeader from '../components/StudentHeader';
 
 const PRIMARY = '#6a1b9a';
 const BG = '#f4f5f7';
@@ -19,24 +20,31 @@ const BORDER = '#e2e8f0';
 
 function BottomTabBar() {
   const router = useRouter();
+  const tabs = [
+    { label: 'Dashboard', icon: LayoutDashboard, path: '/student-dashboard' },
+    { label: 'Jobs Search', icon: Briefcase, path: '/student-jobs' },
+    { label: 'Messages', icon: MessageSquare, path: null },
+    { label: 'Community', icon: Users, path: '/student-community' },
+  ];
+  const active = 'Jobs Search';
+
   return (
     <View style={tabBarStyles.container}>
-      <TouchableOpacity style={tabBarStyles.tab} onPress={() => router.replace('/student-dashboard')}>
-        <LayoutDashboard size={20} color={GRAY} />
-        <Text style={tabBarStyles.label}>Dashboard</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={tabBarStyles.tab}>
-        <Briefcase size={20} color={PRIMARY} />
-        <Text style={[tabBarStyles.label, tabBarStyles.labelActive]}>Jobs Search</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={tabBarStyles.tab}>
-        <MessageSquare size={20} color={GRAY} />
-        <Text style={tabBarStyles.label}>Messages</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={tabBarStyles.tab}>
-        <Users size={20} color={GRAY} />
-        <Text style={tabBarStyles.label}>Community</Text>
-      </TouchableOpacity>
+      {tabs.map(({ label, icon: Icon, path }) => {
+        const isActive = active === label;
+        return (
+          <TouchableOpacity 
+            key={label} 
+            style={tabBarStyles.tab} 
+            onPress={() => {
+              if (path) router.replace(path as any);
+            }}
+          >
+            <Icon size={20} color={isActive ? PRIMARY : GRAY} />
+            <Text style={[tabBarStyles.label, isActive && tabBarStyles.labelActive]}>{label}</Text>
+          </TouchableOpacity>
+        );
+      })}
     </View>
   );
 }
@@ -67,43 +75,7 @@ export default function StudentJobs() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      
-      {/* Top Header */}
-      <View style={styles.headerContainer}>
-        <View style={styles.headerTop}>
-          <View style={styles.logoRow}>
-            <View style={styles.logoBox}>
-              <GraduationCap size={14} color={WHITE} />
-            </View>
-            <Text style={styles.logoText}>Student Portal</Text>
-          </View>
-          <View style={styles.headerIcons}>
-            <View style={styles.bellWrapper}>
-              <Bell size={18} color={DARK} />
-              <View style={styles.bellDot} />
-            </View>
-            <Image source={{ uri: 'https://i.pravatar.cc/100?img=11' }} style={styles.avatar} />
-          </View>
-        </View>
-
-        <View style={styles.searchRow}>
-          <View style={styles.searchBar}>
-            <Search size={14} color={GRAY} />
-            <TextInput 
-              style={styles.searchInput}
-              placeholder="Search for jobs, companies..."
-              placeholderTextColor={GRAY}
-            />
-          </View>
-          <TouchableOpacity style={styles.iconBtn}>
-            <Mail size={18} color={GRAY} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconBtn}>
-            <Settings size={18} color={GRAY} />
-          </TouchableOpacity>
-        </View>
-      </View>
-
+      <StudentHeader />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         
         {/* Title Section */}
@@ -225,7 +197,6 @@ const styles = StyleSheet.create({
   
   headerContainer: {
     backgroundColor: WHITE,
-    borderBottomWidth: 3, borderBottomColor: '#3b82f6', // blue bottom border line in screenshot
     paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 50 : 20, paddingBottom: 16,
   },
   headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },

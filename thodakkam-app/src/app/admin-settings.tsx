@@ -8,6 +8,7 @@ import {
   BarChart2, Settings, Home, Pencil, Sun, Moon, HelpCircle, ChevronDown
 } from 'lucide-react-native';
 import { router } from 'expo-router';
+import AdminHeader from '../components/AdminHeader';
 
 const PRIMARY = '#5A279B'; 
 const BG = '#ffffff';
@@ -44,43 +45,10 @@ export default function AdminSettings() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <AdminHeader />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         
-        {/* Header Section */}
-        <View style={styles.headerCard}>
-          <View style={styles.headerTop}>
-            <View style={styles.adminInfo}>
-              <View style={styles.shieldIconBox}>
-                <ShieldCheck size={18} color={WHITE} />
-              </View>
-              <View>
-                <Text style={styles.adminTitle}>Master Admin</Text>
-                <Text style={styles.adminSubtitle}>MANAGEMENT</Text>
-              </View>
-            </View>
-            <View style={styles.headerActions}>
-              <TouchableOpacity style={styles.actionIcon}>
-                <Mail size={20} color={TEXT_GRAY} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.actionIcon}>
-                <Bell size={20} color={TEXT_GRAY} />
-              </TouchableOpacity>
-              <Image 
-                source={{ uri: 'https://i.pravatar.cc/150?img=11' }} 
-                style={styles.profilePic} 
-              />
-            </View>
-          </View>
-          
-          <View style={styles.searchBar}>
-            <Search size={16} color={TEXT_GRAY} />
-            <TextInput 
-              style={styles.searchInput}
-              placeholder="Search settings..."
-              placeholderTextColor={TEXT_GRAY}
-            />
-          </View>
-        </View>
+
 
         {/* Page Title & Tabs */}
         <View style={styles.titleSection}>

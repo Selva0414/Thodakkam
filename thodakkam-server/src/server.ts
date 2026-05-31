@@ -20,7 +20,8 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Ensure uploads folder exists
@@ -151,6 +152,7 @@ app.post('/api/login', async (req: Request, res: Response): Promise<void> => {
         id: user.id,
         fullName: user.fullName,
         email: user.email,
+        phone: user.phone,
         profilePhoto: user.profilePhoto
       }
     });
@@ -175,6 +177,7 @@ app.get('/api/user/:id', async (req: Request, res: Response): Promise<void> => {
         id: user.id,
         fullName: user.fullName,
         email: user.email,
+        phone: user.phone,
         profilePhoto: user.profilePhoto
       }
     });
@@ -494,6 +497,31 @@ app.post('/api/jobs', async (req: Request, res: Response): Promise<void> => {
   }
 });
 
+// Update a Job
+app.put('/api/jobs/:id', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { title, location, type, salary, description, requirements } = req.body;
+
+    const job = await prisma.job.update({
+      where: { id: id as string },
+      data: {
+        title,
+        location,
+        type,
+        salary,
+        description,
+        requirements: requirements || []
+      }
+    });
+
+    res.status(200).json({ success: true, message: 'Job updated successfully', job });
+  } catch (err) {
+    console.error('Job update error:', err);
+    res.status(500).json({ success: false, message: 'Server error updating job' });
+  }
+});
+
 // 9. Get Jobs for a Startup
 app.get('/api/jobs/startup/:companyName', async (req: Request, res: Response): Promise<void> => {
   try {
@@ -503,7 +531,8 @@ app.get('/api/jobs/startup/:companyName', async (req: Request, res: Response): P
       where: { companyName: companyName as string },
       include: {
         jobs: {
-          orderBy: { createdAt: 'desc' }
+          orderBy: { createdAt: 'desc' },
+          include: { applications: true }
         }
       } as any
     });
@@ -550,6 +579,19 @@ app.post('/api/apply', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    // Check if user already applied
+    const existingApplication = await prisma.application.findFirst({
+      where: {
+        jobId,
+        email
+      } as any
+    });
+
+    if (existingApplication) {
+      res.status(400).json({ success: false, message: 'You have already applied for this job' });
+      return;
+    }
+
     const application = await prisma.application.create({
       data: {
         jobId,
@@ -565,6 +607,291 @@ app.post('/api/apply', async (req: Request, res: Response): Promise<void> => {
   } catch (err) {
     console.error('Application error:', err);
     res.status(500).json({ success: false, message: 'Server error submitting application' });
+  }
+});
+
+// 11b. Check if user already applied
+app.get('/api/apply/check', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { jobId, email } = req.query;
+    if (!jobId || !email) {
+      res.status(400).json({ success: false, message: 'Missing jobId or email' });
+      return;
+    }
+
+    const existing = await prisma.application.findFirst({
+      where: {
+        jobId: String(jobId),
+        email: String(email)
+      } as any
+    });
+
+    res.status(200).json({ success: true, applied: !!existing });
+  } catch (err) {
+    console.error('Error checking application:', err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// 11c. Get All Applications for a Startup
+app.get('/api/applications/startup/:companyName', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { companyName } = req.params;
+    const startup = await prisma.startup.findFirst({
+      where: { companyName: companyName as string },
+      include: {
+        jobs: {
+          include: {
+            applications: {
+              include: { user: true }
+            }
+          }
+        }
+      } as any
+    });
+
+    if (!startup) {
+      res.status(404).json({ success: false, message: 'Startup not found' });
+      return;
+    }
+
+    // Flatten all applications into one array
+    let allApplications: any[] = [];
+    (startup as any).jobs.forEach((job: any) => {
+      if (job.applications && job.applications.length > 0) {
+        job.applications.forEach((app: any) => {
+          allApplications.push({
+            ...app,
+            jobTitle: job.title // Inject job title so startup knows what they applied for
+          });
+        });
+      }
+    });
+
+    // Sort by appliedAt descending
+    allApplications.sort((a, b) => new Date(b.appliedAt).getTime() - new Date(a.appliedAt).getTime());
+
+    res.status(200).json({ success: true, applications: allApplications });
+  } catch (err) {
+    console.error('Error fetching applications for startup:', err);
+    res.status(500).json({ success: false, message: 'Server error fetching applications' });
+  }
+});
+
+// 11d. Update Application Status
+app.put('/api/applications/:id', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    const updatedApplication = await prisma.application.update({
+      where: { id: id as string },
+      data: { status }
+    });
+    res.status(200).json({ success: true, application: updatedApplication });
+  } catch (err) {
+    console.error('Error updating application:', err);
+    res.status(500).json({ success: false, message: 'Server error updating application' });
+  }
+});
+
+
+// 14. Forgot Password Flow
+// Request OTP
+app.post('/api/auth/forgot-password', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { email, role } = req.body;
+    if (!email || !role) { res.status(400).json({ success: false, message: 'Email and role are required' }); return; }
+
+    let userExists = false;
+    if (role === 'student') {
+      userExists = !!(await prisma.user.findUnique({ where: { email } }));
+    } else if (role === 'startup') {
+      userExists = !!(await prisma.startup.findUnique({ where: { email } }));
+    } else if (role === 'admin') {
+      userExists = !!(await prisma.admin.findUnique({ where: { email } }));
+    }
+
+    if (!userExists) {
+      res.status(404).json({ success: false, message: 'User not found with this email' }); return;
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    await prisma.otp.upsert({
+      where: { email },
+      update: { otp, createdAt: new Date() },
+      create: { email, otp }
+    });
+
+    // Send email via nodemailer
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER || 'your-email@gmail.com', // fallback for dev
+        pass: process.env.EMAIL_PASS || 'your-app-password',
+      },
+    });
+
+    const mailOptions = {
+      from: process.env.EMAIL_USER || 'Thodakkam Portal',
+      to: email,
+      subject: 'Password Reset OTP - Thodakkam',
+      text: `Your OTP for password reset is: ${otp}\nThis OTP is valid for 10 minutes.`,
+      html: `
+        <div style="font-family: Arial, sans-serif; padding: 20px;">
+          <h2>Password Reset Request</h2>
+          <p>You requested a password reset for your Thodakkam account.</p>
+          <p>Your One-Time Password (OTP) is:</p>
+          <h1 style="color: #6a1b9a; letter-spacing: 5px;">${otp}</h1>
+          <p>Please enter this code in the app to reset your password. It is valid for 10 minutes.</p>
+          <p>If you did not request this, please ignore this email.</p>
+        </div>
+      `
+    };
+
+    try {
+      await transporter.sendMail(mailOptions);
+      console.log(`[MAIL SENT] OTP ${otp} sent successfully to ${email}`);
+      res.status(200).json({ success: true, message: 'OTP sent to your email successfully.' });
+    } catch (mailError) {
+      console.error("Nodemailer error:", mailError);
+      // Fallback for development if credentials are bad
+      console.log(`[DEV MODE FALLBACK] OTP for ${email} is ${otp}`);
+      res.status(200).json({ success: true, message: 'OTP sent (Check terminal if email fails in Dev Mode)' });
+    }
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// Verify OTP
+app.post('/api/auth/verify-otp-password', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { email, otp } = req.body;
+    const otpRecord = await prisma.otp.findUnique({ where: { email } });
+    
+    if (!otpRecord || otpRecord.otp !== otp) {
+      res.status(400).json({ success: false, message: 'Invalid OTP' }); return;
+    }
+    
+    res.status(200).json({ success: true, message: 'OTP verified successfully' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// Reset Password
+app.post('/api/auth/reset-password', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { email, newPassword, role } = req.body;
+    if (!email || !newPassword || !role) { res.status(400).json({ success: false, message: 'Missing fields' }); return; }
+
+    if (role === 'student') {
+      await prisma.user.update({ where: { email }, data: { password: newPassword } });
+    } else if (role === 'startup') {
+      await prisma.startup.update({ where: { email }, data: { password: newPassword } });
+    } else if (role === 'admin') {
+      await prisma.admin.update({ where: { email }, data: { password: newPassword } });
+    }
+
+    await prisma.otp.deleteMany({ where: { email } });
+
+    res.status(200).json({ success: true, message: 'Password updated successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// Community Posts
+app.get('/api/posts', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const posts = await prisma.post.findMany({
+      include: { user: true },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.status(200).json({ success: true, posts });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error fetching posts' });
+  }
+});
+
+app.post('/api/posts', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { text, imageUrl, category, email, companyName } = req.body;
+    let userId = '';
+
+    if (companyName) {
+      const generatedEmail = `${companyName.replace(/\s+/g, '').toLowerCase()}@startup.local`;
+      let startupUser = await prisma.user.findFirst({ where: { email: generatedEmail } });
+      if (!startupUser) {
+        startupUser = await prisma.user.create({
+          data: {
+            fullName: companyName,
+            email: generatedEmail,
+            password: 'mockpassword',
+            skills: []
+          } as any
+        });
+      }
+      userId = startupUser.id;
+    } else if (email) {
+      const user = await prisma.user.findUnique({ where: { email } });
+      if (user) userId = user.id;
+    }
+    
+    if (!userId) {
+      const validUser = await prisma.user.findFirst();
+      if (!validUser) {
+         res.status(400).json({ success: false, message: 'No valid user found to post as.' });
+         return;
+      }
+      userId = validUser.id;
+    }
+
+    let finalImageUrl = imageUrl;
+    
+    // If imageUrl is a base64 string, write it to disk and save the filename
+    if (imageUrl && imageUrl.startsWith('data:image')) {
+      try {
+        const matches = imageUrl.match(/^data:image\/([a-zA-Z0-9+]+);base64,(.+)$/);
+        if (matches && matches.length === 3) {
+          const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1];
+          const base64Data = matches[2];
+          const buffer = Buffer.from(base64Data, 'base64');
+          
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const filename = `post-${uniqueSuffix}.${ext}`;
+          const uploadDir = path.join(__dirname, '../uploads');
+          if (!fs.existsSync(uploadDir)) {
+             fs.mkdirSync(uploadDir, { recursive: true });
+          }
+          
+          const uploadPath = path.join(uploadDir, filename);
+          fs.writeFileSync(uploadPath, buffer);
+          
+          finalImageUrl = `uploads/${filename}`;
+        }
+      } catch (e) {
+        console.error("Failed to decode base64 image", e);
+      }
+    }
+
+    const post = await prisma.post.create({
+      data: {
+        text,
+        imageUrl: finalImageUrl,
+        category: category || 'Projects',
+        userId: userId
+      } as any
+    });
+    res.status(201).json({ success: true, post });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error creating post' });
   }
 });
 

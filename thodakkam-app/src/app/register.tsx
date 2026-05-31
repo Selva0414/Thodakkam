@@ -1,9 +1,9 @@
 import React from 'react';
-import { 
+import {
   StyleSheet, Text, View, TextInput, ScrollView, TouchableOpacity, SafeAreaView, Platform, KeyboardAvoidingView, Image, Modal
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
-import { 
+import {
   GraduationCap, Lock, UploadCloud, FileText, Briefcase, Link as LinkIcon, Globe, ChevronDown, X, Sparkles, Check, LayoutGrid
 } from 'lucide-react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -41,8 +41,8 @@ function InputField({ label, placeholder, icon: Icon, rightIcon: RightIcon, secu
             {prefixDivider && <View style={styles.verticalDivider} />}
           </View>
         )}
-        <TextInput 
-          style={[styles.input, multiline && styles.inputMultiline, Icon && !prefixDivider && { paddingLeft: 8 }]} 
+        <TextInput
+          style={[styles.input, multiline && styles.inputMultiline, Icon && !prefixDivider && { paddingLeft: 8 }]}
           placeholder={placeholder}
           placeholderTextColor="#9ca3af"
           secureTextEntry={secureTextEntry}
@@ -101,7 +101,7 @@ export default function RegisterScreen() {
 
   // Skills States
   const [skills, setSkills] = React.useState<string[]>(['UI Design', 'Python', 'Data Analysis', 'React.js', 'Marketing']);
-  const [selectedSkills, setSelectedSkills] = React.useState<string[]>(['UI Design', 'Python']);
+  const [selectedSkills, setSelectedSkills] = React.useState<string[]>([]);
   const [newSkillText, setNewSkillText] = React.useState('');
   const [showSkillInput, setShowSkillInput] = React.useState(false);
 
@@ -186,7 +186,7 @@ export default function RegisterScreen() {
       formData.append('experienceRole', internships[0].role);
       formData.append('experienceStartDate', internships[0].startDate);
       formData.append('experienceEndDate', internships[0].endDate);
-      
+
       let finalDescription = internships[0].description;
       if (internships.length > 1) {
         finalDescription = JSON.stringify(internships);
@@ -253,8 +253,8 @@ export default function RegisterScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView 
-        style={{ flex: 1 }} 
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         {/* Success Modal */}
@@ -274,7 +274,7 @@ export default function RegisterScreen() {
                 Your profile is ready. Start applying for internships and jobs.
               </Text>
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.modalDashboardButton}
                 onPress={() => {
                   setShowSuccessModal(false);
@@ -368,9 +368,9 @@ export default function RegisterScreen() {
             {skills.map((skill) => {
               const isSelected = selectedSkills.includes(skill);
               return (
-                <TouchableOpacity 
-                  key={skill} 
-                  style={[styles.tag, isSelected && styles.tagSelected]} 
+                <TouchableOpacity
+                  key={skill}
+                  style={[styles.tag, isSelected && styles.tagSelected]}
                   onPress={() => toggleSkill(skill)}
                 >
                   <Text style={isSelected ? styles.tagTextSelected : styles.tagText}>{skill}</Text>
@@ -378,7 +378,7 @@ export default function RegisterScreen() {
                 </TouchableOpacity>
               );
             })}
-            
+
             {showSkillInput ? (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <TextInput
@@ -425,10 +425,10 @@ export default function RegisterScreen() {
                 <InputField label="Start Date" placeholder="mm/dd/yyyy" containerStyle={{ flex: 1, marginRight: 12 }} value={internship.startDate} onChangeText={(val: string) => updateInternship(index, 'startDate', val)} />
                 <InputField label="End Date" placeholder="mm/dd/yyyy" containerStyle={{ flex: 1 }} value={internship.endDate} onChangeText={(val: string) => updateInternship(index, 'endDate', val)} />
               </View>
-              <InputField 
-                label="Description" 
-                placeholder="Describe your key responsibilities and achievements..." 
-                multiline 
+              <InputField
+                label="Description"
+                placeholder="Describe your key responsibilities and achievements..."
+                multiline
                 value={internship.description}
                 onChangeText={(val: string) => updateInternship(index, 'description', val)}
               />
@@ -442,7 +442,7 @@ export default function RegisterScreen() {
           <InputField placeholder="Personal Website URL" icon={Globe} prefixDivider value={portfolioUrl} onChangeText={setPortfolioUrl} />
           <InputField placeholder="GitHub Profile" icon={GithubIcon} prefixDivider value={githubUrl} onChangeText={setGithubUrl} />
           <InputField placeholder="LinkedIn Profile" icon={LinkedinIcon} prefixDivider value={linkedinUrl} onChangeText={setLinkedinUrl} />
-          
+
           <View style={{ height: 40 }} />
         </ScrollView>
 
@@ -766,7 +766,7 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     marginTop: 2,
   },
-  
+
   // Modal Styles
   modalOverlay: {
     flex: 1,

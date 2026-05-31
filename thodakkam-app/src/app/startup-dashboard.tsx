@@ -9,6 +9,7 @@ import {
 } from 'lucide-react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import StartupHeader from '../components/StartupHeader';
 
 const PRIMARY = '#662483';
 const BG = '#f8fafc';
@@ -20,58 +21,13 @@ export default function StartupDashboard() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const [activeTab, setActiveTab] = useState('Dashboard');
-
   const companyName = (params.companyName as string) || 'Echo Digital';
-  
-  // Extract initials (max 2 characters) for the logo placeholder
-  const getInitials = (name: string) => {
-    const words = name.split(' ').filter(w => w.length > 0);
-    if (words.length >= 2) return (words[0][0] + words[1][0]).toLowerCase();
-    if (words.length === 1 && words[0].length >= 4) return words[0].substring(0, 4).toLowerCase();
-    return name.substring(0, 2).toLowerCase();
-  };
-
-  const companyInitials = getInitials(companyName);
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <StartupHeader companyName={companyName} />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         
-        {/* Header Section */}
-        <View style={styles.headerCard}>
-          <View style={styles.headerTop}>
-            <View style={styles.adminInfo}>
-              <View style={styles.logoBox}>
-                <Text style={styles.logoText}>{companyInitials}</Text>
-              </View>
-              <View>
-                <Text style={styles.companyTitle}>{companyName}</Text>
-                <Text style={styles.companySubtitle}>PREMIUM PLAN</Text>
-              </View>
-            </View>
-            <View style={styles.headerActions}>
-              <TouchableOpacity style={styles.actionIcon}>
-                <Mail size={20} color={TEXT_GRAY} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.actionIcon}>
-                <Bell size={20} color={TEXT_GRAY} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.actionIcon}>
-                <Settings size={20} color={TEXT_GRAY} />
-              </TouchableOpacity>
-            </View>
-          </View>
-          
-          <View style={styles.searchBar}>
-            <Search size={16} color={TEXT_GRAY} />
-            <TextInput 
-              style={styles.searchInput}
-              placeholder="Search analytics, candidates..."
-              placeholderTextColor={TEXT_GRAY}
-            />
-          </View>
-        </View>
-
         {/* Stats Row */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.statsScroll}>
           {/* Stat 1 */}
@@ -250,6 +206,12 @@ export default function StartupDashboard() {
                 setActiveTab(item.label);
                 if (item.label === 'Jobs') {
                   router.replace({ pathname: '/startup-jobs' as any, params: { companyName } });
+                } else if (item.label === 'Candidates') {
+                  router.replace({ pathname: '/startup-candidates' as any, params: { companyName } });
+                } else if (item.label === 'Interviews') {
+                  router.replace({ pathname: '/startup-interviews' as any, params: { companyName } });
+                } else if (item.label === 'Community') {
+                  router.replace({ pathname: '/startup-community' as any, params: { companyName } });
                 }
               }}
             >
