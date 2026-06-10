@@ -6,7 +6,7 @@ import {
 import {
   Bell, Search, Mail, Settings, LayoutDashboard, Briefcase,
   MessageSquare, Users, Image as ImageIcon, Send, GraduationCap,
-  Heart, MessageCircle, Share2, Plus
+  Heart, MessageCircle, Share2, Plus, ClipboardList
 } from 'lucide-react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
@@ -25,7 +25,8 @@ function BottomTabBar() {
   const tabs = [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/student-dashboard' },
     { label: 'Jobs Search', icon: Briefcase, path: '/student-jobs' },
-    { label: 'Messages', icon: MessageSquare, path: null },
+    { label: 'Assessments', icon: ClipboardList, path: '/student-assessments' },
+    { label: 'Messages', icon: MessageSquare, path: '/student-messages' },
     { label: 'Community', icon: Users, path: '/student-community' },
   ];
   return (
@@ -33,9 +34,9 @@ function BottomTabBar() {
       {tabs.map(({ label, icon: Icon, path }) => {
         const isActive = active === label;
         return (
-          <TouchableOpacity 
-            key={label} 
-            style={tabBarStyles.tab} 
+          <TouchableOpacity
+            key={label}
+            style={tabBarStyles.tab}
             onPress={() => {
               if (path) router.push(path as any);
             }}
@@ -93,7 +94,7 @@ export default function StudentCommunity() {
     <SafeAreaView style={styles.safeArea}>
       <StudentHeader />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        
+
         <View style={styles.titleRow}>
           <Text style={styles.pageTitle}>Community Feed</Text>
           <TouchableOpacity style={styles.addBtn} onPress={() => router.push('/student-add-post' as any)}>
@@ -103,7 +104,7 @@ export default function StudentCommunity() {
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={styles.filterContent}>
           {['All', 'Projects', 'Awards', 'Certifications'].map(cat => (
-            <TouchableOpacity 
+            <TouchableOpacity
               key={cat}
               style={[styles.filterChip, activeCategory === cat && styles.filterChipActive]}
               onPress={() => setActiveCategory(cat)}
@@ -183,10 +184,13 @@ function PostItem({ post }: { post: any }) {
     Alert.alert('Comments', 'Comment section coming soon!');
   };
 
+  const authorName = post.user?.fullName || post.startup?.companyName || 'Anonymous Student';
+  const authorInitial = authorName.charAt(0).toUpperCase();
+
   const handleShare = async () => {
     try {
       await Share.share({
-        message: `Check out this post by ${post.user?.fullName || 'a student'}: "${post.text}" - Join Thodakkam to see more!`,
+        message: `Check out this post by ${authorName}: "${post.text}" - Join Thodakkam to see more!`,
       });
     } catch (error: any) {
       Alert.alert('Error', error.message);
@@ -197,19 +201,24 @@ function PostItem({ post }: { post: any }) {
     <View style={styles.postCard}>
       <View style={styles.postHeader}>
         {post.user?.profilePhoto ? (
-          <Image 
-            source={{ uri: post.user.profilePhoto }} 
-            style={styles.postAvatar} 
+          <Image
+            source={{ uri: post.user.profilePhoto }}
+            style={styles.postAvatar}
+          />
+        ) : post.startup?.profilePhoto ? (
+          <Image
+            source={{ uri: post.startup.profilePhoto }}
+            style={styles.postAvatar}
           />
         ) : (
           <View style={[styles.postAvatar, { backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center' }]}>
             <Text style={{ color: WHITE, fontWeight: 'bold', fontSize: 14 }}>
-              {(post.user?.fullName || 'A').charAt(0).toUpperCase()}
+              {authorInitial}
             </Text>
           </View>
         )}
         <View style={styles.postMeta}>
-          <Text style={styles.postAuthor}>{post.user?.fullName || 'Anonymous Student'}</Text>
+          <Text style={styles.postAuthor}>{authorName}</Text>
           <Text style={styles.postTime}>
             {new Date(post.createdAt).toLocaleDateString()} at {new Date(post.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </Text>
@@ -218,13 +227,13 @@ function PostItem({ post }: { post: any }) {
           <Text style={styles.badgeText}>PROJECT</Text>
         </View>
       </View>
-      
+
       <Text style={styles.postText}>{post.text}</Text>
-      
+
       {post.imageUrl && (
         <Image source={{ uri: post.imageUrl }} style={styles.postImage} resizeMode="contain" />
       )}
-      
+
       <View style={styles.postFooter}>
         <TouchableOpacity style={styles.footerAction} onPress={handleLike}>
           <Heart size={18} color={liked ? '#e11d48' : GRAY} fill={liked ? '#e11d48' : 'transparent'} />
@@ -250,7 +259,7 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: BG },
   scroll: { flex: 1 },
   scrollContent: { padding: 16, paddingBottom: 40 },
-  
+
   titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, marginTop: 4 },
   pageTitle: { fontSize: 22, fontWeight: '800', color: DARK },
   addBtn: { width: 32, height: 32, borderRadius: 8, backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center' },
@@ -291,10 +300,10 @@ const styles = StyleSheet.create({
   postTime: { fontSize: 11, color: GRAY, marginTop: 2 },
   badgeWrap: { backgroundColor: '#f1f5f9', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4 },
   badgeText: { fontSize: 9, fontWeight: '800', color: DARK, letterSpacing: 0.5 },
-  
+
   postText: { fontSize: 13, color: DARK, lineHeight: 20, marginBottom: 12 },
   postImage: { width: '100%', height: 300, backgroundColor: '#f8fafc', borderRadius: 12, marginBottom: 16 },
-  
+
   postFooter: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   footerAction: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   footerActionText: { fontSize: 12, fontWeight: '600', color: GRAY },
@@ -316,7 +325,7 @@ const navStyles = StyleSheet.create({
   avatar: { width: 28, height: 28, borderRadius: 14, backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
   avatarText: { color: WHITE, fontSize: 12, fontWeight: '700' },
   avatarImage: { width: '100%', height: '100%' },
-  
+
   searchRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   searchBar: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: BG, borderRadius: 8, paddingHorizontal: 10, height: 36 },
   searchInput: { flex: 1, marginLeft: 6, fontSize: 12, color: DARK },

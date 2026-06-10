@@ -244,11 +244,6 @@ export default function StartupAddPost() {
           <Text style={styles.tipText}>Use specific tags like <Text style={{ color: PRIMARY, fontWeight: '700' }}>#Design</Text> or <Text style={{ color: PRIMARY, fontWeight: '700' }}>#Code</Text> to appear in filtered search results.</Text>
         </View>
 
-        <TouchableOpacity style={styles.messageFab}>
-          <MessageCircle size={16} color={WHITE} style={{ marginRight: 8 }} />
-          <Text style={styles.messageFabText}>Message</Text>
-        </TouchableOpacity>
-
       </ScrollView>
     </SafeAreaView>
   );

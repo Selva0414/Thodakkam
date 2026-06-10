@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, TouchableOpacity,
-  SafeAreaView, TextInput, Platform
+  SafeAreaView, TextInput, Platform, ActivityIndicator
 } from 'react-native';
 import {
   Search, Mail, Bell, Settings, Briefcase, Users,
@@ -22,6 +22,70 @@ export default function StartupDashboard() {
   const params = useLocalSearchParams();
   const [activeTab, setActiveTab] = useState('Dashboard');
   const companyName = (params.companyName as string) || 'Echo Digital';
+  
+  const [applications, setApplications] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  const [chartDuration, setChartDuration] = useState(30);
+  const [isChartDropdownOpen, setIsChartDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    async function fetchApps() {
+      try {
+        const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
+        const res = await fetch(`${baseUrl}/api/applications/startup/${encodeURIComponent(companyName)}`);
+        const data = await res.json();
+        if (data.success && data.applications) {
+          setApplications(data.applications);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchApps();
+  }, [companyName]);
+
+  const totalHires = applications.filter(a => a.status === 'HIRED' || a.status === 'OFFERED').length;
+  const interviewing = applications.filter(a => a.status === 'INTERVIEW SCHEDULED').length;
+  const totalApps = applications.length;
+
+  const chartData = useMemo(() => {
+    const xVals = [10, 80, 150, 220, 290];
+    const bins = [0, 0, 0, 0, 0];
+    const now = new Date().getTime();
+    const dayMs = 24 * 60 * 60 * 1000;
+    const intervalDays = chartDuration / 5;
+    
+    applications.forEach(app => {
+      const appTime = new Date(app.appliedAt).getTime();
+      const daysAgo = Math.floor((now - appTime) / dayMs);
+      if (daysAgo >= 0 && daysAgo < chartDuration) {
+        const binIndex = 4 - Math.floor(daysAgo / intervalDays);
+        if (binIndex >= 0 && binIndex <= 4) {
+          bins[binIndex]++;
+        }
+      }
+    });
+
+    const maxBin = Math.max(...bins, 1);
+    const yVals = bins.map(count => 100 - (count / maxBin) * 60);
+    
+    const d = `M${xVals[0]},${yVals[0]} Q${(xVals[0] + xVals[1])/2},${yVals[0]} ${xVals[1]},${yVals[1]} T${xVals[2]},${yVals[2]} T${xVals[3]},${yVals[3]} T${xVals[4]},${yVals[4]}`;
+    const fillD = `${d} L${xVals[4]},120 L${xVals[0]},120 Z`;
+    
+    const labels = [];
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    for(let i=0; i<4; i++) {
+       const step = chartDuration / 4;
+       const daysBack = Math.max(0, Math.round(chartDuration - (i * step) - step/2));
+       const dObj = new Date(now - daysBack * dayMs);
+       labels.push(`${dObj.getDate()} ${months[dObj.getMonth()]}`);
+    }
+
+    return { d, fillD, labels };
+  }, [applications, chartDuration]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -32,61 +96,77 @@ export default function StartupDashboard() {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.statsScroll}>
           {/* Stat 1 */}
           <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Total Hires</Text>
+            <Text style={styles.statLabel}>Total Applications</Text>
             <View style={styles.statValRow}>
-              <Text style={styles.statValue}>128</Text>
-              <Text style={styles.statGrowthGreen}>+12%</Text>
+              <Text style={styles.statValue}>{loading ? '-' : totalApps}</Text>
             </View>
-            <Text style={styles.statSub}>vs last month</Text>
+            <Text style={styles.statSub}>all time</Text>
           </View>
           
           {/* Stat 2 */}
           <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Open Roles</Text>
+            <Text style={styles.statLabel}>Interviewing</Text>
             <View style={styles.statValRow}>
-              <Text style={styles.statValue}>12</Text>
-              <Text style={styles.statGrowthGray}>0%</Text>
+              <Text style={styles.statValue}>{loading ? '-' : interviewing}</Text>
             </View>
-            <Text style={styles.statSub}>same as last week</Text>
+            <Text style={styles.statSub}>active pipeline</Text>
           </View>
 
           {/* Stat 3 */}
           <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Interview Rate</Text>
+            <Text style={styles.statLabel}>Total Hires/Offers</Text>
             <View style={styles.statValRow}>
-              <Text style={styles.statValue}>18%</Text>
-              <Text style={styles.statGrowthGreen}>+2%</Text>
+              <Text style={styles.statValue}>{loading ? '-' : totalHires}</Text>
             </View>
-            <Text style={styles.statSub}>avg. improvement</Text>
+            <Text style={styles.statSub}>successful candidates</Text>
           </View>
         </ScrollView>
 
         {/* Candidate Growth Chart */}
-        <View style={styles.chartCard}>
-          <View style={styles.cardHeader}>
+        <View style={[styles.chartCard, { zIndex: 50, elevation: 50 }]}>
+          <View style={[styles.cardHeader, { zIndex: 50, elevation: 50 }]}>
             <Text style={styles.cardTitle}>Candidate Growth</Text>
-            <View style={styles.dropdownBtn}>
-              <Text style={styles.dropdownText}>Last 30 Days v</Text>
+            <View style={{ zIndex: 50, elevation: 50 }}>
+              <TouchableOpacity 
+                style={styles.dropdownBtn}
+                onPress={() => setIsChartDropdownOpen(!isChartDropdownOpen)}
+              >
+                <Text style={styles.dropdownText}>
+                  {chartDuration === 7 ? 'Last 1 Week' : chartDuration === 30 ? 'Last 1 Month' : chartDuration === 90 ? 'Last 3 Months' : `Last ${chartDuration} Days`} v
+                </Text>
+              </TouchableOpacity>
+              {isChartDropdownOpen && (
+                <View style={[styles.dropdownMenu, { position: 'absolute', top: 35, right: 0, width: 140, zIndex: 20 }]}>
+                  <TouchableOpacity style={styles.dropdownItem} onPress={() => { setChartDuration(7); setIsChartDropdownOpen(false); }}>
+                    <Text style={styles.dropdownItemText}>Last 1 Week</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.dropdownItem} onPress={() => { setChartDuration(30); setIsChartDropdownOpen(false); }}>
+                    <Text style={styles.dropdownItemText}>Last 1 Month</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.dropdownItem} onPress={() => { setChartDuration(90); setIsChartDropdownOpen(false); }}>
+                    <Text style={styles.dropdownItemText}>Last 3 Months</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
           </View>
-          <View style={styles.lineChartContainer}>
+          <View style={[styles.lineChartContainer, { zIndex: 1, elevation: 1 }]}>
             <Svg height="120" width="100%" viewBox="0 0 300 120">
               <Path 
-                d="M10,100 Q40,90 80,70 T150,75 T220,40 T290,60 L290,120 L10,120 Z" 
+                d={chartData.fillD} 
                 fill="#fdf4ff" 
               />
               <Path 
-                d="M10,100 Q40,90 80,70 T150,75 T220,40 T290,60" 
+                d={chartData.d} 
                 fill="none" 
                 stroke="#0f172a" 
                 strokeWidth="2.5" 
               />
             </Svg>
             <View style={styles.chartXAxis}>
-              <Text style={styles.xAxisLabel}>1 May</Text>
-              <Text style={styles.xAxisLabel}>10 May</Text>
-              <Text style={styles.xAxisLabel}>20 May</Text>
-              <Text style={styles.xAxisLabel}>30 May</Text>
+              {chartData.labels.map((lbl, idx) => (
+                 <Text key={idx} style={styles.xAxisLabel}>{lbl}</Text>
+              ))}
             </View>
           </View>
         </View>
@@ -140,37 +220,29 @@ export default function StartupDashboard() {
           </View>
           
           <View style={styles.activityList}>
-            <View style={styles.activityItem}>
-              <View style={[styles.activityDot, { backgroundColor: '#0f172a' }]} />
-              <View>
-                <Text style={styles.activityText}>New application for <Text style={styles.bold}>Senior Product Designer</Text></Text>
-                <Text style={styles.activityTime}>2 minutes ago</Text>
-              </View>
-            </View>
-            
-            <View style={styles.activityItem}>
-              <View style={[styles.activityDot, { backgroundColor: '#cbd5e1' }]} />
-              <View>
-                <Text style={styles.activityText}>Interview scheduled with <Text style={styles.bold}>Sarah Chen</Text></Text>
-                <Text style={styles.activityTime}>1 hour ago</Text>
-              </View>
-            </View>
-
-            <View style={styles.activityItem}>
-              <View style={[styles.activityDot, { backgroundColor: '#cbd5e1' }]} />
-              <View>
-                <Text style={styles.activityText}>New hire: <Text style={styles.bold}>James Wilson</Text> joined Engineering</Text>
-                <Text style={styles.activityTime}>3 hours ago</Text>
-              </View>
-            </View>
-
-            <View style={styles.activityItem}>
-              <View style={[styles.activityDot, { backgroundColor: '#eab308' }]} />
-              <View>
-                <Text style={styles.activityText}>Job post <Text style={styles.bold}>"Sales Lead"</Text> is expiring soon</Text>
-                <Text style={styles.activityTime}>5 hours ago</Text>
-              </View>
-            </View>
+            {loading ? (
+               <ActivityIndicator color={PRIMARY} style={{ marginVertical: 20 }} />
+            ) : applications.length === 0 ? (
+               <Text style={{ textAlign: 'center', color: TEXT_GRAY, marginVertical: 20 }}>No recent activity.</Text>
+            ) : (
+               applications.slice(0, 5).map((app, i) => {
+                 const dateStr = new Date(app.updatedAt || app.appliedAt).toLocaleDateString();
+                 const isScheduled = app.status === 'INTERVIEW SCHEDULED';
+                 return (
+                   <View key={app.id || i} style={styles.activityItem}>
+                     <View style={[styles.activityDot, { backgroundColor: isScheduled ? '#10b981' : '#0f172a' }]} />
+                     <View>
+                       {isScheduled ? (
+                         <Text style={styles.activityText}>Interview scheduled with <Text style={styles.bold}>{app.fullName}</Text></Text>
+                       ) : (
+                         <Text style={styles.activityText}>New application for <Text style={styles.bold}>{app.jobTitle}</Text></Text>
+                       )}
+                       <Text style={styles.activityTime}>{dateStr}</Text>
+                     </View>
+                   </View>
+                 );
+               })
+            )}
           </View>
         </View>
 
@@ -178,7 +250,7 @@ export default function StartupDashboard() {
 
       {/* Floating Elements */}
       <View style={styles.floatingContainer}>
-        <TouchableOpacity style={styles.msgPill}>
+        <TouchableOpacity style={styles.msgPill} onPress={() => router.push({ pathname: '/startup-messages' as any, params: { companyName } })}>
           <MessageSquare size={16} color={WHITE} style={{ marginRight: 6 }} />
           <Text style={styles.msgText}>Message</Text>
         </TouchableOpacity>
@@ -262,6 +334,9 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 14, fontWeight: '800', color: TEXT_DARK },
   dropdownBtn: { borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 },
   dropdownText: { fontSize: 10, color: TEXT_GRAY, fontWeight: '500' },
+  dropdownMenu: { backgroundColor: WHITE, borderRadius: 8, borderWidth: 1, borderColor: '#e2e8f0', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 4 },
+  dropdownItem: { paddingVertical: 8, paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
+  dropdownItemText: { fontSize: 11, color: TEXT_DARK },
   lineChartContainer: { marginTop: 10 },
   chartXAxis: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 12, paddingHorizontal: 4 },
   xAxisLabel: { fontSize: 10, color: '#94a3b8' },

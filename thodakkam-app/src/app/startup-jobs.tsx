@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, TouchableOpacity,
   SafeAreaView, TextInput, Platform, Image, ActivityIndicator, Modal, Linking
@@ -28,6 +28,7 @@ export default function StartupJobs() {
   const [loading, setLoading] = useState(true);
   const [selectedJob, setSelectedJob] = useState<any>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [analyticsTime, setAnalyticsTime] = useState(30);
 
   const companyName = (params.companyName as string) || 'Echo Digital';
 
@@ -90,6 +91,71 @@ export default function StartupJobs() {
     { label: 'Drafts', count: draftCount },
     { label: 'Closed', count: closedCount },
   ];
+
+  const allApplications = jobs.flatMap(j => j.applications || []);
+  const totalApplications = allApplications.length;
+  
+  const interviewed = allApplications.filter(a => a.status === 'INTERVIEW SCHEDULED' || a.status === 'OFFERED' || a.status === 'HIRED').length;
+  const offered = allApplications.filter(a => a.status === 'OFFERED' || a.status === 'HIRED').length;
+  const interviewToOfferRate = interviewed > 0 ? ((offered / interviewed) * 100).toFixed(1) + '%' : '0%';
+
+  let avgDaysToHire = '-';
+  if (offered > 0) {
+     const offeredApps = allApplications.filter(a => a.status === 'OFFERED' || a.status === 'HIRED');
+     const totalMs = offeredApps.reduce((sum, a) => {
+        const t1 = new Date(a.appliedAt).getTime();
+        const t2 = new Date(a.updatedAt || a.appliedAt).getTime();
+        return sum + Math.max(0, t2 - t1);
+     }, 0);
+     avgDaysToHire = Math.max(1, Math.round(totalMs / offered / (24 * 60 * 60 * 1000))).toString();
+  }
+
+  const analyticsChartData = useMemo(() => {
+    const xVals = [10, 80, 150, 220, 290];
+    const currentBins = [0, 0, 0, 0, 0];
+    const prevBins = [0, 0, 0, 0, 0];
+    const now = new Date().getTime();
+    const dayMs = 24 * 60 * 60 * 1000;
+    const intervalDays = analyticsTime / 5;
+
+    allApplications.forEach(app => {
+      const appTime = new Date(app.appliedAt).getTime();
+      const daysAgo = Math.floor((now - appTime) / dayMs);
+      
+      if (daysAgo >= 0 && daysAgo < analyticsTime) {
+         const binIndex = 4 - Math.floor(daysAgo / intervalDays);
+         if (binIndex >= 0 && binIndex <= 4) currentBins[binIndex]++;
+      } else if (daysAgo >= analyticsTime && daysAgo < analyticsTime * 2) {
+         const adjustedDaysAgo = daysAgo - analyticsTime;
+         const binIndex = 4 - Math.floor(adjustedDaysAgo / intervalDays);
+         if (binIndex >= 0 && binIndex <= 4) prevBins[binIndex]++;
+      }
+    });
+
+    const maxBin = Math.max(...currentBins, ...prevBins, 1);
+    
+    // Y map from 120 to 20 (height is 140, max y=20, min y=120)
+    const mapY = (count: number) => 120 - (count / maxBin) * 100;
+    const curY = currentBins.map(mapY);
+    const prevY = prevBins.map(mapY);
+
+    const dCur = `M${xVals[0]},${curY[0]} Q${(xVals[0]+xVals[1])/2},${curY[0]} ${xVals[1]},${curY[1]} T${xVals[2]},${curY[2]} T${xVals[3]},${curY[3]} T${xVals[4]},${curY[4]}`;
+    const dPrev = `M${xVals[0]},${prevY[0]} Q${(xVals[0]+xVals[1])/2},${prevY[0]} ${xVals[1]},${prevY[1]} T${xVals[2]},${prevY[2]} T${xVals[3]},${prevY[3]} T${xVals[4]},${prevY[4]}`;
+    
+    const labels = [];
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    for(let i=0; i<4; i++) {
+       const step = analyticsTime / 4;
+       const daysBack = Math.max(0, Math.round(analyticsTime - (i * step) - step/2));
+       const dObj = new Date(now - daysBack * dayMs);
+       labels.push(`${dObj.getDate()} ${months[dObj.getMonth()]}`);
+    }
+
+    const dotX = xVals[3];
+    const dotY = curY[3];
+
+    return { dCur, dPrev, labels, dotX, dotY };
+  }, [allApplications, analyticsTime]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -186,7 +252,14 @@ export default function StartupJobs() {
                               type: job.type,
                               salary: job.salary,
                               description: job.description,
-                              requirements: (job.requirements || []).join(', ')
+                              requirements: (job.requirements || []).join(', '),
+                              department: job.department,
+                              workMode: job.workMode,
+                              experience: job.experience,
+                              education: job.education,
+                              openings: job.openings,
+                              deadline: job.deadline,
+                              applicationMethod: job.applicationMethod
                             }
                           });
                         }}
@@ -259,14 +332,23 @@ export default function StartupJobs() {
             </View>
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.timeFilters}>
-              <TouchableOpacity style={[styles.timeFilterBtn, styles.timeFilterBtnActive]}>
-                <Text style={styles.timeFilterBtnTextActive}>Last 30 days</Text>
+              <TouchableOpacity 
+                style={[styles.timeFilterBtn, analyticsTime === 30 && styles.timeFilterBtnActive]}
+                onPress={() => setAnalyticsTime(30)}
+              >
+                <Text style={analyticsTime === 30 ? styles.timeFilterBtnTextActive : styles.timeFilterBtnText}>Last 30 days</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.timeFilterBtn}>
-                <Text style={styles.timeFilterBtnText}>Last 7 days</Text>
+              <TouchableOpacity 
+                style={[styles.timeFilterBtn, analyticsTime === 7 && styles.timeFilterBtnActive]}
+                onPress={() => setAnalyticsTime(7)}
+              >
+                <Text style={analyticsTime === 7 ? styles.timeFilterBtnTextActive : styles.timeFilterBtnText}>Last 7 days</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.timeFilterBtn}>
-                <Text style={styles.timeFilterBtnText}>Year-to-date</Text>
+              <TouchableOpacity 
+                style={[styles.timeFilterBtn, analyticsTime === 365 && styles.timeFilterBtnActive]}
+                onPress={() => setAnalyticsTime(365)}
+              >
+                <Text style={analyticsTime === 365 ? styles.timeFilterBtnTextActive : styles.timeFilterBtnText}>Year-to-date</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.exportBtn}>
                 <View style={styles.exportIconBox}>
@@ -280,34 +362,34 @@ export default function StartupJobs() {
                 <View style={styles.aStatIcon}><Users size={18} color={PRIMARY} /></View>
                 <View style={styles.aStatTextWrapper}>
                   <Text style={styles.aStatLabel}>TOTAL APPLICATIONS</Text>
-                  <Text style={styles.aStatValue}>2,482</Text>
+                  <Text style={styles.aStatValue}>{totalApplications}</Text>
                 </View>
-                <View style={styles.aBadgeGreen}><Text style={styles.aBadgeGreenText}>↗ 12.5%</Text></View>
+                <View style={styles.aBadgeGreen}><Text style={styles.aBadgeGreenText}>↗ -</Text></View>
               </View>
 
               <View style={styles.aStatCard}>
                 <View style={styles.aStatIcon}><Briefcase size={18} color={PRIMARY} /></View>
                 <View style={styles.aStatTextWrapper}>
                   <Text style={styles.aStatLabel}>ACTIVE JOBS</Text>
-                  <Text style={styles.aStatValue}>14</Text>
+                  <Text style={styles.aStatValue}>{activeCount}</Text>
                 </View>
-                <View style={styles.aBadgeGreen}><Text style={styles.aBadgeGreenText}>↗ 3.2%</Text></View>
+                <View style={styles.aBadgeGreen}><Text style={styles.aBadgeGreenText}>↗ -</Text></View>
               </View>
 
               <View style={styles.aStatCard}>
                 <View style={styles.aStatIcon}><Calendar size={18} color={PRIMARY} /></View>
                 <View style={styles.aStatTextWrapper}>
                   <Text style={styles.aStatLabel}>AVG. TIME TO HIRE</Text>
-                  <Text style={styles.aStatValue}>18 Days</Text>
+                  <Text style={styles.aStatValue}>{avgDaysToHire === '-' ? '-' : `${avgDaysToHire} Days`}</Text>
                 </View>
-                <View style={styles.aBadgeRed}><Text style={styles.aBadgeRedText}>↘ -2 days</Text></View>
+                <View style={styles.aBadgeRed}><Text style={styles.aBadgeRedText}>-</Text></View>
               </View>
 
               <View style={styles.aStatCard}>
                 <View style={styles.aStatIcon}><ListIcon size={18} color={PRIMARY} /></View>
                 <View style={styles.aStatTextWrapper}>
                   <Text style={styles.aStatLabel}>INTERVIEW-TO-OFFER</Text>
-                  <Text style={styles.aStatValue}>12.4%</Text>
+                  <Text style={styles.aStatValue}>{interviewToOfferRate}</Text>
                 </View>
                 <View style={styles.aBadgeGreen}><Text style={styles.aBadgeGreenText}>↗ 5.1%</Text></View>
               </View>
@@ -333,15 +415,14 @@ export default function StartupJobs() {
               </View>
               <View style={styles.aChartWrapper}>
                 <Svg height="140" width="100%" viewBox="0 0 300 140">
-                  <Path d="M10,100 Q60,70 120,80 T220,50 T280,20" fill="none" stroke={PRIMARY} strokeWidth="2.5" />
-                  <Circle cx="220" cy="50" r="4" fill={PRIMARY} />
-                  <Path d="M10,110 Q60,100 120,105 T220,95 T280,85" fill="none" stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="4 4" />
+                  <Path d={analyticsChartData.dPrev} fill="none" stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="4 4" />
+                  <Path d={analyticsChartData.dCur} fill="none" stroke={PRIMARY} strokeWidth="2.5" />
+                  <Circle cx={analyticsChartData.dotX} cy={analyticsChartData.dotY} r="4" fill={PRIMARY} />
                 </Svg>
                 <View style={styles.chartXAxis}>
-                  <Text style={styles.xAxisLabel}>WEEK 1</Text>
-                  <Text style={styles.xAxisLabel}>WEEK 2</Text>
-                  <Text style={styles.xAxisLabel}>WEEK 3</Text>
-                  <Text style={styles.xAxisLabel}>WEEK 4</Text>
+                  {analyticsChartData.labels.map((lbl, idx) => (
+                    <Text key={idx} style={styles.xAxisLabel}>{lbl}</Text>
+                  ))}
                 </View>
               </View>
             </View>
@@ -450,7 +531,7 @@ export default function StartupJobs() {
             </TouchableOpacity>
           )}
           <View style={{ flex: 1 }} />
-          <TouchableOpacity style={styles.msgPill}>
+          <TouchableOpacity style={styles.msgPill} onPress={() => router.push({ pathname: '/startup-messages' as any, params: { companyName } })}>
             <MessageSquare size={16} color={WHITE} style={{ marginRight: 6 }} />
             <Text style={styles.msgText}>Message</Text>
           </TouchableOpacity>

@@ -26,7 +26,7 @@ function BottomTabBar() {
   const tabs = [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/student-dashboard' },
     { label: 'Jobs Search', icon: Briefcase, path: '/student-jobs' },
-    { label: 'Messages', icon: MessageSquare, path: null },
+    { label: 'Messages', icon: MessageSquare, path: '/student-messages' },
     { label: 'Community', icon: Users, path: '/student-community' },
   ];
   return (

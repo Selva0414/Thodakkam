@@ -8,6 +8,7 @@ import {
 } from 'lucide-react-native';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import Svg, { Circle, Text as SvgText } from 'react-native-svg';
+import StartupHeader from '../components/StartupHeader';
 
 const PRIMARY = '#662483';
 const BG = '#f8fafc';
@@ -97,33 +98,7 @@ export default function StartupCandidates() {
   return (
     <SafeAreaView style={styles.safeArea}>
       
-      {/* Search & Header (Figma style) */}
-      <View style={styles.headerContainer}>
-        <View style={styles.headerTop}>
-          <View style={styles.companyInfo}>
-            <View style={styles.logoBox}>
-              <Text style={styles.logoText}>echo</Text>
-            </View>
-            <View>
-              <Text style={styles.companyNameText}>{companyName}</Text>
-              <Text style={styles.premiumText}>PREMIUM PLAN</Text>
-            </View>
-          </View>
-          <View style={styles.headerIcons}>
-            <Mail size={20} color={TEXT_GRAY} />
-            <Bell size={20} color={TEXT_GRAY} />
-            <Settings size={20} color={TEXT_GRAY} />
-          </View>
-        </View>
-        <View style={styles.searchBar}>
-          <Search size={16} color="#94a3b8" />
-          <TextInput 
-            style={styles.searchInput}
-            placeholder="Search analytics, candidates..."
-            placeholderTextColor="#94a3b8"
-          />
-        </View>
-      </View>
+      <StartupHeader companyName={companyName} />
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         
@@ -147,7 +122,7 @@ export default function StartupCandidates() {
 
         <View style={styles.contentPadding}>
           {/* AI ATS Analyzer Button */}
-          <TouchableOpacity style={styles.aiButton}>
+          <TouchableOpacity style={styles.aiButton} onPress={() => router.push({ pathname: '/startup-ai-analyzer' as any, params: { companyName } })}>
             <Sparkles size={18} color={WHITE} style={{ marginRight: 8 }} />
             <Text style={styles.aiButtonText}>AI ATS Analyzer</Text>
           </TouchableOpacity>
@@ -400,7 +375,7 @@ export default function StartupCandidates() {
         
         <View style={styles.fabRow}>
           <View style={{ flex: 1 }} />
-          <TouchableOpacity style={styles.messageFab}>
+          <TouchableOpacity style={styles.messageFab} onPress={() => router.push({ pathname: '/startup-messages' as any, params: { companyName } })}>
             <MessageSquare size={16} color={WHITE} style={{ marginRight: 8 }} />
             <Text style={styles.messageFabText}>Message</Text>
           </TouchableOpacity>

@@ -6,7 +6,7 @@ import {
 import {
   Bell, Search, Mail, Settings, LayoutDashboard, Briefcase,
   MessageSquare, Users, SlidersHorizontal, Monitor, Cloud, PenTool, Shield,
-  ArrowRight, Upload, MessageCircle, GraduationCap
+  ArrowRight, Upload, MessageCircle, GraduationCap, ClipboardList
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import StudentHeader from '../components/StudentHeader';
@@ -23,7 +23,8 @@ function BottomTabBar() {
   const tabs = [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/student-dashboard' },
     { label: 'Jobs Search', icon: Briefcase, path: '/student-jobs' },
-    { label: 'Messages', icon: MessageSquare, path: null },
+    { label: 'Assessments', icon: ClipboardList, path: '/student-assessments' },
+    { label: 'Messages', icon: MessageSquare, path: '/student-messages' },
     { label: 'Community', icon: Users, path: '/student-community' },
   ];
   const active = 'Jobs Search';

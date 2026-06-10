@@ -196,12 +196,15 @@ function PostItem({ post, companyName }: { post: any, companyName: string }) {
   const handleShare = async () => {
     try {
       await Share.share({
-        message: `Check out this post by ${post.user?.fullName || 'a user'}: "${post.text}" - Join Thodakkam to see more!`,
+        message: `Check out this post by ${post.user?.fullName || post.startup?.companyName || 'a user'}: "${post.text}" - Join Thodakkam to see more!`,
       });
     } catch (error: any) {
       Alert.alert('Error', error.message);
     }
   };
+
+  const authorName = post.user?.fullName || post.startup?.companyName || 'Unknown';
+  const authorInitial = authorName.charAt(0).toUpperCase();
 
   return (
     <View style={styles.postCard}>
@@ -214,12 +217,12 @@ function PostItem({ post, companyName }: { post: any, companyName: string }) {
         ) : (
           <View style={[styles.postAvatar, { backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center' }]}>
             <Text style={{ color: WHITE, fontWeight: 'bold', fontSize: 14 }}>
-              {(post.user?.fullName).charAt(0).toUpperCase()}
+              {authorInitial}
             </Text>
           </View>
         )}
         <View style={styles.postMeta}>
-          <Text style={styles.postAuthor}>{post.user?.fullName}</Text>
+          <Text style={styles.postAuthor}>{authorName}</Text>
           <Text style={styles.postTime}>
             {new Date(post.createdAt).toLocaleDateString()} at {new Date(post.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </Text>

@@ -1,51 +1,129 @@
 import React, { useState } from 'react';
 import {
   StyleSheet, Text, View, TextInput, TouchableOpacity,
-  SafeAreaView, ScrollView, Platform, ActivityIndicator, Alert
+  SafeAreaView, ScrollView, Platform, ActivityIndicator, Alert, KeyboardAvoidingView, Modal
 } from 'react-native';
-import { ArrowLeft, Briefcase, MapPin, DollarSign, FileText } from 'lucide-react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { ArrowLeft, Briefcase, Layers, Settings, FileText, ChevronDown, Calendar, X } from 'lucide-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 const PRIMARY = '#662483';
-const BG = '#f8fafc';
+const BG = '#f4f5f7';
 const WHITE = '#ffffff';
 const TEXT_DARK = '#0f172a';
 const TEXT_GRAY = '#64748b';
 const BORDER = '#e2e8f0';
+const ERROR = '#ef4444';
 
 export default function StartupAddJob() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const companyName = (params.companyName as string) || 'Echo Digital';
 
+  // 1. Basic Info
   const [title, setTitle] = useState('');
+  const [department, setDepartment] = useState('');
+  const [employmentType, setEmploymentType] = useState('Internship');
+  const [workMode, setWorkMode] = useState('Onsite');
   const [location, setLocation] = useState('');
-  const [type, setType] = useState('Full-time');
-  const [salary, setSalary] = useState('');
+
+  // 2. Job Details
+  const [experience, setExperience] = useState('');
+  const [education, setEducation] = useState('Any Degree');
+  const [openings, setOpenings] = useState('1');
+  const [skills, setSkills] = useState('');
+
+  // 3. Application Settings
+  const [deadline, setDeadline] = useState('');
+  const [dateObj, setDateObj] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [applicationMethod, setApplicationMethod] = useState('Apply on platform');
+
+  // 4. Description
+  // 4. Description
   const [description, setDescription] = useState('');
-  const [requirements, setRequirements] = useState('');
-  
+
+  const [errors, setErrors] = useState<{ [key: string]: boolean }>({});
   const [loading, setLoading] = useState(false);
 
+  // Dropdown State
+  const [pickerConfig, setPickerConfig] = useState<{ visible: boolean, type: string, options: string[] }>({
+    visible: false,
+    type: '',
+    options: []
+  });
+
+  const departmentOptions = ['Engineering', 'Design', 'Marketing', 'Sales', 'Product', 'HR', 'Finance', 'Operations'];
+  const employmentTypeOptions = ['Internship', 'Full-time', 'Part-time', 'Contract', 'Freelance'];
+  const experienceOptions = ['Fresher', '1-3 years', '3-5 years', '5-8 years', '8+ years'];
+  const educationOptions = ['Any Degree', 'B.E/B.Tech', 'B.Sc', 'BCA', 'MCA', 'M.E/M.Tech', 'MBA'];
+
+  const openPicker = (type: string, options: string[]) => {
+    setPickerConfig({ visible: true, type, options });
+  };
+
+  const handleSelectOption = (option: string) => {
+    if (pickerConfig.type === 'department') {
+      setDepartment(option);
+      setErrors(prev => ({...prev, department: false}));
+    } else if (pickerConfig.type === 'employmentType') {
+      setEmploymentType(option);
+    } else if (pickerConfig.type === 'experience') {
+      setExperience(option);
+    } else if (pickerConfig.type === 'education') {
+      setEducation(option);
+    }
+    setPickerConfig({ ...pickerConfig, visible: false });
+  };
+
+  const onChangeDate = (event: any, selectedDate?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
+    if (selectedDate) {
+      setDateObj(selectedDate);
+      setDeadline(selectedDate.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }));
+    }
+  };
+
+  const validate = () => {
+    let newErrors: { [key: string]: boolean } = {};
+    if (!title.trim()) newErrors.title = true;
+    if (!department.trim()) newErrors.department = true;
+    if (!location.trim()) newErrors.location = true;
+    if (!skills.trim()) newErrors.skills = true;
+    if (!description.trim()) newErrors.description = true;
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handlePostJob = async () => {
-    if (!title || !location || !description) {
-      Alert.alert('Missing Fields', 'Please fill in the required fields: Title, Location, and Description.');
+    if (!validate()) {
+      Alert.alert('Missing Fields', 'Please fill in all required fields.');
       return;
     }
 
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/jobs', { // Use actual IP or localhost based on setup
+      const response = await fetch('http://localhost:5000/api/jobs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           companyName,
           title,
           location,
-          type,
-          salary,
+          type: employmentType,
+          salary: '',
           description,
-          requirements: requirements.split(',').map(r => r.trim()).filter(r => r.length > 0)
+          requirements: skills.split(',').map(r => r.trim()).filter(r => r.length > 0),
+          department,
+          workMode,
+          experience,
+          education,
+          openings,
+          deadline,
+          applicationMethod
         })
       });
 
@@ -64,6 +142,21 @@ export default function StartupAddJob() {
     }
   };
 
+  const renderSectionHeader = (icon: any, num: string, title: string, subtitle: string) => {
+    const Icon = icon;
+    return (
+      <View style={styles.sectionHeader}>
+        <View style={styles.iconBox}>
+          <Icon size={16} color={TEXT_DARK} />
+        </View>
+        <View>
+          <Text style={styles.sectionTitle}>{num}. {title}</Text>
+          <Text style={styles.sectionSubtitle}>{subtitle}</Text>
+        </View>
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
@@ -74,108 +167,246 @@ export default function StartupAddJob() {
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Job Title *</Text>
-          <View style={styles.inputContainer}>
-            <Briefcase size={20} color={TEXT_GRAY} style={styles.inputIcon} />
-            <TextInput 
-              style={styles.input} 
-              placeholder="e.g. Senior Frontend Engineer"
-              placeholderTextColor={TEXT_GRAY}
-              value={title}
-              onChangeText={setTitle}
-            />
-          </View>
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Location *</Text>
-          <View style={styles.inputContainer}>
-            <MapPin size={20} color={TEXT_GRAY} style={styles.inputIcon} />
-            <TextInput 
-              style={styles.input} 
-              placeholder="e.g. San Francisco, CA (Remote)"
-              placeholderTextColor={TEXT_GRAY}
-              value={location}
-              onChangeText={setLocation}
-            />
-          </View>
-        </View>
-
-        <View style={styles.row}>
-          <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
-            <Text style={styles.label}>Job Type</Text>
-            <View style={styles.inputContainer}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+        <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          
+          {/* Section 1: Basic Info */}
+          <View style={styles.card}>
+            {renderSectionHeader(Briefcase, '1', 'Basic Info', 'Define the role and where it will be performed.')}
+            
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Job Title <Text style={styles.asterisk}>*</Text></Text>
               <TextInput 
-                style={styles.input} 
-                placeholder="e.g. Full-time"
+                style={[styles.input, errors.title && styles.inputError]} 
+                placeholder="e.g. Senior Full Stack Engineer"
                 placeholderTextColor={TEXT_GRAY}
-                value={type}
-                onChangeText={setType}
+                value={title}
+                onChangeText={(val) => { setTitle(val); setErrors(prev => ({...prev, title: false})); }}
               />
+              {errors.title && <Text style={styles.errorText}>Job title is required</Text>}
+            </View>
+
+            <View style={styles.row}>
+              <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                <Text style={styles.label}>Department <Text style={styles.asterisk}>*</Text></Text>
+                <TouchableOpacity 
+                  style={[styles.input, styles.dropdown, errors.department && styles.inputError]}
+                  onPress={() => openPicker('department', departmentOptions)}
+                >
+                  <Text style={[styles.inputText, !department && { color: TEXT_GRAY }]}>{department || 'Select department'}</Text>
+                  <ChevronDown size={16} color={TEXT_GRAY} />
+                </TouchableOpacity>
+                {errors.department && <Text style={styles.errorText}>Department is required</Text>}
+              </View>
+
+              <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
+                <Text style={styles.label}>Employment Type <Text style={styles.asterisk}>*</Text></Text>
+                <TouchableOpacity 
+                  style={[styles.input, styles.dropdown]}
+                  onPress={() => openPicker('employmentType', employmentTypeOptions)}
+                >
+                  <Text style={styles.inputText}>{employmentType}</Text>
+                  <ChevronDown size={16} color={TEXT_GRAY} />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.row}>
+              <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                <Text style={styles.label}>Work Mode <Text style={styles.asterisk}>*</Text></Text>
+                <View style={styles.chipsRow}>
+                  {['Onsite', 'Remote', 'Hybrid'].map(mode => (
+                    <TouchableOpacity 
+                      key={mode} 
+                      style={[styles.chip, workMode === mode && styles.chipActive]}
+                      onPress={() => setWorkMode(mode)}
+                    >
+                      <Text style={[styles.chipText, workMode === mode && styles.chipTextActive]}>{mode}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
+                <Text style={styles.label}>Location <Text style={styles.asterisk}>*</Text></Text>
+                <TextInput 
+                  style={[styles.input, errors.location && styles.inputError]} 
+                  placeholder="e.g. Bangalore, India"
+                  placeholderTextColor={TEXT_GRAY}
+                  value={location}
+                  onChangeText={(val) => { setLocation(val); setErrors(prev => ({...prev, location: false})); }}
+                />
+              </View>
             </View>
           </View>
-          <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
-            <Text style={styles.label}>Salary Range</Text>
-            <View style={styles.inputContainer}>
-              <DollarSign size={20} color={TEXT_GRAY} style={styles.inputIcon} />
+
+          {/* Section 2: Job Details */}
+          <View style={styles.card}>
+            {renderSectionHeader(Layers, '2', 'Job Details', 'Capture candidate profile requirements and qualifications.')}
+            
+            <View style={styles.row}>
+              <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                <Text style={styles.label}>Experience Required <Text style={styles.asterisk}>*</Text></Text>
+                <TouchableOpacity 
+                  style={[styles.input, styles.dropdown]}
+                  onPress={() => openPicker('experience', experienceOptions)}
+                >
+                  <Text style={[styles.inputText, !experience && { color: TEXT_GRAY }]}>{experience || 'Select experience'}</Text>
+                  <ChevronDown size={16} color={TEXT_GRAY} />
+                </TouchableOpacity>
+              </View>
+
+              <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
+                <Text style={styles.label}>Education <Text style={styles.asterisk}>*</Text></Text>
+                <TouchableOpacity 
+                  style={[styles.input, styles.dropdown]}
+                  onPress={() => openPicker('education', educationOptions)}
+                >
+                  <Text style={styles.inputText}>{education}</Text>
+                  <ChevronDown size={16} color={TEXT_GRAY} />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Number of Openings <Text style={styles.asterisk}>*</Text></Text>
               <TextInput 
                 style={styles.input} 
-                placeholder="e.g. $120k - $150k"
-                placeholderTextColor={TEXT_GRAY}
-                value={salary}
-                onChangeText={setSalary}
+                keyboardType="numeric"
+                value={openings}
+                onChangeText={setOpenings}
               />
             </View>
-          </View>
-        </View>
 
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Job Description *</Text>
-          <View style={[styles.inputContainer, styles.textAreaContainer]}>
-            <FileText size={20} color={TEXT_GRAY} style={styles.inputIconTop} />
-            <TextInput 
-              style={styles.textArea} 
-              placeholder="Describe the role and responsibilities..."
-              placeholderTextColor={TEXT_GRAY}
-              multiline
-              numberOfLines={4}
-              textAlignVertical="top"
-              value={description}
-              onChangeText={setDescription}
-            />
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Skills Required <Text style={styles.asterisk}>*</Text></Text>
+              <TextInput 
+                style={[styles.input, errors.skills && styles.inputError]} 
+                placeholder="Type a skill and press Enter or ✓"
+                placeholderTextColor={TEXT_GRAY}
+                value={skills}
+                onChangeText={(val) => { setSkills(val); setErrors(prev => ({...prev, skills: false})); }}
+              />
+              {errors.skills && <Text style={styles.errorText}>Add at least one required skill</Text>}
+            </View>
           </View>
-        </View>
 
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Requirements (Comma separated)</Text>
-          <View style={[styles.inputContainer, styles.textAreaContainer]}>
-            <TextInput 
-              style={styles.textArea} 
-              placeholder="e.g. 5+ years React, Node.js, GraphQL..."
-              placeholderTextColor={TEXT_GRAY}
-              multiline
-              numberOfLines={3}
-              textAlignVertical="top"
-              value={requirements}
-              onChangeText={setRequirements}
-            />
+          {/* Section 3: Application Settings */}
+          <View style={styles.card}>
+            {renderSectionHeader(Settings, '3', 'Application Settings', 'Control how candidates can apply and until when.')}
+            
+            <View style={styles.row}>
+              <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+                <Text style={styles.label}>Application Deadline <Text style={styles.asterisk}>*</Text></Text>
+                <TouchableOpacity 
+                  style={[styles.input, styles.dropdown]}
+                  onPress={() => setShowDatePicker(true)}
+                >
+                  <Text style={[{ flex: 1, fontSize: 13, color: TEXT_DARK }, !deadline && { color: TEXT_GRAY }]}>
+                    {deadline || 'mm/dd/yyyy'}
+                  </Text>
+                  <Calendar size={16} color={TEXT_DARK} />
+                </TouchableOpacity>
+                {showDatePicker && (
+                  <DateTimePicker
+                    value={dateObj}
+                    mode="date"
+                    display="default"
+                    onChange={onChangeDate}
+                  />
+                )}
+              </View>
+
+              <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
+                <Text style={styles.label}>Application Method <Text style={styles.asterisk}>*</Text></Text>
+                <View style={styles.chipsRow}>
+                  {['Apply on platform', 'External link'].map(method => (
+                    <TouchableOpacity 
+                      key={method} 
+                      style={[styles.chip, applicationMethod === method && styles.chipActive]}
+                      onPress={() => setApplicationMethod(method)}
+                    >
+                      <Text style={[styles.chipText, applicationMethod === method && styles.chipTextActive]}>{method}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            </View>
           </View>
-        </View>
 
-      </ScrollView>
+          {/* Section 4: Description */}
+          <View style={styles.card}>
+            {renderSectionHeader(FileText, '4', 'Description', 'Provide a clear and complete role description.')}
+            
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Job Description <Text style={styles.asterisk}>*</Text></Text>
+              
+              <View style={[styles.richTextContainer, errors.description && styles.inputError]}>
+                <View style={styles.richTextToolbar}>
+                  <Text style={styles.toolbarIcon}>B</Text>
+                  <Text style={[styles.toolbarIcon, { fontStyle: 'italic' }]}>I</Text>
+                  <Text style={styles.toolbarIcon}>⋮≡</Text>
+                  <Text style={styles.toolbarIcon}>🔗</Text>
+                  <Text style={styles.toolbarIcon}>{'<>'}</Text>
+                </View>
+                <TextInput 
+                  style={styles.textArea} 
+                  placeholder="Responsibilities, role impact, qualifications, hiring process, and expectations..."
+                  placeholderTextColor={TEXT_GRAY}
+                  multiline
+                  numberOfLines={6}
+                  textAlignVertical="top"
+                  value={description}
+                  onChangeText={(val) => { setDescription(val); setErrors(prev => ({...prev, description: false})); }}
+                />
+              </View>
+              {errors.description && <Text style={styles.errorText}>Job description is required</Text>}
+            </View>
+          </View>
+
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.postBtn} onPress={handlePostJob} disabled={loading}>
+        <TouchableOpacity style={styles.secondaryBtn}>
+          <Text style={styles.secondaryBtnText}>Preview Job</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.secondaryBtn}>
+          <Text style={styles.secondaryBtnText}>Save as Draft</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.primaryBtn} onPress={handlePostJob} disabled={loading}>
           {loading ? (
             <ActivityIndicator color={WHITE} />
           ) : (
-            <Text style={styles.postBtnText}>Publish Job</Text>
+            <Text style={styles.primaryBtnText}>Post Job</Text>
           )}
         </TouchableOpacity>
       </View>
+
+      {/* Picker Modal */}
+      <Modal visible={pickerConfig.visible} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Option</Text>
+              <TouchableOpacity onPress={() => setPickerConfig({ ...pickerConfig, visible: false })} style={styles.closeBtn}>
+                <X size={20} color={TEXT_DARK} />
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={{ flex: 1 }}>
+              {pickerConfig.options.map(opt => (
+                <TouchableOpacity 
+                  key={opt} 
+                  style={styles.pickerItem}
+                  onPress={() => handleSelectOption(opt)}
+                >
+                  <Text style={styles.pickerItemText}>{opt}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -184,38 +415,76 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: WHITE },
   header: { 
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', 
-    paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 20,
-    borderBottomWidth: 1, borderBottomColor: BORDER
+    paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 16,
+    backgroundColor: WHITE, borderBottomWidth: 1, borderBottomColor: BORDER
   },
   backBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'flex-start' },
   headerTitle: { fontSize: 18, fontWeight: '800', color: TEXT_DARK },
   
   scroll: { flex: 1, backgroundColor: BG },
-  scrollContent: { padding: 20, paddingBottom: 40 },
+  scrollContent: { padding: 16, paddingBottom: 40 },
   
-  inputGroup: { marginBottom: 20 },
-  label: { fontSize: 13, fontWeight: '700', color: TEXT_DARK, marginBottom: 8 },
-  inputContainer: { 
-    flexDirection: 'row', alignItems: 'center', backgroundColor: WHITE, 
-    borderWidth: 1, borderColor: BORDER, borderRadius: 12, paddingHorizontal: 16, height: 52 
+  card: {
+    backgroundColor: WHITE, borderRadius: 12, padding: 20, marginBottom: 16,
+    borderWidth: 1, borderColor: BORDER,
   },
-  inputIcon: { marginRight: 12 },
-  input: { flex: 1, fontSize: 15, color: TEXT_DARK },
+  sectionHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 20 },
+  iconBox: { width: 32, height: 32, borderRadius: 8, backgroundColor: '#f1f5f9', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  sectionTitle: { fontSize: 16, fontWeight: '800', color: TEXT_DARK, marginBottom: 4 },
+  sectionSubtitle: { fontSize: 12, color: TEXT_GRAY },
+
+  inputGroup: { marginBottom: 16 },
+  label: { fontSize: 13, fontWeight: '700', color: TEXT_DARK, marginBottom: 8 },
+  asterisk: { color: ERROR },
+  input: { 
+    backgroundColor: WHITE, borderWidth: 1, borderColor: BORDER, 
+    borderRadius: 8, paddingHorizontal: 12, height: 44, fontSize: 13, color: TEXT_DARK 
+  },
+  inputError: { borderColor: ERROR },
+  errorText: { color: ERROR, fontSize: 11, marginTop: 4, fontWeight: '500' },
   
+  dropdown: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  inputText: { fontSize: 13, color: TEXT_DARK },
+
   row: { flexDirection: 'row' },
   
-  textAreaContainer: { height: 120, alignItems: 'flex-start', paddingTop: 16 },
-  inputIconTop: { marginRight: 12, marginTop: 2 },
-  textArea: { flex: 1, fontSize: 15, color: TEXT_DARK, minHeight: 88 },
+  chipsRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+  chip: { 
+    paddingHorizontal: 12, height: 36, borderRadius: 18, 
+    borderWidth: 1, borderColor: BORDER, backgroundColor: WHITE, 
+    justifyContent: 'center', alignItems: 'center' 
+  },
+  chipActive: { borderColor: PRIMARY, backgroundColor: '#faf5ff' },
+  chipText: { fontSize: 12, fontWeight: '600', color: TEXT_DARK },
+  chipTextActive: { color: PRIMARY },
+
+  richTextContainer: { borderWidth: 1, borderColor: BORDER, borderRadius: 8, overflow: 'hidden' },
+  richTextToolbar: { flexDirection: 'row', alignItems: 'center', padding: 8, backgroundColor: '#f8fafc', borderBottomWidth: 1, borderBottomColor: BORDER, gap: 16 },
+  toolbarIcon: { fontSize: 14, fontWeight: '700', color: TEXT_GRAY },
+  textArea: { backgroundColor: WHITE, padding: 12, fontSize: 13, color: TEXT_DARK, minHeight: 120 },
   
   footer: { 
-    padding: 20, backgroundColor: WHITE, borderTopWidth: 1, borderTopColor: BORDER,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 20 
+    flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center',
+    padding: 16, backgroundColor: WHITE, borderTopWidth: 1, borderTopColor: BORDER,
+    paddingBottom: Platform.OS === 'ios' ? 32 : 16, gap: 12
   },
-  postBtn: { 
-    backgroundColor: PRIMARY, height: 56, borderRadius: 12, 
+  secondaryBtn: { 
+    paddingHorizontal: 16, height: 40, borderRadius: 8, 
     justifyContent: 'center', alignItems: 'center',
-    shadowColor: PRIMARY, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4
+    borderWidth: 1, borderColor: BORDER, backgroundColor: WHITE 
   },
-  postBtnText: { color: WHITE, fontSize: 16, fontWeight: '700' }
+  secondaryBtnText: { color: TEXT_DARK, fontSize: 13, fontWeight: '600' },
+  primaryBtn: { 
+    backgroundColor: PRIMARY, paddingHorizontal: 24, height: 40, borderRadius: 8, 
+    justifyContent: 'center', alignItems: 'center'
+  },
+  primaryBtnText: { color: WHITE, fontSize: 13, fontWeight: '700' },
+
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: WHITE, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: '50%' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  modalTitle: { fontSize: 18, fontWeight: '800', color: TEXT_DARK },
+  closeBtn: { padding: 4 },
+  pickerItem: { paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
+  pickerItemText: { fontSize: 15, color: TEXT_DARK }
 });

@@ -15,6 +15,7 @@ const connectionString = process.env.DATABASE_URL;
 const pool = new Pool({ connectionString });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -393,6 +394,156 @@ app.post('/api/startup/login', async (req: Request, res: Response): Promise<void
   }
 });
 
+// 5.1 Startup Profile (Get & Update)
+app.get('/api/startup/profile/:companyName', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const companyName = req.params.companyName as string;
+    const startup = await prisma.startup.findFirst({ where: { companyName } });
+    if (!startup) {
+      res.status(404).json({ success: false, message: 'Startup not found' });
+      return;
+    }
+    res.status(200).json({ 
+      success: true, 
+      startup: {
+        id: startup.id,
+        founderName: startup.founderName,
+        companyName: startup.companyName,
+        email: startup.email,
+        profilePhoto: (startup as any).profilePhoto,
+        role: (startup as any).role,
+        timezone: (startup as any).timezone,
+        bio: (startup as any).bio
+      }
+    });
+  } catch (err) {
+    console.error('Fetch startup profile error:', err);
+    res.status(500).json({ success: false, message: 'Server error fetching startup profile' });
+  }
+});
+
+app.put('/api/startup/profile/:companyName', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const companyName = req.params.companyName as string;
+    const { founderName, email, role, timezone, bio, profilePhoto } = req.body;
+    
+    // We update by companyName. If email is being changed, check if it exists.
+    if (email) {
+      const existing = await prisma.startup.findUnique({ where: { email } });
+      if (existing && existing.companyName !== companyName) {
+         res.status(400).json({ success: false, message: 'Email already used by another account' });
+         return;
+      }
+    }
+
+    const updated = await prisma.startup.updateMany({
+      where: { companyName },
+      data: {
+        founderName, email, role, timezone, bio, profilePhoto
+      } as any
+    });
+
+    if (updated.count === 0) {
+      res.status(404).json({ success: false, message: 'Startup not found' });
+      return;
+    }
+
+    res.status(200).json({ success: true, message: 'Profile updated successfully' });
+  } catch (err) {
+    console.error('Update startup profile error:', err);
+    res.status(500).json({ success: false, message: 'Server error updating startup profile' });
+  }
+});
+
+// --- STARTUP NETWORK ---
+app.get('/api/startup/network/:companyName', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const companyName = req.params.companyName as string;
+    const startup = await prisma.startup.findFirst({ where: { companyName } });
+    if (!startup) {
+      res.status(404).json({ success: false, message: 'Startup not found' });
+      return;
+    }
+
+    const followersRaw = await (prisma as any).userFollowsStartup.findMany({
+      where: { startupId: startup.id },
+      include: { user: true }
+    });
+    
+    const followingRaw = await (prisma as any).startupFollowsUser.findMany({
+      where: { startupId: startup.id },
+      include: { user: true }
+    });
+
+    const followers = followersRaw.map((f: any) => ({
+      id: f.user.id,
+      name: f.user.fullName,
+      role: 'User',
+      avatar: f.user.profilePhoto || `https://ui-avatars.com/api/?name=${encodeURIComponent(f.user.fullName)}`,
+      following: followingRaw.some((fw: any) => fw.userId === f.userId)
+    }));
+
+    const following = followingRaw.map((f: any) => ({
+      id: f.user.id,
+      name: f.user.fullName,
+      role: 'User',
+      avatar: f.user.profilePhoto || `https://ui-avatars.com/api/?name=${encodeURIComponent(f.user.fullName)}`,
+      following: true
+    }));
+
+    const allUsers = await prisma.user.findMany({ take: 10 });
+    const suggestions = allUsers
+      .filter((u: any) => !followingRaw.some((fw: any) => fw.userId === u.id))
+      .slice(0, 5)
+      .map((u: any) => ({
+        id: u.id,
+        name: u.fullName,
+        avatar: u.profilePhoto || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.fullName)}`
+      }));
+
+    res.status(200).json({ success: true, followers, following, suggestions });
+  } catch (err) {
+    console.error('Fetch network error:', err);
+    res.status(500).json({ success: false, message: 'Server error fetching network' });
+  }
+});
+
+app.post('/api/startup/network/:companyName/follow', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const companyName = req.params.companyName as string;
+    const { userId } = req.body;
+    
+    const startup = await prisma.startup.findFirst({ where: { companyName } });
+    if (!startup) { res.status(404).json({ success: false, message: 'Startup not found' }); return; }
+
+    await (prisma as any).startupFollowsUser.create({
+      data: { startupId: startup.id, userId }
+    });
+
+    res.status(200).json({ success: true, message: 'Followed user' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+app.post('/api/startup/network/:companyName/unfollow', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const companyName = req.params.companyName as string;
+    const { userId } = req.body;
+    
+    const startup = await prisma.startup.findFirst({ where: { companyName } });
+    if (!startup) { res.status(404).json({ success: false, message: 'Startup not found' }); return; }
+
+    await (prisma as any).startupFollowsUser.deleteMany({
+      where: { startupId: startup.id, userId }
+    });
+
+    res.status(200).json({ success: true, message: 'Unfollowed user' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 // 6. Admin Authentication (Sign In)
 app.post('/api/admin/login', async (req: Request, res: Response): Promise<void> => {
   try {
@@ -461,7 +612,10 @@ app.get('/api/admin/stats', async (req: Request, res: Response): Promise<void> =
 // 8. Create a New Job
 app.post('/api/jobs', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { title, location, type, salary, description, requirements, companyName } = req.body;
+    const { 
+      title, location, type, salary, description, requirements, companyName,
+      department, workMode, experience, education, openings, deadline, applicationMethod 
+    } = req.body;
 
     if (!title || !location || !companyName) {
       res.status(400).json({ success: false, message: 'Missing required job fields or companyName' });
@@ -486,6 +640,14 @@ app.post('/api/jobs', async (req: Request, res: Response): Promise<void> => {
         salary,
         description: description || '',
         requirements: requirements || [],
+        // Force TS refresh
+        department,
+        workMode,
+        experience,
+        education,
+        openings: String(openings || '1'),
+        deadline,
+        applicationMethod,
         startupId: startup.id,
       }
     });
@@ -501,7 +663,10 @@ app.post('/api/jobs', async (req: Request, res: Response): Promise<void> => {
 app.put('/api/jobs/:id', async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const { title, location, type, salary, description, requirements } = req.body;
+    const { 
+      title, location, type, salary, description, requirements,
+      department, workMode, experience, education, openings, deadline, applicationMethod
+    } = req.body;
 
     const job = await prisma.job.update({
       where: { id: id as string },
@@ -511,7 +676,14 @@ app.put('/api/jobs/:id', async (req: Request, res: Response): Promise<void> => {
         type,
         salary,
         description,
-        requirements: requirements || []
+        requirements: requirements || [],
+        department,
+        workMode,
+        experience,
+        education,
+        openings: openings ? String(openings) : undefined,
+        deadline,
+        applicationMethod
       }
     });
 
@@ -532,7 +704,11 @@ app.get('/api/jobs/startup/:companyName', async (req: Request, res: Response): P
       include: {
         jobs: {
           orderBy: { createdAt: 'desc' },
-          include: { applications: true }
+          include: { 
+            applications: {
+              include: { user: true }
+            }
+          }
         }
       } as any
     });
@@ -678,14 +854,36 @@ app.get('/api/applications/startup/:companyName', async (req: Request, res: Resp
   }
 });
 
+// 11c-2. Get All Applications for a Student
+app.get('/api/applications/user/:userId', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { userId } = req.params;
+    const applications = await prisma.application.findMany({
+      where: { userId: userId as string },
+      include: {
+        job: {
+          include: {
+            startup: true
+          }
+        }
+      },
+      orderBy: { appliedAt: 'desc' }
+    });
+
+    res.status(200).json({ success: true, applications });
+  } catch (err) {
+    console.error('Error fetching applications for user:', err);
+    res.status(500).json({ success: false, message: 'Server error fetching applications' });
+  }
+});
 // 11d. Update Application Status
 app.put('/api/applications/:id', async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, interviewDate, interviewTime } = req.body;
     const updatedApplication = await prisma.application.update({
       where: { id: id as string },
-      data: { status }
+      data: { status, interviewDate, interviewTime }
     });
     res.status(200).json({ success: true, application: updatedApplication });
   } catch (err) {
@@ -809,7 +1007,7 @@ app.post('/api/auth/reset-password', async (req: Request, res: Response): Promis
 app.get('/api/posts', async (req: Request, res: Response): Promise<void> => {
   try {
     const posts = await prisma.post.findMany({
-      include: { user: true },
+      include: { user: true, startup: true },
       orderBy: { createdAt: 'desc' }
     });
     res.status(200).json({ success: true, posts });
@@ -822,34 +1020,22 @@ app.get('/api/posts', async (req: Request, res: Response): Promise<void> => {
 app.post('/api/posts', async (req: Request, res: Response): Promise<void> => {
   try {
     const { text, imageUrl, category, email, companyName } = req.body;
-    let userId = '';
+    let userId = null;
+    let startupId = null;
 
     if (companyName) {
-      const generatedEmail = `${companyName.replace(/\s+/g, '').toLowerCase()}@startup.local`;
-      let startupUser = await prisma.user.findFirst({ where: { email: generatedEmail } });
-      if (!startupUser) {
-        startupUser = await prisma.user.create({
-          data: {
-            fullName: companyName,
-            email: generatedEmail,
-            password: 'mockpassword',
-            skills: []
-          } as any
-        });
+      const startup = await prisma.startup.findFirst({ where: { companyName } });
+      if (startup) {
+        startupId = startup.id;
       }
-      userId = startupUser.id;
     } else if (email) {
       const user = await prisma.user.findUnique({ where: { email } });
       if (user) userId = user.id;
     }
     
-    if (!userId) {
-      const validUser = await prisma.user.findFirst();
-      if (!validUser) {
-         res.status(400).json({ success: false, message: 'No valid user found to post as.' });
-         return;
-      }
-      userId = validUser.id;
+    if (!userId && !startupId) {
+      res.status(400).json({ success: false, message: 'No valid user or startup found to post as.' });
+      return;
     }
 
     let finalImageUrl = imageUrl;
@@ -885,13 +1071,59 @@ app.post('/api/posts', async (req: Request, res: Response): Promise<void> => {
         text,
         imageUrl: finalImageUrl,
         category: category || 'Projects',
-        userId: userId
-      } as any
+        userId: userId || undefined,
+        startupId: startupId || undefined
+      }
     });
     res.status(201).json({ success: true, post });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Server error creating post' });
+  }
+});
+
+// ─── Assessment Routes ────────────────────────────────────────────────────────
+// Create Assessment
+app.post('/api/assessments', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { startupId, jobId, title, description, selectedRounds, mcqConfig, codingConfig, interviewConfig } = req.body;
+    if (!startupId || !title) {
+      res.status(400).json({ success: false, message: 'startupId and title are required' });
+      return;
+    }
+    
+    const assessment = await prisma.assessment.create({
+      data: {
+        startupId: startupId as string,
+        jobId: jobId || null,
+        title,
+        description,
+        selectedRounds,
+        mcqConfig,
+        codingConfig,
+        interviewConfig
+      }
+    });
+    
+    res.status(201).json({ success: true, assessment });
+  } catch (error) {
+    console.error('Error creating assessment:', error);
+    res.status(500).json({ success: false, message: 'Server error creating assessment' });
+  }
+});
+
+// Get Assessments by Startup
+app.get('/api/assessments/:startupId', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const startupId = req.params.startupId as string;
+    const assessments = await prisma.assessment.findMany({
+      where: { startupId },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.status(200).json({ success: true, assessments });
+  } catch (error) {
+    console.error('Error fetching assessments:', error);
+    res.status(500).json({ success: false, message: 'Server error fetching assessments' });
   }
 });
 

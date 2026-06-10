@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, Platform } from 'react-native';
-import { Bell, Search, Mail, Settings } from 'lucide-react-native';
+import { Bell, Search, Mail, Menu, Users, Settings } from 'lucide-react-native';
 import NotificationModal from './NotificationModal';
 import EmailNotificationModal from './EmailNotificationModal';
+import StartupProfileModal from './StartupProfileModal';
+import StartupSettingsModal from './StartupSettingsModal';
+import StartupNetworkModal from './StartupNetworkModal';
 
 const PRIMARY = '#662483';
 const BG = '#f8fafc';
@@ -13,6 +16,10 @@ const TEXT_GRAY = '#64748b';
 export default function StartupHeader({ companyName = 'Echo Digital' }: { companyName?: string }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showNetworkModal, setShowNetworkModal] = useState(false);
 
   // Extract initials (max 2 characters) for the logo placeholder
   const getInitials = (name: string) => {
@@ -43,15 +50,15 @@ export default function StartupHeader({ companyName = 'Echo Digital' }: { compan
           <TouchableOpacity style={styles.actionIcon} onPress={() => setShowNotifications(true)}>
             <Bell size={20} color={TEXT_GRAY} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionIcon}>
-            <Settings size={20} color={TEXT_GRAY} />
+          <TouchableOpacity style={styles.actionIcon} onPress={() => setShowMenu(!showMenu)}>
+            <Menu size={20} color={TEXT_GRAY} />
           </TouchableOpacity>
         </View>
       </View>
-      
+
       <View style={styles.searchBar}>
         <Search size={16} color={TEXT_GRAY} />
-        <TextInput 
+        <TextInput
           style={styles.searchInput}
           placeholder="Search analytics, candidates..."
           placeholderTextColor={TEXT_GRAY}
@@ -59,6 +66,38 @@ export default function StartupHeader({ companyName = 'Echo Digital' }: { compan
       </View>
       <NotificationModal visible={showNotifications} onClose={() => setShowNotifications(false)} role="startup" />
       <EmailNotificationModal visible={showEmailModal} onClose={() => setShowEmailModal(false)} />
+
+      {showMenu && (
+        <View style={styles.menuDropdown}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMenu(false); setShowProfileModal(true); }}>
+            <Users size={16} color={TEXT_DARK} style={styles.menuIcon} />
+            <Text style={styles.menuText}>Profile</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMenu(false); setShowNetworkModal(true); }}>
+            <Users size={16} color={TEXT_DARK} style={styles.menuIcon} />
+            <Text style={styles.menuText}>My Network</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMenu(false); setShowSettingsModal(true); }}>
+            <Settings size={16} color={TEXT_DARK} style={styles.menuIcon} />
+            <Text style={styles.menuText}>Settings</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      <StartupProfileModal 
+        visible={showProfileModal} 
+        onClose={() => setShowProfileModal(false)} 
+        companyName={companyName} 
+      />
+      <StartupSettingsModal 
+        visible={showSettingsModal} 
+        onClose={() => setShowSettingsModal(false)} 
+      />
+      <StartupNetworkModal
+        visible={showNetworkModal}
+        onClose={() => setShowNetworkModal(false)}
+        companyName={companyName}
+      />
     </View>
   );
 }
@@ -67,7 +106,8 @@ const styles = StyleSheet.create({
   headerCard: {
     backgroundColor: WHITE,
     paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 20,
-    marginBottom: 16, borderBottomWidth: 1, borderBottomColor: '#f1f5f9'
+    marginBottom: 16, borderBottomWidth: 1, borderBottomColor: '#f1f5f9',
+    zIndex: 50, elevation: 50
   },
   headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   adminInfo: { flexDirection: 'row', alignItems: 'center' },
@@ -79,4 +119,8 @@ const styles = StyleSheet.create({
   actionIcon: { padding: 4 },
   searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f1f5f9', borderRadius: 12, paddingHorizontal: 12, height: 44 },
   searchInput: { flex: 1, marginLeft: 8, fontSize: 13, color: TEXT_DARK },
+  menuDropdown: { position: 'absolute', top: Platform.OS === 'ios' ? 100 : 80, right: 20, backgroundColor: WHITE, borderRadius: 12, padding: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5, minWidth: 160, zIndex: 100 },
+  menuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 12, borderRadius: 8 },
+  menuIcon: { marginRight: 10 },
+  menuText: { fontSize: 14, fontWeight: '600', color: TEXT_DARK },
 });

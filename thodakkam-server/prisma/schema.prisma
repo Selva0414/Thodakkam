@@ -14,9 +14,17 @@ model Startup {
   email          String   @unique
   password       String
   category       String
+  profilePhoto   String?
+  role           String?  @default("Super Admin")
+  timezone       String?
+  bio            String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-  jobs           Job[]
+  jobs               Job[]
+  posts              Post[]
+  followingUsers     StartupFollowsUser[]
+  followers          UserFollowsStartup[]
+  assessments        Assessment[]
 }
 
 model Otp {
@@ -43,8 +51,30 @@ model User {
   linkedinUrl  String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  applications Application[]
-  posts        Post[]
+  applications       Application[]
+  posts              Post[]
+  followedStartups   UserFollowsStartup[]
+  startupFollowers   StartupFollowsUser[]
+}
+
+model StartupFollowsUser {
+  id        String   @id @default(uuid())
+  startupId String
+  startup   Startup  @relation(fields: [startupId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  @@unique([startupId, userId])
+}
+
+model UserFollowsStartup {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  startupId String
+  startup   Startup  @relation(fields: [startupId], references: [id])
+  createdAt DateTime @default(now())
+  @@unique([userId, startupId])
 }
 
 model Post {
@@ -52,8 +82,10 @@ model Post {
   text      String
   imageUrl  String?
   category  String   @default("Projects")
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  startupId String?
+  startup   Startup? @relation(fields: [startupId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -71,14 +103,22 @@ model Job {
   id           String   @id @default(uuid())
   title        String
   location     String
-  type         String   @default("Full-time")
-  salary       String?
-  description  String
-  requirements String[]
+  type              String   @default("Full-time")
+  salary            String?
+  description       String
+  requirements      String[]
+  department        String?
+  workMode          String?
+  experience        String?
+  education         String?
+  openings          String?
+  deadline          String?
+  applicationMethod String?
   status       String   @default("ACTIVE")
   startupId    String
   startup      Startup  @relation(fields: [startupId], references: [id])
   applications Application[]
+  assessments  Assessment[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
@@ -93,7 +133,26 @@ model Application {
   email     String?
   phone     String?
   resumeUrl String?
-  status    String   @default("PENDING")
-  appliedAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  status        String   @default("PENDING")
+  interviewDate String?
+  interviewTime String?
+  appliedAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
+
+model Assessment {
+  id              String   @id @default(uuid())
+  startupId       String
+  startup         Startup  @relation(fields: [startupId], references: [id])
+  jobId           String?
+  job             Job?     @relation(fields: [jobId], references: [id])
+  title           String
+  description     String?
+  selectedRounds  String[]
+  mcqConfig       Json?
+  codingConfig    Json?
+  interviewConfig Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+

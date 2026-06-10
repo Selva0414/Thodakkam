@@ -7,7 +7,7 @@ import {
   Bell, Search, Upload, Clock, CheckCircle, Video,
   Building2, MoreHorizontal, TrendingUp, Plus, Briefcase,
   MessageSquare, Users, LayoutDashboard, ChevronRight, Zap, FileText, GraduationCap,
-  Mail, Settings
+  Mail, Settings, ClipboardList
 } from 'lucide-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import StudentHeader from '../components/StudentHeader';
@@ -45,7 +45,11 @@ function StatCard({ icon: Icon, iconBg, label, value }: any) {
   );
 }
 
-function ApplicationOverview() {
+function ApplicationOverview({ applications = [] }: { applications?: any[] }) {
+  const appliedCount = applications.length;
+  const interviewingCount = applications.filter(a => a.status === 'INTERVIEW SCHEDULED').length;
+  const offeredCount = applications.filter(a => a.status === 'OFFERED').length;
+
   return (
     <View style={sectionCard.container}>
       <View style={sectionCard.header}>
@@ -55,9 +59,9 @@ function ApplicationOverview() {
         </TouchableOpacity>
       </View>
       <View style={overviewStyles.row}>
-        <StatCard icon={Upload} iconBg="#5A279B" label="Applied" value={3} />
-        <StatCard icon={Clock} iconBg="#f59e0b" label="Interviewing" value={1} />
-        <StatCard icon={CheckCircle} iconBg="#10b981" label="Offered" value={0} />
+        <StatCard icon={Upload} iconBg="#5A279B" label="Applied" value={appliedCount} />
+        <StatCard icon={Clock} iconBg="#f59e0b" label="Interviewing" value={interviewingCount} />
+        <StatCard icon={CheckCircle} iconBg="#10b981" label="Offered" value={offeredCount} />
       </View>
     </View>
   );
@@ -82,12 +86,20 @@ function InterviewCard({ day, month, title, company, time, mode, modeColor }: an
   );
 }
 
-function UpcomingInterviews() {
-  const interviews = [
-    { day: '19', month: 'AUG', title: 'Senior Frontend Architect', company: 'Uber', time: '$120-80 PST', mode: 'VIDEO CALL', modeColor: '#3b82f6' },
-    { day: '20', month: 'AUG', title: 'Backend Engineer (AI)', company: 'Uber', time: '$120-80 PST', mode: 'ON-SITE', modeColor: '#10b981' },
-    { day: '22', month: 'AUG', title: 'Security Engineer', company: 'Uber', time: '11:00 AM PST', mode: 'VIDEO CALL', modeColor: '#3b82f6' },
-  ];
+function UpcomingInterviews({ applications = [] }: { applications?: any[] }) {
+  const upcomingApps = applications.filter(a => a.status === 'INTERVIEW SCHEDULED');
+  
+  if (upcomingApps.length === 0) {
+    return (
+      <View style={sectionCard.container}>
+        <View style={sectionCard.header}>
+          <Text style={sectionCard.title}>Upcoming Interviews</Text>
+        </View>
+        <Text style={{ color: GRAY, textAlign: 'center', marginVertical: 10 }}>No upcoming interviews scheduled yet.</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={sectionCard.container}>
       <View style={sectionCard.header}>
@@ -96,9 +108,31 @@ function UpcomingInterviews() {
           <MoreHorizontal size={20} color={GRAY} />
         </TouchableOpacity>
       </View>
-      {interviews.map((iv, i) => (
-        <InterviewCard key={i} {...iv} />
-      ))}
+      {upcomingApps.map((app, i) => {
+        let day = '??';
+        let month = '???';
+        if (app.interviewDate) {
+          const d = new Date(app.interviewDate);
+          if (!isNaN(d.getTime())) {
+            day = d.getDate().toString().padStart(2, '0');
+            const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+            month = monthNames[d.getMonth()];
+          }
+        }
+        
+        return (
+          <InterviewCard 
+            key={app.id || i}
+            day={day} 
+            month={month} 
+            title={app.job?.title || 'Unknown Role'} 
+            company={app.job?.startup?.companyName || 'Company'} 
+            time={app.interviewTime || 'TBD'} 
+            mode={'VIDEO CALL'} 
+            modeColor={'#3b82f6'} 
+          />
+        );
+      })}
     </View>
   );
 }
@@ -151,14 +185,53 @@ function FeedItem({ icon: Icon, iconBg, text, time }: any) {
   );
 }
 
-function ActivityFeed() {
+function ActivityFeed({ applications = [] }: { applications?: any[] }) {
   const [tab, setTab] = useState('All');
   const tabs = ['All', 'Applied', 'Offers'];
-  const feed = [
-    { icon: TrendingUp, iconBg: '#0ea5e9', text: 'LinkedIn exceeded your application to Technical interview phase.', time: 'A few hours ago' },
-    { icon: Upload, iconBg: '#10b981', text: 'LinkedIn submitted an application for Lead Product Designer at Figma.', time: 'A few hours ago' },
-    { icon: MessageSquare, iconBg: '#f59e0b', text: 'New message from Recruiter at Stripe regarding your application.', time: 'Yesterday' },
-  ];
+  
+  // Generate feed from applications
+  const feed = applications.map(app => {
+    const company = app.job?.startup?.companyName || 'A company';
+    const role = app.job?.title || 'a role';
+    const date = new Date(app.updatedAt || app.createdAt);
+    const timeString = isNaN(date.getTime()) ? 'Recently' : date.toLocaleDateString();
+
+    let icon = Upload;
+    let iconBg = '#10b981';
+    let text = `You submitted an application for ${role} at ${company}.`;
+    let type = 'Applied';
+
+    if (app.status === 'INTERVIEW SCHEDULED') {
+      icon = TrendingUp;
+      iconBg = '#0ea5e9';
+      text = `${company} advanced your application to the interview phase.`;
+      type = 'All'; // Or Interview, but we only have All, Applied, Offers
+    } else if (app.status === 'OFFERED') {
+      icon = FileText;
+      iconBg = '#f59e0b';
+      text = `${company} issued an offer letter for the ${role} position.`;
+      type = 'Offers';
+    } else if (app.status === 'REJECTED') {
+      icon = MessageSquare;
+      iconBg = '#ef4444';
+      text = `${company} updated the status of your application for ${role}.`;
+      type = 'All';
+    }
+
+    return { icon, iconBg, text, time: timeString, type, timestamp: date.getTime() };
+  });
+
+  // Sort feed descending by time
+  feed.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+  // Filter based on tab
+  const filteredFeed = feed.filter(f => {
+    if (tab === 'All') return true;
+    if (tab === 'Applied' && f.type === 'Applied') return true;
+    if (tab === 'Offers' && f.type === 'Offers') return true;
+    return false;
+  });
+
   return (
     <View style={sectionCard.container}>
       <Text style={sectionCard.title}>Activity Feed</Text>
@@ -169,7 +242,11 @@ function ActivityFeed() {
           </TouchableOpacity>
         ))}
       </View>
-      {feed.map((f, i) => <FeedItem key={i} {...f} />)}
+      {filteredFeed.length > 0 ? (
+        filteredFeed.map((f, i) => <FeedItem key={i} {...f} />)
+      ) : (
+        <Text style={{ color: GRAY, textAlign: 'center', marginVertical: 10 }}>No activity to show in this category.</Text>
+      )}
     </View>
   );
 }
@@ -205,7 +282,8 @@ function BottomTabBar() {
   const tabs = [
     { label: 'Dashboard', icon: LayoutDashboard },
     { label: 'Jobs Board', icon: Briefcase, path: '/student-jobs' as any },
-    { label: 'Messages', icon: MessageSquare, path: null },
+    { label: 'Assessments', icon: ClipboardList, path: '/student-assessments' as any },
+    { label: 'Messages', icon: MessageSquare, path: '/student-messages' },
     { label: 'Community', icon: Users, path: '/student-community' },
   ];
   return (
@@ -232,6 +310,7 @@ export default function StudentDashboard() {
   const params = useLocalSearchParams();
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState(userStore);
+  const [applications, setApplications] = useState<any[]>([]);
 
   useEffect(() => {
     async function fetchUser() {
@@ -276,9 +355,22 @@ export default function StudentDashboard() {
         }
       } catch (err) {
         console.error('Failed to fetch user:', err);
-      } finally {
-        setLoading(false);
       }
+      
+      if (params.userId) {
+        try {
+          const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
+          const appRes = await fetch(`${baseUrl}/api/applications/user/${params.userId}`);
+          const appJson = await appRes.json();
+          if (appJson.success && appJson.applications) {
+            setApplications(appJson.applications);
+          }
+        } catch (err) {
+          console.error('Failed to fetch applications:', err);
+        }
+      }
+      
+      setLoading(false);
     }
 
     fetchUser();
@@ -297,10 +389,10 @@ export default function StudentDashboard() {
       <StudentHeader user={userData} />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <WelcomeSection user={userData} />
-        <ApplicationOverview />
-        <UpcomingInterviews />
+        <ApplicationOverview applications={applications} />
+        <UpcomingInterviews applications={applications} />
         <SkillsInDemand />
-        <ActivityFeed />
+        <ActivityFeed applications={applications} />
         <AssessmentBanner />
         <OfferBanner />
         <View style={{ height: 24 }} />
