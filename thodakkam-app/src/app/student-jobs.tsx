@@ -6,7 +6,7 @@ import {
 import {
   Bell, Search, Mail, Settings, LayoutDashboard, Briefcase,
   MessageSquare, Users, SlidersHorizontal, Monitor, Cloud, PenTool, Shield,
-  ArrowRight, Upload, MessageCircle, GraduationCap, ClipboardList
+  ArrowRight, Upload, MessageCircle, GraduationCap, ClipboardList, Bookmark, MapPin, Sparkles
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import StudentHeader from '../components/StudentHeader';
@@ -103,49 +103,63 @@ export default function StudentJobs() {
           <Text style={{ textAlign: 'center', marginTop: 20, color: GRAY }}>No active jobs found right now.</Text>
         ) : (
           jobs.map(job => {
-            // Give a random match score for visual demo if not provided
             const matchScore = Math.floor(Math.random() * (98 - 70 + 1) + 70);
             
-            let badgeBg = '#f1f5f9';
-            let badgeColor = '#64748b';
-            if (matchScore >= 90) { badgeBg = '#ecfdf5'; badgeColor = '#10b981'; }
-            else if (matchScore >= 80) { badgeBg = '#eff6ff'; badgeColor = '#3b82f6'; }
+            let startupPhoto = job.startup?.companyLogo || job.startup?.profilePhoto;
+            if (startupPhoto && !startupPhoto.startsWith('http') && !startupPhoto.startsWith('data:')) {
+              const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
+              startupPhoto = `${baseUrl}/uploads/${startupPhoto.split(/[/\\]/).pop()}`;
+            }
 
             return (
               <View key={job.id} style={styles.jobCard}>
-                <View style={styles.cardHeader}>
-                  <View style={styles.jobIconBox}>
-                    <Monitor size={20} color={DARK} />
+                <View style={styles.cardTopRow}>
+                  <View style={styles.companyLogoBox}>
+                    {startupPhoto ? (
+                      <Image source={{ uri: startupPhoto }} style={styles.companyLogo} resizeMode="contain" />
+                    ) : (
+                      <Text style={styles.companyLogoText}>{(job.startup?.companyName || 'C').substring(0,2).toUpperCase()}</Text>
+                    )}
                   </View>
-                  <View style={styles.jobInfo}>
-                    <Text style={styles.jobTitle}>{job.title}</Text>
-                    <Text style={styles.jobCompany}>{job.startup?.companyName} • {job.location}</Text>
-                  </View>
-                  <View style={[styles.matchBadge, { backgroundColor: badgeBg }]}>
-                    {matchScore >= 80 && <View style={[styles.matchDot, { backgroundColor: badgeColor }]} />}
-                    <Text style={[styles.matchText, { color: badgeColor }]}>{matchScore}%{"\n"}Match</Text>
+                  
+                  <View style={styles.jobMainInfo}>
+                    <View style={styles.titleRowFlex}>
+                      <Text style={styles.jobTitleLarge} numberOfLines={1}>{job.title}</Text>
+                      <View style={styles.sparkleBadge}>
+                        <Sparkles size={10} color="#3730a3" style={{ marginRight: 4 }} />
+                        <Text style={styles.sparkleText}>{matchScore}% Match</Text>
+                      </View>
+                    </View>
+                    <Text style={styles.companyNameText}>{job.startup?.companyName?.toUpperCase() || 'COMPANY'}</Text>
+                    <View style={styles.locationRow}>
+                      <MapPin size={10} color={GRAY} />
+                      <Text style={styles.locationText}>{job.location || 'Remote'}</Text>
+                    </View>
                   </View>
                 </View>
                 
-                <Text style={styles.jobDesc} numberOfLines={2}>
-                  {job.description || "No description provided."}
-                </Text>
-                
-                <View style={styles.skillsRow}>
-                  {(job.requirements || []).slice(0, 3).map((req: string, idx: number) => (
-                    <View key={idx} style={styles.skillBadge}><Text style={styles.skillText}>{req}</Text></View>
+                <View style={styles.tagsContainer}>
+                  {(job.requirements || []).slice(0, 2).map((req: string, idx: number) => (
+                    <View key={idx} style={styles.tagPill}><Text style={styles.tagPillText}>{req}</Text></View>
                   ))}
-                  {job.requirements?.length > 3 && (
-                    <Text style={styles.skillBonus}>+{job.requirements.length - 3} Skills</Text>
+                  {job.type && (
+                    <View style={styles.tagPill}><Text style={styles.tagPillText}>{job.type}</Text></View>
                   )}
                 </View>
                 
-                <TouchableOpacity 
-                  style={styles.applyBtn}
-                  onPress={() => router.push({ pathname: '/student-apply', params: { jobId: job.id, jobTitle: job.title } })}
-                >
-                  <Text style={styles.applyBtnText}>Apply Now</Text>
-                </TouchableOpacity>
+                <View style={styles.cardDivider} />
+                
+                <View style={styles.cardBottomRow}>
+                  <TouchableOpacity style={styles.bookmarkBtn}>
+                    <Bookmark size={16} color={DARK} />
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={styles.applyPurpleBtn}
+                    onPress={() => router.push({ pathname: '/student-apply', params: { jobId: job.id, jobTitle: job.title } })}
+                  >
+                    <Text style={styles.applyPurpleBtnText}>Apply Now</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             );
           })
@@ -228,32 +242,35 @@ const styles = StyleSheet.create({
   sortTextBold: { fontWeight: '700', color: DARK },
 
   jobCard: {
-    backgroundColor: WHITE, borderRadius: 16, padding: 16, marginBottom: 16,
+    backgroundColor: WHITE, borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#f1f5f9',
     ...Platform.select({
-      web: { boxShadow: '0 2px 8px rgba(0,0,0,0.05)' },
-      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3 },
+      web: { boxShadow: '0 4px 12px rgba(0,0,0,0.03)' },
+      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 3 },
     }),
   },
-  cardHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 12 },
-  jobIconBox: { width: 36, height: 36, borderRadius: 8, borderWidth: 1, borderColor: BORDER, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  jobInfo: { flex: 1 },
-  jobTitle: { fontSize: 13, fontWeight: '800', color: DARK, marginBottom: 2 },
-  jobCompany: { fontSize: 10, color: GRAY, lineHeight: 14 },
+  cardTopRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 16 },
+  companyLogoBox: { width: 44, height: 44, borderRadius: 8, backgroundColor: WHITE, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  companyLogo: { width: '80%', height: '80%' },
+  companyLogoText: { fontSize: 16, fontWeight: '800', color: PRIMARY },
+  jobMainInfo: { flex: 1 },
+  titleRowFlex: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  jobTitleLarge: { fontSize: 18, fontWeight: '800', color: DARK, flex: 1, marginRight: 8 },
+  sparkleBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#e0e7ff', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
+  sparkleText: { fontSize: 10, fontWeight: '700', color: '#3730a3' },
+  companyNameText: { fontSize: 12, color: '#475569', letterSpacing: 0.5, marginBottom: 4 },
+  locationRow: { flexDirection: 'row', alignItems: 'center' },
+  locationText: { fontSize: 12, color: GRAY, marginLeft: 4 },
   
-  matchBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
-  matchDot: { width: 4, height: 4, borderRadius: 2, marginRight: 4 },
-  matchText: { fontSize: 8, fontWeight: '800', textAlign: 'center' },
+  tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
+  tagPill: { backgroundColor: '#f1f5f9', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
+  tagPillText: { fontSize: 11, color: DARK, fontWeight: '500' },
   
-  jobDesc: { fontSize: 11, color: GRAY, lineHeight: 16, marginBottom: 12 },
+  cardDivider: { height: 1, backgroundColor: '#f1f5f9', width: '100%', marginBottom: 16 },
   
-  skillsRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginBottom: 16 },
-  skillBadge: { backgroundColor: BG, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4 },
-  skillText: { fontSize: 9, color: GRAY, fontWeight: '600' },
-  skillBonus: { fontSize: 9, color: '#3b82f6', fontWeight: '700' },
-  skillGap: { fontSize: 9, color: '#f97316', fontWeight: '700' },
-  
-  applyBtn: { backgroundColor: PRIMARY, borderRadius: 8, paddingVertical: 10, alignItems: 'center' },
-  applyBtnText: { color: WHITE, fontSize: 12, fontWeight: '700' },
+  cardBottomRow: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 12 },
+  bookmarkBtn: { width: 40, height: 40, borderRadius: 8, borderWidth: 1, borderColor: '#e2e8f0', justifyContent: 'center', alignItems: 'center' },
+  applyPurpleBtn: { backgroundColor: PRIMARY, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10, minWidth: 120, alignItems: 'center' },
+  applyPurpleBtnText: { color: WHITE, fontSize: 13, fontWeight: '700' },
 
   aiPromoCard: { backgroundColor: PRIMARY, borderRadius: 16, padding: 20, marginTop: 8 },
   aiPromoTitle: { fontSize: 16, fontWeight: '800', color: WHITE, marginBottom: 6 },

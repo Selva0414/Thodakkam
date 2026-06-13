@@ -3,9 +3,10 @@ import {
   StyleSheet, Text, View, TextInput, ScrollView, TouchableOpacity, SafeAreaView, Platform, KeyboardAvoidingView, Image, ImageBackground, Modal
 } from 'react-native';
 import { 
-  Rocket, Lock, Mail, Eye, EyeOff, ChevronDown, ArrowRight, ArrowLeft, Check, X
+  Rocket, Lock, Mail, Eye, EyeOff, ChevronDown, ArrowRight, ArrowLeft, Check, X, Camera
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 
 const PRIMARY_COLOR = '#662483'; // Deep purple matching the screenshot
 const TEXT_DARK = '#0f172a';
@@ -68,6 +69,24 @@ export default function StartupRegisterScreen() {
   const [agreed, setAgreed] = useState(false);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
 
+  const [founderImage, setFounderImage] = useState<string | null>(null);
+  const [companyLogo, setCompanyLogo] = useState<string | null>(null);
+
+  const pickImage = async (setImage: React.Dispatch<React.SetStateAction<string | null>>) => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.5,
+      base64: true,
+    });
+
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
+      setImage(base64Image);
+    }
+  };
+
   // OTP states
   const [otpVal, setOtpVal] = useState(['', '', '', '', '', '']);
   const otpInputsRef = useRef<Array<TextInput | null>>([]);
@@ -129,7 +148,9 @@ export default function StartupRegisterScreen() {
           email,
           password,
           category,
-          otp: fullOtp
+          otp: fullOtp,
+          founderImage,
+          companyLogo
         })
       });
 
@@ -358,6 +379,37 @@ export default function StartupRegisterScreen() {
               <Text style={styles.errorText}>{errorMessage}</Text>
             </View>
           ) : null}
+
+          {/* Image Upload Row */}
+          <View style={styles.imageUploadRow}>
+            <View style={styles.imageUploadWrapper}>
+              <Text style={styles.label}>Founder Image</Text>
+              <TouchableOpacity style={styles.imageUploadBox} onPress={() => pickImage(setFounderImage)}>
+                {founderImage ? (
+                  <Image source={{ uri: founderImage }} style={styles.uploadedImage} />
+                ) : (
+                  <View style={styles.imagePlaceholder}>
+                    <Camera size={24} color="#94a3b8" />
+                    <Text style={styles.imagePlaceholderText}>Upload</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.imageUploadWrapper}>
+              <Text style={styles.label}>Company Logo</Text>
+              <TouchableOpacity style={styles.imageUploadBox} onPress={() => pickImage(setCompanyLogo)}>
+                {companyLogo ? (
+                  <Image source={{ uri: companyLogo }} style={styles.uploadedImage} />
+                ) : (
+                  <View style={styles.imagePlaceholder}>
+                    <Camera size={24} color="#94a3b8" />
+                    <Text style={styles.imagePlaceholderText}>Upload</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
 
           {/* Form Fields */}
           <InputField 
@@ -790,6 +842,41 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#94a3b8',
     textAlign: 'center',
+  },
+  imageUploadRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+    gap: 16,
+  },
+  imageUploadWrapper: {
+    flex: 1,
+  },
+  imageUploadBox: {
+    height: 100,
+    borderWidth: 1,
+    borderColor: BORDER_COLOR,
+    borderStyle: 'dashed',
+    borderRadius: 8,
+    backgroundColor: BG_LIGHT,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  imagePlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  imagePlaceholderText: {
+    fontSize: 12,
+    color: '#64748b',
+    marginTop: 8,
+    fontWeight: '500',
+  },
+  uploadedImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
   },
 
   // OTP Verification Screen Styles

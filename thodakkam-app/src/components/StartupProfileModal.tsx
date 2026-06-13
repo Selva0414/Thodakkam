@@ -47,7 +47,7 @@ export default function StartupProfileModal({ visible, onClose, companyName }: S
         setRole(data.startup.role || 'Super Admin');
         setTimezone(data.startup.timezone || '(GMT-08:00) Pacific Time');
         setBio(data.startup.bio || '');
-        setProfilePhoto(data.startup.profilePhoto);
+        setProfilePhoto(data.startup.founderImage || data.startup.profilePhoto);
       }
     } catch (err) {
       console.error('Error fetching profile:', err);

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, TextInput, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, TextInput, Platform, Image } from 'react-native';
 import { Bell, Search, Mail, Menu, Users, Settings } from 'lucide-react-native';
 import NotificationModal from './NotificationModal';
 import EmailNotificationModal from './EmailNotificationModal';
@@ -20,6 +20,21 @@ export default function StartupHeader({ companyName = 'Echo Digital' }: { compan
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showNetworkModal, setShowNetworkModal] = useState(false);
+  const [companyLogo, setCompanyLogo] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (companyName) {
+      const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
+      fetch(`${baseUrl}/api/startup/profile/${encodeURIComponent(companyName)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.startup?.companyLogo) {
+            setCompanyLogo(data.startup.companyLogo);
+          }
+        })
+        .catch(err => console.log('Error fetching logo:', err));
+    }
+  }, [companyName]);
 
   // Extract initials (max 2 characters) for the logo placeholder
   const getInitials = (name: string) => {
@@ -35,8 +50,12 @@ export default function StartupHeader({ companyName = 'Echo Digital' }: { compan
     <View style={styles.headerCard}>
       <View style={styles.headerTop}>
         <View style={styles.adminInfo}>
-          <View style={styles.logoBox}>
-            <Text style={styles.logoText}>{companyInitials}</Text>
+          <View style={[styles.logoBox, companyLogo && { backgroundColor: 'transparent', borderWidth: 1, borderColor: '#e2e8f0' }]}>
+            {companyLogo ? (
+              <Image source={{ uri: companyLogo }} style={{ width: '100%', height: '100%', borderRadius: 10, resizeMode: 'cover' }} />
+            ) : (
+              <Text style={styles.logoText}>{companyInitials}</Text>
+            )}
           </View>
           <View>
             <Text style={styles.companyTitle}>{companyName}</Text>

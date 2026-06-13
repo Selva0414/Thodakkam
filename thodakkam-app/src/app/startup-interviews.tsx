@@ -15,14 +15,88 @@ const WHITE = '#ffffff';
 const TEXT_DARK = '#0f172a';
 const TEXT_GRAY = '#64748b';
 
-const MOCK_ASSESSMENTS: any[] = [];
-
 export default function StartupInterviews() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const companyName = (params.companyName as string);
 
   const [activeTab, setActiveTab] = useState('Interviews');
+  const [assessments, setAssessments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  React.useEffect(() => {
+    if (companyName) {
+      fetchAssessments();
+    }
+  }, [companyName]);
+
+  const fetchAssessments = async () => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/assessments/${encodeURIComponent(companyName)}`);
+      const data = await res.json();
+      if (data.success && data.assessments) {
+        const mapped = data.assessments.map((a: any) => {
+          const tags: any[] = [];
+          let questionsCount = 0;
+
+          if (a.selectedRounds?.includes('mcq')) {
+            tags.push({ label: 'MCQ Assessment', icon: FileText });
+            if (a.mcqConfig?.questions) questionsCount += a.mcqConfig.questions.length;
+            else if (a.mcqConfig?.domainConfig?.questionsCount) questionsCount += Number(a.mcqConfig.domainConfig.questionsCount);
+          }
+          if (a.selectedRounds?.includes('coding')) {
+            tags.push({ label: 'Live Coding', icon: Code });
+          }
+          if (a.selectedRounds?.includes('interview')) {
+            tags.push({ label: 'Interview', icon: Users });
+          }
+
+          let status = 'INACTIVE';
+          const now = new Date();
+          let startDateObj = null;
+          let endDateObj = null;
+
+          if (a.mcqConfig?.startDate && a.mcqConfig?.startTime) {
+            startDateObj = new Date(`${a.mcqConfig.startDate}T${a.mcqConfig.startTime}`);
+          } else if (a.mcqConfig?.startDate) {
+            startDateObj = new Date(a.mcqConfig.startDate);
+          }
+
+          if (a.mcqConfig?.endDate && a.mcqConfig?.endTime) {
+            endDateObj = new Date(`${a.mcqConfig.endDate}T${a.mcqConfig.endTime}`);
+          } else if (a.mcqConfig?.endDate) {
+            endDateObj = new Date(a.mcqConfig.endDate);
+          }
+
+          if (startDateObj && endDateObj) {
+            if (now >= startDateObj && now <= endDateObj) {
+              status = 'ACTIVE';
+            }
+          } else if (startDateObj) {
+            if (now >= startDateObj) status = 'ACTIVE';
+          } else {
+            // Default to active if no schedule is set
+            status = 'ACTIVE';
+          }
+
+          return {
+            id: a.id,
+            title: a.title,
+            status: status,
+            tags,
+            questions: questionsCount,
+            candidates: a.assignedCandidates?.length || 0,
+            date: startDateObj ? startDateObj.toLocaleDateString() : new Date(a.createdAt).toLocaleDateString()
+          };
+        });
+        setAssessments(mapped);
+      }
+    } catch (err) {
+      console.error('Error fetching assessments:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleNavPress = (label: string) => {
     setActiveTab(label);
@@ -64,7 +138,11 @@ export default function StartupInterviews() {
         </View>
 
         {/* Assessments Grid / List */}
-        {MOCK_ASSESSMENTS.length === 0 ? (
+        {loading ? (
+          <View style={{ padding: 40, alignItems: 'center' }}>
+            <Text style={{ color: TEXT_GRAY }}>Loading...</Text>
+          </View>
+        ) : assessments.length === 0 ? (
           <View style={styles.emptyState}>
             <View style={styles.emptyIconBox}>
               <FileText size={32} color="#cbd5e1" />
@@ -74,13 +152,13 @@ export default function StartupInterviews() {
           </View>
         ) : (
           <View style={[styles.grid, isWide && styles.gridWide]}>
-            {MOCK_ASSESSMENTS.map((item) => (
+            {assessments.map((item) => (
               <View key={item.id} style={[styles.card, isWide && styles.cardWide]}>
                 <View style={styles.cardHeader}>
                   <View style={styles.titleRow}>
                     <Text style={styles.cardTitle}>{item.title}</Text>
-                    <View style={styles.statusBadge}>
-                      <Text style={styles.statusText}>{item.status}</Text>
+                    <View style={[styles.statusBadge, item.status === 'INACTIVE' && styles.statusBadgeInactive]}>
+                      <Text style={[styles.statusText, item.status === 'INACTIVE' && styles.statusTextInactive]}>{item.status}</Text>
                     </View>
                   </View>
                   <TouchableOpacity style={{ padding: 4 }}>
@@ -193,15 +271,17 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 16, fontWeight: '700', color: TEXT_DARK },
   statusBadge: { backgroundColor: '#dcfce7', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
   statusText: { color: '#16a34a', fontSize: 10, fontWeight: '800' },
+  statusBadgeInactive: { backgroundColor: '#f1f5f9' },
+  statusTextInactive: { color: '#64748b' },
 
   cardDesc: { fontSize: 13, color: TEXT_GRAY, lineHeight: 20, marginBottom: 16 },
 
   tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
   tag: { 
     flexDirection: 'row', alignItems: 'center', gap: 6, 
-    backgroundColor: '#f5f3ff', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6 
+    backgroundColor: '#f5effc', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6 
   },
-  tagText: { color: '#662483', fontSize: 11, fontWeight: '600' },
+  tagText: { color: '#8b4cb5', fontSize: 12, fontWeight: '600' },
 
   divider: { height: 1, backgroundColor: '#f1f5f9', width: '100%', marginVertical: 16 },
   

@@ -1,4 +1,5 @@
 export const userStore = {
+  id: '' as string,
   name: 'Student Name',
   profilePhoto: null as string | null,
   email: 'student@example.com',
@@ -6,6 +7,7 @@ export const userStore = {
 };
 
 export const updateGlobalUser = (user: any) => {
+  if (user.id) userStore.id = user.id;
   if (user.name) userStore.name = user.name;
   if (user.profilePhoto !== undefined) userStore.profilePhoto = user.profilePhoto;
   if (user.email) userStore.email = user.email;
