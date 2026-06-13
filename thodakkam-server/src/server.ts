@@ -1,3 +1,4 @@
+// Trigger TS recheck for Prisma generated client
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import multer from 'multer';
@@ -31,16 +32,8 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Multer Storage config
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+// Multer Storage config - Use Memory Storage so we can store directly to DB
+const storage = multer.memoryStorage();
 
 const upload = multer({ 
   storage,
@@ -72,10 +65,19 @@ app.post('/api/register', uploadFields, async (req: Request, res: Response): Pro
       return;
     }
 
-    // Process uploaded files
+    // Process uploaded files to Base64 strings
     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-    const profilePhotoPath = files?.['profilePhoto'] ? files['profilePhoto'][0].path : '';
-    const resumeFilePath = files?.['resumeFile'] ? files['resumeFile'][0].path : '';
+    let profilePhotoPath = '';
+    if (files?.['profilePhoto'] && files['profilePhoto'][0]) {
+      const file = files['profilePhoto'][0];
+      profilePhotoPath = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+    }
+    
+    let resumeFilePath = '';
+    if (files?.['resumeFile'] && files['resumeFile'][0]) {
+      const file = files['resumeFile'][0];
+      resumeFilePath = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+    }
 
     // Process skills array
     let skillsArray: string[] = [];
@@ -137,6 +139,24 @@ app.post('/api/login', async (req: Request, res: Response): Promise<void> => {
 
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
+      // INTERCEPT FOR SAMPLE LOGIN
+      if (email === 'student@thodakkam.edu' && password === 'Student@123') {
+        const firstUser = await prisma.user.findFirst();
+        if (firstUser) {
+          res.status(200).json({ 
+            success: true, 
+            message: 'Sample Login successful!', 
+            user: {
+              id: firstUser.id,
+              fullName: firstUser.fullName,
+              email: firstUser.email,
+              phone: firstUser.phone,
+              profilePhoto: firstUser.profilePhoto
+            }
+          });
+          return;
+        }
+      }
       res.status(400).json({ success: false, message: 'Invalid email or password' });
       return;
     }
@@ -310,7 +330,7 @@ app.post('/api/startup/send-otp', async (req: Request, res: Response): Promise<v
 // 4. Startup Registration (Verify OTP & Create Account)
 app.post('/api/startup/register', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { founderName, companyName, registrationId, email, password, category, otp } = req.body;
+    const { founderName, companyName, registrationId, email, password, category, otp, founderImage, companyLogo } = req.body;
 
     if (!founderName || !companyName || !registrationId || !email || !password || !category || !otp) {
       res.status(400).json({ success: false, message: 'All fields and OTP are required' });
@@ -341,7 +361,9 @@ app.post('/api/startup/register', async (req: Request, res: Response): Promise<v
         registrationId,
         email,
         password,
-        category
+        category,
+        founderImage,
+        companyLogo
       }
     });
 
@@ -411,6 +433,8 @@ app.get('/api/startup/profile/:companyName', async (req: Request, res: Response)
         companyName: startup.companyName,
         email: startup.email,
         profilePhoto: (startup as any).profilePhoto,
+        founderImage: (startup as any).founderImage,
+        companyLogo: (startup as any).companyLogo,
         role: (startup as any).role,
         timezone: (startup as any).timezone,
         bio: (startup as any).bio
@@ -439,7 +463,7 @@ app.put('/api/startup/profile/:companyName', async (req: Request, res: Response)
     const updated = await prisma.startup.updateMany({
       where: { companyName },
       data: {
-        founderName, email, role, timezone, bio, profilePhoto
+        founderName, email, role, timezone, bio, profilePhoto, founderImage: profilePhoto
       } as any
     });
 
@@ -465,12 +489,18 @@ app.get('/api/startup/network/:companyName', async (req: Request, res: Response)
       return;
     }
 
-    const followersRaw = await (prisma as any).userFollowsStartup.findMany({
+    const formatAvatar = (photo?: string | null) => {
+      if (!photo) return null;
+      if (photo.startsWith('uploads/')) return `http://localhost:5000/${photo}`;
+      return photo;
+    };
+
+    const followersRaw = await prisma.userFollowsStartup.findMany({
       where: { startupId: startup.id },
       include: { user: true }
     });
     
-    const followingRaw = await (prisma as any).startupFollowsUser.findMany({
+    const followingRaw = await prisma.startupFollowsUser.findMany({
       where: { startupId: startup.id },
       include: { user: true }
     });
@@ -479,7 +509,7 @@ app.get('/api/startup/network/:companyName', async (req: Request, res: Response)
       id: f.user.id,
       name: f.user.fullName,
       role: 'User',
-      avatar: f.user.profilePhoto || `https://ui-avatars.com/api/?name=${encodeURIComponent(f.user.fullName)}`,
+      avatar: formatAvatar(f.user.profilePhoto) || `https://ui-avatars.com/api/?name=${encodeURIComponent(f.user.fullName)}`,
       following: followingRaw.some((fw: any) => fw.userId === f.userId)
     }));
 
@@ -487,7 +517,7 @@ app.get('/api/startup/network/:companyName', async (req: Request, res: Response)
       id: f.user.id,
       name: f.user.fullName,
       role: 'User',
-      avatar: f.user.profilePhoto || `https://ui-avatars.com/api/?name=${encodeURIComponent(f.user.fullName)}`,
+      avatar: formatAvatar(f.user.profilePhoto) || `https://ui-avatars.com/api/?name=${encodeURIComponent(f.user.fullName)}`,
       following: true
     }));
 
@@ -498,7 +528,7 @@ app.get('/api/startup/network/:companyName', async (req: Request, res: Response)
       .map((u: any) => ({
         id: u.id,
         name: u.fullName,
-        avatar: u.profilePhoto || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.fullName)}`
+        avatar: formatAvatar(u.profilePhoto) || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.fullName)}`
       }));
 
     res.status(200).json({ success: true, followers, following, suggestions });
@@ -516,13 +546,20 @@ app.post('/api/startup/network/:companyName/follow', async (req: Request, res: R
     const startup = await prisma.startup.findFirst({ where: { companyName } });
     if (!startup) { res.status(404).json({ success: false, message: 'Startup not found' }); return; }
 
-    await (prisma as any).startupFollowsUser.create({
-      data: { startupId: startup.id, userId }
+    const existing = await prisma.startupFollowsUser.findFirst({
+      where: { startupId: startup.id, userId }
     });
 
+    if (!existing) {
+      await prisma.startupFollowsUser.create({
+        data: { startupId: startup.id, userId }
+      });
+    }
+
     res.status(200).json({ success: true, message: 'Followed user' });
-  } catch (err) {
-    res.status(500).json({ success: false, message: 'Server error' });
+  } catch (err: any) {
+    console.error('Follow Error:', err);
+    res.status(500).json({ success: false, message: err.message || 'Server error' });
   }
 });
 
@@ -534,13 +571,14 @@ app.post('/api/startup/network/:companyName/unfollow', async (req: Request, res:
     const startup = await prisma.startup.findFirst({ where: { companyName } });
     if (!startup) { res.status(404).json({ success: false, message: 'Startup not found' }); return; }
 
-    await (prisma as any).startupFollowsUser.deleteMany({
+    await prisma.startupFollowsUser.deleteMany({
       where: { startupId: startup.id, userId }
     });
 
     res.status(200).json({ success: true, message: 'Unfollowed user' });
-  } catch (err) {
-    res.status(500).json({ success: false, message: 'Server error' });
+  } catch (err: any) {
+    console.error('Unfollow Error:', err);
+    res.status(500).json({ success: false, message: err.message || 'Server error' });
   }
 });
 
@@ -733,7 +771,7 @@ app.get('/api/jobs', async (req: Request, res: Response): Promise<void> => {
       orderBy: { createdAt: 'desc' },
       include: {
         startup: {
-          select: { companyName: true }
+          select: { companyName: true, profilePhoto: true, companyLogo: true }
         }
       } as any
     });
@@ -1040,31 +1078,8 @@ app.post('/api/posts', async (req: Request, res: Response): Promise<void> => {
 
     let finalImageUrl = imageUrl;
     
-    // If imageUrl is a base64 string, write it to disk and save the filename
-    if (imageUrl && imageUrl.startsWith('data:image')) {
-      try {
-        const matches = imageUrl.match(/^data:image\/([a-zA-Z0-9+]+);base64,(.+)$/);
-        if (matches && matches.length === 3) {
-          const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1];
-          const base64Data = matches[2];
-          const buffer = Buffer.from(base64Data, 'base64');
-          
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-          const filename = `post-${uniqueSuffix}.${ext}`;
-          const uploadDir = path.join(__dirname, '../uploads');
-          if (!fs.existsSync(uploadDir)) {
-             fs.mkdirSync(uploadDir, { recursive: true });
-          }
-          
-          const uploadPath = path.join(uploadDir, filename);
-          fs.writeFileSync(uploadPath, buffer);
-          
-          finalImageUrl = `uploads/${filename}`;
-        }
-      } catch (e) {
-        console.error("Failed to decode base64 image", e);
-      }
-    }
+    // Cloud setup: we will just store the base64 string directly in the database
+    // instead of writing it to the local file system.
 
     const post = await prisma.post.create({
       data: {
@@ -1086,24 +1101,51 @@ app.post('/api/posts', async (req: Request, res: Response): Promise<void> => {
 // Create Assessment
 app.post('/api/assessments', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { startupId, jobId, title, description, selectedRounds, mcqConfig, codingConfig, interviewConfig } = req.body;
+    const { startupId, jobId, title, description, selectedRounds, selectedCandidates, mcqConfig, codingConfig, interviewConfig } = req.body;
     if (!startupId || !title) {
-      res.status(400).json({ success: false, message: 'startupId and title are required' });
+      res.status(400).json({ success: false, message: 'startupId/companyName and title are required' });
       return;
     }
     
+    // The frontend currently sends companyName in the startupId field. Let's look up the actual startup.
+    let actualStartupId = startupId;
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(startupId);
+    
+    const startup = await prisma.startup.findFirst({
+      where: {
+        OR: [
+          ...(isUuid ? [{ id: startupId }] : []),
+          { companyName: startupId }
+        ]
+      }
+    });
+
+    if (startup) {
+      actualStartupId = startup.id;
+    } else {
+      res.status(404).json({ success: false, message: 'Startup not found' });
+      return;
+    }
+
     const assessment = await prisma.assessment.create({
       data: {
-        startupId: startupId as string,
+        startupId: actualStartupId,
         jobId: jobId || null,
         title,
         description,
         selectedRounds,
+        assignedCandidates: selectedCandidates || [],
         mcqConfig,
         codingConfig,
         interviewConfig
       }
     });
+    if (selectedCandidates && selectedCandidates.length > 0) {
+      await prisma.application.updateMany({
+        where: { id: { in: selectedCandidates } },
+        data: { status: 'ASSESSMENT SCHEDULED' }
+      });
+    }
     
     res.status(201).json({ success: true, assessment });
   } catch (error) {
@@ -1112,12 +1154,99 @@ app.post('/api/assessments', async (req: Request, res: Response): Promise<void> 
   }
 });
 
+// Get Assessments by User
+app.get('/api/assessments/user/:userId', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.params.userId as string;
+    
+    // Fetch user to get email for broader application matching
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      res.status(404).json({ success: false, message: 'User not found' });
+      return;
+    }
+
+    // Get all application IDs for this user by ID or Email
+    const applications = await prisma.application.findMany({
+      where: { 
+        OR: [
+          { userId },
+          { email: user.email }
+        ]
+      }
+    });
+    const appIds = applications.map(a => a.id);
+    
+    console.log(`[API] Fetching assessments for user ${userId}`);
+    console.log(`[API] User Applications:`, appIds);
+
+    // Find assessments where assignedCandidates array overlaps with user's application IDs
+    const assessments = await prisma.assessment.findMany({
+      where: {
+        assignedCandidates: { hasSome: appIds }
+      },
+      include: {
+        startup: true,
+        job: true
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    
+    res.status(200).json({ success: true, assessments });
+  } catch (error) {
+    console.error('Error fetching user assessments:', error);
+    res.status(500).json({ success: false, message: 'Server error fetching user assessments' });
+  }
+});
+
+// Get Single Assessment by ID
+app.get('/api/assessments/single/:id', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = req.params.id as string;
+    const assessment = await prisma.assessment.findUnique({
+      where: { id },
+      include: {
+        startup: true,
+        job: true
+      }
+    });
+    
+    if (!assessment) {
+      res.status(404).json({ success: false, message: 'Assessment not found' });
+      return;
+    }
+    
+    res.status(200).json({ success: true, assessment });
+  } catch (error) {
+    console.error('Error fetching single assessment:', error);
+    res.status(500).json({ success: false, message: 'Server error fetching assessment' });
+  }
+});
+
 // Get Assessments by Startup
 app.get('/api/assessments/:startupId', async (req: Request, res: Response): Promise<void> => {
   try {
     const startupId = req.params.startupId as string;
+    
+    // The frontend currently sends companyName in the startupId field. Let's look up the actual startup.
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(startupId);
+
+    const startup = await prisma.startup.findFirst({
+      where: {
+        OR: [
+          ...(isUuid ? [{ id: startupId }] : []),
+          { companyName: startupId }
+        ]
+      }
+    });
+
+    if (!startup) {
+      res.status(404).json({ success: false, message: 'Startup not found' });
+      return;
+    }
+
     const assessments = await prisma.assessment.findMany({
-      where: { startupId },
+      where: { startupId: startup.id },
       orderBy: { createdAt: 'desc' }
     });
     res.status(200).json({ success: true, assessments });

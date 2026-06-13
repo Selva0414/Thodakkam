@@ -68,6 +68,10 @@ export default function StartupCreateAssessment() {
   // Config States for Header Cards
   const [mcqDuration, setMcqDuration] = useState('30');
   const [mcqPass, setMcqPass] = useState('60');
+  const [mcqStartDate, setMcqStartDate] = useState('');
+  const [mcqStartTime, setMcqStartTime] = useState('');
+  const [mcqEndDate, setMcqEndDate] = useState('');
+  const [mcqEndTime, setMcqEndTime] = useState('');
 
   const [codingDuration, setCodingDuration] = useState('60');
   const [codingPass, setCodingPass] = useState('60');
@@ -93,6 +97,14 @@ export default function StartupCreateAssessment() {
   const updateQuestionDifficulty = (id: number, difficulty: string) => {
     setQuestions(questions.map(q => q.id === id ? { ...q, difficulty } : q));
     setOpenDifficultyId(null);
+  };
+
+  const updateQuestionText = (id: number, text: string) => {
+    setQuestions(questions.map(q => q.id === id ? { ...q, question: text } : q));
+  };
+
+  const updateOptionText = (id: number, optLabel: string, text: string) => {
+    setQuestions(questions.map(q => q.id === id ? { ...q, [`option${optLabel}`]: text } : q));
   };
 
   const removeQuestion = (id: number) => {
@@ -132,9 +144,14 @@ export default function StartupCreateAssessment() {
           title: selectedJobId ? (jobs.find(j => j.id === selectedJobId)?.title + ' Assessment') : description.substring(0, 50),
           description,
           selectedRounds,
+          selectedCandidates,
           mcqConfig: selectedRounds.includes('mcq') ? {
             durationMin: Number(mcqDuration),
             passPercentage: Number(mcqPass),
+            startDate: mcqStartDate,
+            startTime: mcqStartTime,
+            endDate: mcqEndDate,
+            endTime: mcqEndTime,
             questions,
             questionType,
             domainConfig: questionType === 'domain' ? domainConfig : undefined
@@ -270,25 +287,27 @@ export default function StartupCreateAssessment() {
                 {(jobs.find(j => j.id === selectedJobId)?.applications || []).map((app: any) => {
                   const isSelected = selectedCandidates.includes(app.id);
                   return (
-                    <View key={app.id} style={[styles.candidateCard, isSelected && { borderColor: PRIMARY, backgroundColor: '#faf5ff' }]}>
-                      <TouchableOpacity 
-                        style={styles.checkboxContainer}
-                        onPress={() => {
-                          if (isSelected) {
-                            setSelectedCandidates(selectedCandidates.filter(id => id !== app.id));
-                          } else {
-                            setSelectedCandidates([...selectedCandidates, app.id]);
-                          }
-                        }}
-                      >
+                    <TouchableOpacity 
+                      key={app.id} 
+                      style={[styles.candidateCard, isSelected && { borderColor: PRIMARY, backgroundColor: '#faf5ff' }]}
+                      onPress={() => {
+                        if (isSelected) {
+                          setSelectedCandidates(selectedCandidates.filter(id => id !== app.id));
+                        } else {
+                          setSelectedCandidates([...selectedCandidates, app.id]);
+                        }
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <View style={styles.checkboxContainer}>
                         <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
                           {isSelected && <Check size={12} color={WHITE} />}
                         </View>
-                      </TouchableOpacity>
+                      </View>
                       
                       <View style={styles.candidateInfo}>
                         {app.user?.profilePhoto || app.profilePhoto ? (
-                          <Image source={{ uri: `http://localhost:5000/${app.user?.profilePhoto || app.profilePhoto}` }} style={styles.candidateAvatar} />
+                          <Image source={{ uri: (app.user?.profilePhoto || app.profilePhoto)?.startsWith('data:') ? (app.user?.profilePhoto || app.profilePhoto) : `http://localhost:5000/${app.user?.profilePhoto || app.profilePhoto}` }} style={styles.candidateAvatar} />
                         ) : (
                           <View style={styles.candidateAvatarPlaceholder}>
                             <Text style={styles.candidateInitials}>{(app.fullName || app.user?.fullName || 'U').substring(0, 2).toUpperCase()}</Text>
@@ -302,7 +321,7 @@ export default function StartupCreateAssessment() {
                           <Text style={styles.viewProfileText}>View Profile</Text>
                         </TouchableOpacity>
                       </View>
-                    </View>
+                    </TouchableOpacity>
                   );
                 })}
                 {(!jobs.find(j => j.id === selectedJobId)?.applications || jobs.find(j => j.id === selectedJobId)?.applications.length === 0) && (
@@ -386,6 +405,8 @@ export default function StartupCreateAssessment() {
                         <View style={{ flexDirection: 'row', gap: 8 }}>
                           {createElement('input', {
                             type: 'date',
+                            value: mcqStartDate,
+                            onChange: (e: any) => setMcqStartDate(e.target.value),
                             style: {
                               flex: 1, height: '48px', borderRadius: '8px', borderWidth: '1px', borderStyle: 'solid',
                               borderColor: '#e2e8f0', padding: '0 12px', backgroundColor: '#ffffff', color: '#0f172a',
@@ -394,6 +415,8 @@ export default function StartupCreateAssessment() {
                           })}
                           {createElement('input', {
                             type: 'time',
+                            value: mcqStartTime,
+                            onChange: (e: any) => setMcqStartTime(e.target.value),
                             style: {
                               width: '120px', height: '48px', borderRadius: '8px', borderWidth: '1px', borderStyle: 'solid',
                               borderColor: '#e2e8f0', padding: '0 12px', backgroundColor: '#ffffff', color: '#0f172a',
@@ -418,6 +441,8 @@ export default function StartupCreateAssessment() {
                         <View style={{ flexDirection: 'row', gap: 8 }}>
                           {createElement('input', {
                             type: 'date',
+                            value: mcqEndDate,
+                            onChange: (e: any) => setMcqEndDate(e.target.value),
                             style: {
                               flex: 1, height: '48px', borderRadius: '8px', borderWidth: '1px', borderStyle: 'solid',
                               borderColor: '#e2e8f0', padding: '0 12px', backgroundColor: '#ffffff', color: '#0f172a',
@@ -426,6 +451,8 @@ export default function StartupCreateAssessment() {
                           })}
                           {createElement('input', {
                             type: 'time',
+                            value: mcqEndTime,
+                            onChange: (e: any) => setMcqEndTime(e.target.value),
                             style: {
                               width: '120px', height: '48px', borderRadius: '8px', borderWidth: '1px', borderStyle: 'solid',
                               borderColor: '#e2e8f0', padding: '0 12px', backgroundColor: '#ffffff', color: '#0f172a',
@@ -571,6 +598,8 @@ export default function StartupCreateAssessment() {
                           multiline
                           numberOfLines={3}
                           textAlignVertical="top"
+                          value={q.question || ''}
+                          onChangeText={(text) => updateQuestionText(q.id, text)}
                         />
                       </View>
 
@@ -628,6 +657,8 @@ export default function StartupCreateAssessment() {
                               style={[styles.textInput, { flex: 1 }]}
                               placeholder={`Option ${opt}`}
                               placeholderTextColor="#cbd5e1"
+                              value={q[`option${opt}`] || ''}
+                              onChangeText={(text) => updateOptionText(q.id, opt, text)}
                             />
                           </View>
                         ))}

@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { 
+import {
   StyleSheet, Text, View, TextInput, TouchableOpacity, SafeAreaView, Platform, KeyboardAvoidingView, ScrollView
 } from 'react-native';
-import { 
+import {
   GraduationCap, Lock, Mail, Eye, EyeOff
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const PRIMARY_COLOR = '#662483'; // Deep purple matching the screenshot
 const TEXT_DARK = '#0f172a';
@@ -41,9 +42,10 @@ export default function LoginScreen() {
       });
       const data = await response.json();
       if (data.success && data.user) {
-        router.replace({ 
-          pathname: '/student-dashboard', 
-          params: { userId: data.user.id } 
+        await AsyncStorage.setItem('studentUserId', data.user.id);
+        router.replace({
+          pathname: '/student-dashboard',
+          params: { userId: data.user.id }
         });
       } else {
         setError(data.message || 'Invalid credentials.');
@@ -51,9 +53,9 @@ export default function LoginScreen() {
     } catch (err) {
       // Server unreachable – fall back to sample credentials
       if (email.trim().toLowerCase() === 'student@thodakkam.edu' && password === 'Student@123') {
-        router.replace({ 
-          pathname: '/student-dashboard', 
-          params: { userName: 'Student' } 
+        router.replace({
+          pathname: '/student-dashboard',
+          params: { userName: 'Student' }
         });
       } else {
         setError('Could not reach server. Sample login:\nEmail: student@thodakkam.edu\nPassword: Student@123');
@@ -65,8 +67,8 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView 
-        style={{ flex: 1 }} 
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -95,8 +97,8 @@ export default function LoginScreen() {
               <Text style={styles.label}>EMAIL ADDRESS</Text>
               <View style={styles.inputWrapper}>
                 <Mail size={18} color="#9ca3af" style={styles.inputIcon} />
-                <TextInput 
-                  style={styles.input} 
+                <TextInput
+                  style={styles.input}
                   placeholder="student@university.edu"
                   placeholderTextColor="#9ca3af"
                   keyboardType="email-address"
@@ -116,8 +118,8 @@ export default function LoginScreen() {
               </View>
               <View style={styles.inputWrapper}>
                 <Lock size={18} color="#9ca3af" style={styles.inputIcon} />
-                <TextInput 
-                  style={styles.input} 
+                <TextInput
+                  style={styles.input}
                   placeholder="••••••"
                   placeholderTextColor="#9ca3af"
                   secureTextEntry={!showPassword}
@@ -148,13 +150,6 @@ export default function LoginScreen() {
               <Text style={styles.loginButtonText}>{isLoading ? 'Verifying...' : 'Verify & Login'}</Text>
             </TouchableOpacity>
 
-            {/* Sample credential hint */}
-            <View style={styles.hintBox}>
-              <Text style={styles.hintTitle}>🔑 Sample / Registered Login</Text>
-              <Text style={styles.hintText}>Email: student@thodakkam.edu</Text>
-              <Text style={styles.hintText}>Password: Student@123</Text>
-            </View>
-
             <View style={styles.signupContainer}>
               <Text style={styles.signupText}>Don't have an account? </Text>
               <TouchableOpacity onPress={() => router.push('/register')}>
@@ -162,7 +157,7 @@ export default function LoginScreen() {
               </TouchableOpacity>
             </View>
           </View>
-          
+
           <View style={{ flex: 1, minHeight: 60 }} />
 
           {/* Footer Links */}

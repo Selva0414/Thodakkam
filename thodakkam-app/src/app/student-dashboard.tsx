@@ -12,6 +12,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import StudentHeader from '../components/StudentHeader';
 import { userStore, updateGlobalUser } from '../utils/userStore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const PRIMARY = '#5A279B';
 const BG = '#f4f5f7';
@@ -211,6 +212,11 @@ function ActivityFeed({ applications = [] }: { applications?: any[] }) {
       iconBg = '#f59e0b';
       text = `${company} issued an offer letter for the ${role} position.`;
       type = 'Offers';
+    } else if (app.status === 'ASSESSMENT SCHEDULED') {
+      icon = ClipboardList;
+      iconBg = '#8b5cf6';
+      text = `${company} scheduled an assessment for the ${role} position.`;
+      type = 'All';
     } else if (app.status === 'REJECTED') {
       icon = MessageSquare;
       iconBg = '#ef4444';
@@ -251,13 +257,13 @@ function ActivityFeed({ applications = [] }: { applications?: any[] }) {
   );
 }
 
-function AssessmentBanner() {
+function AssessmentBanner({ router }: { router: any }) {
   return (
-    <TouchableOpacity style={bannerStyles.assessmentBanner}>
+    <TouchableOpacity style={bannerStyles.assessmentBanner} onPress={() => router.push('/student-assessments')}>
       <Zap size={20} color={WHITE} />
       <View>
         <Text style={bannerStyles.bannerTitle}>Assessment is Live</Text>
-        <Text style={bannerStyles.bannerSub}>click here</Text>
+        <Text style={bannerStyles.bannerSub}>Click here to start</Text>
       </View>
     </TouchableOpacity>
   );
@@ -308,6 +314,7 @@ function BottomTabBar() {
 
 export default function StudentDashboard() {
   const params = useLocalSearchParams();
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState(userStore);
   const [applications, setApplications] = useState<any[]>([]);
@@ -315,11 +322,20 @@ export default function StudentDashboard() {
   useEffect(() => {
     async function fetchUser() {
       try {
-        const userId = params.userId;
+        let userId = params.userId || userStore.id;
+        
+        if (!userId) {
+          const storedId = await AsyncStorage.getItem('studentUserId');
+          if (storedId) {
+            userId = storedId;
+          }
+        }
+
         if (!userId) {
           // If no ID is passed, fallback to params if they exist, or defaults
           if (params.userName) {
             const newUserData = {
+              id: params.userId as string || '',
               name: (params.userName as string),
               profilePhoto: (params.profilePhoto as string) || null,
               email: '',
@@ -338,13 +354,14 @@ export default function StudentDashboard() {
 
         if (resJson.success && resJson.user) {
           let photoUrl = resJson.user.profilePhoto;
-          if (photoUrl && !photoUrl.startsWith('http')) {
+          if (photoUrl && !photoUrl.startsWith('http') && !photoUrl.startsWith('data:')) {
             // Handle both absolute and relative file paths saved in the DB
             const filename = photoUrl.split(/[/\\]/).pop();
             photoUrl = `${baseUrl}/uploads/${filename}`;
           }
 
           const newUserData = {
+            id: resJson.user.id,
             name: resJson.user.fullName,
             profilePhoto: photoUrl,
             email: resJson.user.email || '',
@@ -357,10 +374,16 @@ export default function StudentDashboard() {
         console.error('Failed to fetch user:', err);
       }
       
-      if (params.userId) {
+      let userIdToFetch = params.userId || userStore.id;
+      if (!userIdToFetch) {
+        const storedId = await AsyncStorage.getItem('studentUserId');
+        if (storedId) userIdToFetch = storedId;
+      }
+      
+      if (userIdToFetch) {
         try {
           const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
-          const appRes = await fetch(`${baseUrl}/api/applications/user/${params.userId}`);
+          const appRes = await fetch(`${baseUrl}/api/applications/user/${userIdToFetch}`);
           const appJson = await appRes.json();
           if (appJson.success && appJson.applications) {
             setApplications(appJson.applications);
@@ -393,8 +416,12 @@ export default function StudentDashboard() {
         <UpcomingInterviews applications={applications} />
         <SkillsInDemand />
         <ActivityFeed applications={applications} />
-        <AssessmentBanner />
-        <OfferBanner />
+        {applications.some((a: any) => a.status === 'ASSESSMENT SCHEDULED') && (
+          <AssessmentBanner router={router} />
+        )}
+        {applications.some((a: any) => a.status === 'OFFERED') && (
+          <OfferBanner />
+        )}
         <View style={{ height: 24 }} />
       </ScrollView>
       <BottomTabBar />

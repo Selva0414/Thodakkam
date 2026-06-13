@@ -12,6 +12,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { globalNotificationStore } from '../utils/notificationStore';
 import { userStore } from '../utils/userStore';
 import StudentHeader from '../components/StudentHeader';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const PRIMARY = '#6a1b9a';
 const BG = '#f8f9fa';
@@ -108,11 +109,15 @@ export default function StudentApply() {
     setLoading(true);
     try {
       const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
+      const fallbackId = await AsyncStorage.getItem('studentUserId');
+      const finalUserId = userStore.id || fallbackId;
+
       const response = await fetch(`${baseUrl}/api/apply`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           jobId: jobId || "mock-job-id",
+          userId: finalUserId,
           fullName: form.fullName,
           email: form.email,
           phone: form.phone,
