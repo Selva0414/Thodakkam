@@ -137,6 +137,9 @@ export default function StudentMessages() {
           
           if (activeStartups.length > 0) {
             setStartups(activeStartups);
+            if (!activeChatId) {
+              handleSelectChat(activeStartups[0].id, true, userId);
+            }
           }
         }
       }
@@ -178,15 +181,16 @@ export default function StudentMessages() {
     }
   };
 
-  const handleSelectChat = async (startupId: string, updateActiveState = true) => {
+  const handleSelectChat = async (startupId: string, updateActiveState = true, overrideUserId?: string) => {
     if (updateActiveState) {
       setActiveChatId(startupId);
       setStartups(prev => prev.map(s => ({ ...s, active: s.id === startupId })));
     }
     
-    if (!myUserId) return;
+    const uid = overrideUserId || myUserId;
+    if (!uid) return;
     try {
-      const res = await fetch(`https://thodakkam-backend.onrender.com/api/messages/${myUserId}/${startupId}`);
+      const res = await fetch(`https://thodakkam-backend.onrender.com/api/messages/${uid}/${startupId}`);
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
