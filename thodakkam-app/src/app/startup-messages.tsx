@@ -9,6 +9,7 @@ import {
 } from 'lucide-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import { globalNotificationStore } from '../utils/notificationStore';
 
 const PRIMARY = '#662483';
 const BG = '#ffffff';
@@ -44,40 +45,15 @@ export default function StartupMessages() {
   // Real-time polling effect
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    if (myUserId) {
-      interval = setInterval(async () => {
-        // Refresh active chat
-        if (activeChatId) {
-          handleSelectChat(activeChatId, false);
-        }
-        
-        // Refresh conversation list to see new incoming chats
-        if (allUsersToMessage.length > 0) {
-          try {
-            const convRes = await fetch(`https://thodakkam-backend.onrender.com/api/messages/conversations/${myUserId}`);
-            if (convRes.ok) {
-              const convData = await convRes.json();
-              if (convData.success && convData.conversationIds) {
-                setCandidates(prev => {
-                  const existingIds = prev.map(p => p.id);
-                  const newIds = convData.conversationIds.filter((id: string) => !existingIds.includes(id));
-                  if (newIds.length === 0) return prev;
-                  const newCandidates = newIds.map((id: string) => {
-                    const u = allUsersToMessage.find((u:any) => u.id === id);
-                    return u ? { id: u.id, name: u.name, active: false, avatar: u.avatar } : null;
-                  }).filter(Boolean);
-                  return [...newCandidates, ...prev];
-                });
-              }
-            }
-          } catch (e) {}
-        }
+    if (activeChatId && myUserId) {
+      interval = setInterval(() => {
+        handleSelectChat(activeChatId, false); // Fetch silently
       }, 3000);
     }
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [activeChatId, myUserId, allUsersToMessage]);
+  }, [activeChatId, myUserId]);
 
   const fetchUsers = async (userId: string) => {
     try {
@@ -193,11 +169,27 @@ export default function StartupMessages() {
       [activeChatId]: [...(prev[activeChatId] || []), newMessage]
     }));
 
+    setCandidates(prev => {
+      if (!prev.find(s => s.id === activeChatId)) {
+        const targetUser = allUsersToMessage.find(u => u.id === activeChatId);
+        if (targetUser) {
+          return [{ id: targetUser.id, name: targetUser.name, active: false, avatar: targetUser.avatar }, ...prev];
+        }
+      }
+      return prev;
+    });
+
     try {
       await fetch('https://thodakkam-backend.onrender.com/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ senderId: myUserId, receiverId: activeChatId, text: msgText })
+      });
+      
+      globalNotificationStore.addNotification({
+        title: 'New Message',
+        description: 'You received a new message',
+        type: 'info'
       });
     } catch (err) {
       console.error('Send message error:', err);
