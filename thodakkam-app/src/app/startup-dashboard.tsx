@@ -248,13 +248,7 @@ export default function StartupDashboard() {
 
       </ScrollView>
 
-      {/* Floating Elements */}
-      <View style={styles.floatingContainer}>
 
-        <TouchableOpacity style={styles.botBtn}>
-          <MessageSquare size={20} color={WHITE} />
-        </TouchableOpacity>
-      </View>
 
       {/* Bottom Navigation */}
       <View style={styles.bottomNav}>
