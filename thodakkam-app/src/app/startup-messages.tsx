@@ -44,15 +44,40 @@ export default function StartupMessages() {
   // Real-time polling effect
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    if (activeChatId && myUserId) {
-      interval = setInterval(() => {
-        handleSelectChat(activeChatId, false); // Fetch silently
+    if (myUserId) {
+      interval = setInterval(async () => {
+        // Refresh active chat
+        if (activeChatId) {
+          handleSelectChat(activeChatId, false);
+        }
+        
+        // Refresh conversation list to see new incoming chats
+        if (allUsersToMessage.length > 0) {
+          try {
+            const convRes = await fetch(`https://thodakkam-backend.onrender.com/api/messages/conversations/${myUserId}`);
+            if (convRes.ok) {
+              const convData = await convRes.json();
+              if (convData.success && convData.conversationIds) {
+                setCandidates(prev => {
+                  const existingIds = prev.map(p => p.id);
+                  const newIds = convData.conversationIds.filter((id: string) => !existingIds.includes(id));
+                  if (newIds.length === 0) return prev;
+                  const newCandidates = newIds.map((id: string) => {
+                    const u = allUsersToMessage.find((u:any) => u.id === id);
+                    return u ? { id: u.id, name: u.name, active: false, avatar: u.avatar } : null;
+                  }).filter(Boolean);
+                  return [...newCandidates, ...prev];
+                });
+              }
+            }
+          } catch (e) {}
+        }
       }, 3000);
     }
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [activeChatId, myUserId]);
+  }, [activeChatId, myUserId, allUsersToMessage]);
 
   const fetchUsers = async (userId: string) => {
     try {
