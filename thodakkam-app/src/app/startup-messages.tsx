@@ -8,6 +8,7 @@ import {
   Menu, Search, Plus, Smile, Send, Briefcase, Users, Calendar, LayoutGrid, MessageSquare, X
 } from 'lucide-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 
 const PRIMARY = '#662483';
 const BG = '#ffffff';
@@ -27,6 +28,8 @@ export default function StartupMessages() {
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [chatMessages, setChatMessages] = useState<Record<string, any[]>>({});
   const [myUserId, setMyUserId] = useState<string>('');
+  const [showEmojis, setShowEmojis] = useState(false);
+  const COMMON_EMOJIS = ['😊', '😂', '❤️', '👍', '🙏', '🔥', '🎉', '🚀', '👀'];
 
   useEffect(() => {
     AsyncStorage.getItem('startupId').then(id => {
@@ -155,10 +158,8 @@ export default function StartupMessages() {
     }
   };
 
-  const handleSendMessage = async () => {
-    if (!message.trim() || !activeChatId || !myUserId) return;
-    const msgText = message;
-    setMessage('');
+  const sendActualMessage = async (msgText: string) => {
+    if (!msgText.trim() || !activeChatId || !myUserId) return;
     
     const tempId = Date.now().toString();
     const newMessage = { id: tempId, text: msgText, isSentByMe: true, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) };
@@ -175,6 +176,25 @@ export default function StartupMessages() {
       });
     } catch (err) {
       console.error('Send message error:', err);
+    }
+  };
+
+  const handleSendMessage = () => {
+    sendActualMessage(message);
+    setMessage('');
+    setShowEmojis(false);
+  };
+
+  const handlePickImage = async () => {
+    if (!activeChatId) return;
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      base64: true,
+      quality: 0.5,
+    });
+    if (!result.canceled && result.assets[0].base64) {
+      const base64Img = `data:image/jpeg;base64,${result.assets[0].base64}`;
+      sendActualMessage(base64Img);
     }
   };
 
@@ -259,7 +279,11 @@ export default function StartupMessages() {
                   <View style={[styles.messageContent, msg.isSentByMe ? { alignItems: 'flex-end' } : null]}>
                     <Text style={styles.messageMeta}>{msg.isSentByMe ? 'You' : candidates.find(s => s.id === activeChatId)?.name} • {msg.time}</Text>
                     <View style={msg.isSentByMe ? styles.messageBubbleSent : styles.messageBubbleReceived}>
-                      <Text style={msg.isSentByMe ? styles.messageTextSent : styles.messageTextReceived}>{msg.text}</Text>
+                      {msg.text.startsWith('data:image/') ? (
+                        <Image source={{ uri: msg.text }} style={{ width: 200, height: 200, borderRadius: 8 }} resizeMode="cover" />
+                      ) : (
+                        <Text style={msg.isSentByMe ? styles.messageTextSent : styles.messageTextReceived}>{msg.text}</Text>
+                      )}
                     </View>
                   </View>
                 </View>
@@ -268,10 +292,21 @@ export default function StartupMessages() {
           )}
         </ScrollView>
 
+        {/* Emoji Bar */}
+        {showEmojis && (
+          <View style={{ flexDirection: 'row', backgroundColor: '#f8fafc', padding: 10, justifyContent: 'space-around', borderTopWidth: 1, borderColor: '#e2e8f0' }}>
+            {COMMON_EMOJIS.map(emoji => (
+              <TouchableOpacity key={emoji} onPress={() => setMessage(prev => prev + emoji)}>
+                <Text style={{ fontSize: 24 }}>{emoji}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
         {/* Input Area */}
         <View style={styles.inputContainer}>
           <View style={styles.inputWrapper}>
-            <TouchableOpacity style={styles.attachBtn}>
+            <TouchableOpacity style={styles.attachBtn} onPress={handlePickImage} disabled={!activeChatId}>
               <Plus size={20} color={TEXT_GRAY} />
             </TouchableOpacity>
             <TextInput
@@ -281,7 +316,7 @@ export default function StartupMessages() {
               value={message}
               onChangeText={setMessage}
             />
-            <TouchableOpacity style={styles.emojiBtn}>
+            <TouchableOpacity style={styles.emojiBtn} onPress={() => setShowEmojis(!showEmojis)}>
               <Smile size={20} color={TEXT_GRAY} />
             </TouchableOpacity>
           </View>

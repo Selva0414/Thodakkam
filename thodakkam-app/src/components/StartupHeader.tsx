@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, Platform, Image } from 'react-native';
-import { Bell, Search, Mail, Menu, Users, Settings } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
+import { Bell, Search, Mail, Menu, Users, Settings, MessageSquare } from 'lucide-react-native';
 import NotificationModal from './NotificationModal';
 import EmailNotificationModal from './EmailNotificationModal';
 import StartupProfileModal from './StartupProfileModal';
@@ -14,6 +15,7 @@ const TEXT_DARK = '#0f172a';
 const TEXT_GRAY = '#64748b';
 
 export default function StartupHeader({ companyName = 'Echo Digital' }: { companyName?: string }) {
+  const router = useRouter();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -75,14 +77,23 @@ export default function StartupHeader({ companyName = 'Echo Digital' }: { compan
         </View>
       </View>
 
-      <View style={styles.searchBar}>
-        <Search size={16} color={TEXT_GRAY} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search analytics, candidates..."
-          placeholderTextColor={TEXT_GRAY}
-        />
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <View style={[styles.searchBar, { flex: 1 }]}>
+          <Search size={16} color={TEXT_GRAY} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search analytics, candidates..."
+            placeholderTextColor={TEXT_GRAY}
+          />
+        </View>
+        <TouchableOpacity 
+          style={{ marginLeft: 12, padding: 10, backgroundColor: PRIMARY, borderRadius: 12 }} 
+          onPress={() => router.push({ pathname: '/startup-messages' as any, params: { companyName } })}
+        >
+          <MessageSquare size={20} color={WHITE} />
+        </TouchableOpacity>
       </View>
+      
       <NotificationModal visible={showNotifications} onClose={() => setShowNotifications(false)} role="startup" />
       <EmailNotificationModal visible={showEmailModal} onClose={() => setShowEmailModal(false)} />
 
