@@ -75,13 +75,28 @@ export default function StudentMessages() {
   }, []);
 
   useEffect(() => {
-    AsyncStorage.getItem('userId').then(id => {
-      if (id) setMyUserId(id);
+    AsyncStorage.getItem('studentUserId').then(id => {
+      if (id) {
+        setMyUserId(id);
+        fetchUsers(id);
+      }
     });
-    fetchUsers();
   }, []);
 
-  const fetchUsers = async () => {
+  // Real-time polling effect
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (activeChatId && myUserId) {
+      interval = setInterval(() => {
+        handleSelectChat(activeChatId, false); // Fetch silently
+      }, 3000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [activeChatId, myUserId]);
+
+  const fetchUsers = async (userId: string) => {
     try {
       const res = await fetch('https://thodakkam-backend.onrender.com/api/users/all');
       if (!res.ok) {
@@ -89,8 +104,9 @@ export default function StudentMessages() {
         return;
       }
       const data = await res.json();
+      let formattedUsers: any[] = [];
       if (data.success) {
-        const formattedUsers = data.users.map((u: any) => {
+        formattedUsers = data.users.map((u: any) => {
           let avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(u.fullName || 'User')}&background=0D8ABC&color=fff`;
           if (u.profilePhoto && !u.profilePhoto.startsWith('file://')) {
             avatarUrl = u.profilePhoto;
@@ -103,6 +119,22 @@ export default function StudentMessages() {
           };
         });
         setAllUsersToMessage(formattedUsers);
+      }
+      
+      // Fetch active conversations
+      const convRes = await fetch(`https://thodakkam-backend.onrender.com/api/messages/conversations/${userId}`);
+      if (convRes.ok) {
+        const convData = await convRes.json();
+        if (convData.success && convData.conversationIds) {
+          const activeStartups = convData.conversationIds.map((id: string) => {
+            const u = formattedUsers.find(u => u.id === id);
+            return u ? { id: u.id, name: u.name, active: false, avatar: u.avatar } : null;
+          }).filter(Boolean);
+          
+          if (activeStartups.length > 0) {
+            setStartups(activeStartups);
+          }
+        }
       }
     } catch (err) {
       console.error('Fetch users error:', err);
@@ -142,9 +174,11 @@ export default function StudentMessages() {
     }
   };
 
-  const handleSelectChat = async (startupId: string) => {
-    setActiveChatId(startupId);
-    setStartups(prev => prev.map(s => ({ ...s, active: s.id === startupId })));
+  const handleSelectChat = async (startupId: string, updateActiveState = true) => {
+    if (updateActiveState) {
+      setActiveChatId(startupId);
+      setStartups(prev => prev.map(s => ({ ...s, active: s.id === startupId })));
+    }
     
     if (!myUserId) return;
     try {

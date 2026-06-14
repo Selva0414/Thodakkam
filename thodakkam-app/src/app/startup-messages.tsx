@@ -31,12 +31,27 @@ export default function StartupMessages() {
   useEffect(() => {
     AsyncStorage.getItem('startupId').then(id => {
       // We will fallback to companyName if ID is missing or use userStore
-      if (id) setMyUserId(id);
+      if (id) {
+        setMyUserId(id);
+        fetchUsers(id);
+      }
     });
-    fetchUsers();
   }, []);
 
-  const fetchUsers = async () => {
+  // Real-time polling effect
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (activeChatId && myUserId) {
+      interval = setInterval(() => {
+        handleSelectChat(activeChatId, false); // Fetch silently
+      }, 3000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [activeChatId, myUserId]);
+
+  const fetchUsers = async (userId: string) => {
     try {
       const res = await fetch('https://thodakkam-backend.onrender.com/api/users/all');
       if (!res.ok) {
@@ -44,8 +59,9 @@ export default function StartupMessages() {
         return;
       }
       const data = await res.json();
+      let formattedUsers: any[] = [];
       if (data.success) {
-        const formattedUsers = data.users.map((u: any) => {
+        formattedUsers = data.users.map((u: any) => {
           let avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(u.fullName || 'User')}&background=662483&color=fff`;
           if (u.profilePhoto && !u.profilePhoto.startsWith('file://')) {
             avatarUrl = u.profilePhoto;
@@ -58,6 +74,22 @@ export default function StartupMessages() {
           };
         });
         setAllUsersToMessage(formattedUsers);
+      }
+      
+      // Fetch active conversations
+      const convRes = await fetch(`https://thodakkam-backend.onrender.com/api/messages/conversations/${userId}`);
+      if (convRes.ok) {
+        const convData = await convRes.json();
+        if (convData.success && convData.conversationIds) {
+          const activeCandidates = convData.conversationIds.map((id: string) => {
+            const u = formattedUsers.find(u => u.id === id);
+            return u ? { id: u.id, name: u.name, active: false, avatar: u.avatar } : null;
+          }).filter(Boolean);
+          
+          if (activeCandidates.length > 0) {
+            setCandidates(activeCandidates);
+          }
+        }
       }
     } catch (err) {
       console.error('Fetch users error:', err);
@@ -97,9 +129,11 @@ export default function StartupMessages() {
     }
   };
 
-  const handleSelectChat = async (candidateId: string) => {
-    setActiveChatId(candidateId);
-    setCandidates(prev => prev.map(s => ({ ...s, active: s.id === candidateId })));
+  const handleSelectChat = async (candidateId: string, updateActiveState = true) => {
+    if (updateActiveState) {
+      setActiveChatId(candidateId);
+      setCandidates(prev => prev.map(s => ({ ...s, active: s.id === candidateId })));
+    }
     
     if (!myUserId) return;
     try {
