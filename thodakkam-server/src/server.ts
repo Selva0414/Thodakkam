@@ -1200,14 +1200,27 @@ app.post('/api/posts', async (req: Request, res: Response): Promise<void> => {
 app.post('/api/posts/:id/like', async (req: Request, res: Response): Promise<void> => {
   try {
     const id = req.params.id as string;
-    const { email } = req.body;
-    if (!email) { res.status(400).json({ success: false, message: 'Email required' }); return; }
-    const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) { res.status(404).json({ success: false, message: 'User not found' }); return; }
+    const { email, companyName } = req.body;
+    if (!email && !companyName) { res.status(400).json({ success: false, message: 'Email or companyName required' }); return; }
+    
+    let userId = null;
+    let startupId = null;
+
+    if (email) {
+      const user = await prisma.user.findUnique({ where: { email } });
+      if (user) userId = user.id;
+    }
+    
+    if (!userId && companyName) {
+      const startup = await prisma.startup.findFirst({ where: { companyName } });
+      if (startup) startupId = startup.id;
+    }
+
+    if (!userId && !startupId) { res.status(404).json({ success: false, message: 'User or Startup not found' }); return; }
 
     // @ts-ignore
     const existingLike = await prisma.like.findFirst({
-      where: { postId: id, userId: user.id }
+      where: { postId: id, OR: [ { userId: userId || undefined }, { startupId: startupId || undefined } ] }
     });
 
     if (existingLike) {
@@ -1217,7 +1230,7 @@ app.post('/api/posts/:id/like', async (req: Request, res: Response): Promise<voi
     } else {
       // @ts-ignore
       await prisma.like.create({
-        data: { postId: id, userId: user.id }
+        data: { postId: id, userId, startupId }
       });
       res.status(200).json({ success: true, message: 'Liked', liked: true });
     }
@@ -1230,15 +1243,27 @@ app.post('/api/posts/:id/like', async (req: Request, res: Response): Promise<voi
 app.post('/api/posts/:id/comment', async (req: Request, res: Response): Promise<void> => {
   try {
     const id = req.params.id as string;
-    const { text, email } = req.body;
-    if (!text || !email) { res.status(400).json({ success: false, message: 'Text and email required' }); return; }
+    const { text, email, companyName } = req.body;
+    if (!text || (!email && !companyName)) { res.status(400).json({ success: false, message: 'Text and email or companyName required' }); return; }
     
-    const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) { res.status(404).json({ success: false, message: 'User not found' }); return; }
+    let userId = null;
+    let startupId = null;
+
+    if (email) {
+      const user = await prisma.user.findUnique({ where: { email } });
+      if (user) userId = user.id;
+    }
+    
+    if (!userId && companyName) {
+      const startup = await prisma.startup.findFirst({ where: { companyName } });
+      if (startup) startupId = startup.id;
+    }
+
+    if (!userId && !startupId) { res.status(404).json({ success: false, message: 'User or Startup not found' }); return; }
 
     // @ts-ignore
     const comment = await prisma.comment.create({
-      data: { text, postId: id, userId: user.id }
+      data: { text, postId: id, userId, startupId }
     });
     
     // @ts-ignore

@@ -28,6 +28,21 @@ export default function StartupCommunity() {
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('All');
+  const [companyLogo, setCompanyLogo] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (companyName) {
+      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend.onrender.com' : 'https://thodakkam-backend.onrender.com';
+      fetch(`${baseUrl}/api/startup/profile/${encodeURIComponent(companyName)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.startup?.companyLogo) {
+            setCompanyLogo(data.startup.companyLogo);
+          }
+        })
+        .catch(err => console.log('Error fetching logo:', err));
+    }
+  }, [companyName]);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
@@ -142,7 +157,7 @@ export default function StartupCommunity() {
         ) : posts.filter(p => activeCategory === 'All' || p.category === activeCategory).length === 0 ? (
           <Text style={{ textAlign: 'center', marginTop: 20, color: GRAY }}>No posts yet in {activeCategory}.</Text>
         ) : (
-          posts.filter(p => activeCategory === 'All' || p.category === activeCategory).map(post => <PostItem key={post.id} post={post} companyName={companyName} />)
+          posts.filter(p => activeCategory === 'All' || p.category === activeCategory).map(post => <PostItem key={post.id} post={post} companyName={companyName} companyLogo={companyLogo} />)
         )}
         
         </Animated.View>
@@ -179,7 +194,7 @@ export default function StartupCommunity() {
 
 // ─── Post Item Component ───────────────────────────────────────────────────────
 
-function PostItem({ post, companyName }: { post: any, companyName: string }) {
+function PostItem({ post, companyName, companyLogo }: { post: any, companyName: string, companyLogo: string | null }) {
   const initialLikes = post.likes ? post.likes.length : 0;
   // Fallback to random if no likes field
   const [likesCount, setLikesCount] = useState(post.likes ? initialLikes : Math.floor(Math.random() * 100));
@@ -205,7 +220,7 @@ function PostItem({ post, companyName }: { post: any, companyName: string }) {
       await fetch(`${baseUrl}/api/posts/${post.id}/like`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: 'startup@test.com' }) // Dummy email to avoid app crash, since backend uses email for user lookup
+        body: JSON.stringify({ companyName }) // Send companyName to identify the startup
       });
     } catch (err) {
       console.error(err);
@@ -221,15 +236,40 @@ function PostItem({ post, companyName }: { post: any, companyName: string }) {
     if (!commentText.trim() || isCommenting) return;
     setIsCommenting(true);
     
-    // Optimistic UI update for startup comment
-    const tempComment = {
-      id: Date.now().toString(),
-      text: commentText,
-      startup: { companyName, profilePhoto: null }
-    };
-    setComments([...comments, tempComment]);
-    setCommentText('');
-    setIsCommenting(false);
+    try {
+      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend.onrender.com' : 'https://thodakkam-backend.onrender.com';
+      const res = await fetch(`${baseUrl}/api/posts/${post.id}/comment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: commentText, companyName })
+      });
+      const data = await res.json();
+      if (data.success && data.comment) {
+        setComments([...comments, data.comment]);
+        setCommentText('');
+      } else {
+        // Fallback optimistic UI if server fails
+        const tempComment = {
+          id: Date.now().toString(),
+          text: commentText,
+          startup: { companyName, profilePhoto: companyLogo, companyLogo: companyLogo }
+        };
+        setComments([...comments, tempComment]);
+        setCommentText('');
+      }
+    } catch (err) {
+      console.error(err);
+      // Optimistic UI on error
+      const tempComment = {
+        id: Date.now().toString(),
+        text: commentText,
+        startup: { companyName, profilePhoto: companyLogo, companyLogo: companyLogo }
+      };
+      setComments([...comments, tempComment]);
+      setCommentText('');
+    } finally {
+      setIsCommenting(false);
+    }
   };
 
   const authorName = post.user?.fullName || post.startup?.companyName || 'Anonymous User';
@@ -332,9 +372,13 @@ function PostItem({ post, companyName }: { post: any, companyName: string }) {
 
           {/* Add Comment Input */}
           <View style={styles.commentInputRow}>
-            <View style={[styles.commentAvatar, { backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center' }]}>
-              <Text style={{ color: WHITE, fontSize: 10, fontWeight: 'bold' }}>{companyName.charAt(0).toUpperCase()}</Text>
-            </View>
+            {companyLogo ? (
+              <Image source={{ uri: companyLogo }} style={styles.commentAvatar} />
+            ) : (
+              <View style={[styles.commentAvatar, { backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center' }]}>
+                <Text style={{ color: WHITE, fontSize: 10, fontWeight: 'bold' }}>{companyName.charAt(0).toUpperCase()}</Text>
+              </View>
+            )}
             <View style={styles.commentInputWrap}>
               <TextInput 
                 style={styles.commentInput}
