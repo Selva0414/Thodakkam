@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
-  StyleSheet, Text, View, TextInput, TouchableOpacity, SafeAreaView, Platform, KeyboardAvoidingView, ScrollView
+  StyleSheet, Text, View, TextInput, TouchableOpacity, SafeAreaView, Platform, KeyboardAvoidingView, ScrollView, Animated
 } from 'react-native';
 import {
   GraduationCap, Lock, Mail, Eye, EyeOff
@@ -25,6 +25,31 @@ export default function LoginScreen() {
   const SAMPLE_PASSWORD = 'Student@123';
 
   const [isLoading, setIsLoading] = useState(false);
+
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
+  const formFadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(formFadeAnim, {
+        toValue: 1,
+        duration: 800,
+        delay: 300,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, []);
 
   const handleLogin = async () => {
     setError('');
@@ -73,26 +98,26 @@ export default function LoginScreen() {
       >
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           {/* Header */}
-          <View style={styles.header}>
+          <Animated.View style={[styles.header, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
             <View style={styles.headerIconContainer}>
               <GraduationCap size={20} color="#ffffff" />
             </View>
             <Text style={styles.headerTitle}>Student Career Portal</Text>
-          </View>
+          </Animated.View>
 
           {/* Hero */}
-          <View style={styles.heroContainer}>
+          <Animated.View style={[styles.heroContainer, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
             <Text style={styles.heroText}>Launch your career{'\n'}with confidence.</Text>
-          </View>
+          </Animated.View>
 
           {/* Welcome section */}
-          <View style={styles.welcomeSection}>
+          <Animated.View style={[styles.welcomeSection, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
             <Text style={styles.welcomeTitle}>Welcome Back</Text>
             <Text style={styles.welcomeSubtitle}>Login to continue your career journey</Text>
-          </View>
+          </Animated.View>
 
           {/* Form */}
-          <View style={styles.formContainer}>
+          <Animated.View style={[styles.formContainer, { opacity: formFadeAnim }]}>
             <View style={styles.inputContainer}>
               <Text style={styles.label}>EMAIL ADDRESS</Text>
               <View style={styles.inputWrapper}>
@@ -156,7 +181,7 @@ export default function LoginScreen() {
                 <Text style={styles.signupLink}>Sign Up</Text>
               </TouchableOpacity>
             </View>
-          </View>
+          </Animated.View>
 
           <View style={{ flex: 1, minHeight: 60 }} />
 

@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, TouchableOpacity,
-  SafeAreaView, Platform, ActivityIndicator
+  SafeAreaView, Platform, ActivityIndicator, Animated
 } from 'react-native';
 import {
   LayoutDashboard, Briefcase, MessageSquare, Users, ClipboardList, Clock, FileText, Play, CheckCircle
@@ -56,6 +56,24 @@ export default function StudentAssessments() {
   const [userData, setUserData] = useState(userStore);
   const [assessments, setAssessments] = useState<any[]>([]);
   const [completedAssessments, setCompletedAssessments] = useState<Record<string, boolean>>({});
+
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 800,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, []);
 
   useEffect(() => {
     async function fetchUserAndAssessments() {
@@ -140,6 +158,7 @@ export default function StudentAssessments() {
       <StudentHeader user={userData} />
       
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
         <View style={styles.header}>
           <Text style={styles.title}>My Assessments</Text>
           <Text style={styles.subtitle}>Complete assessments assigned by companies</Text>
@@ -201,6 +220,7 @@ export default function StudentAssessments() {
             );
           })
         )}
+        </Animated.View>
       </ScrollView>
 
       <BottomTabBar activeTab="Assessments" />

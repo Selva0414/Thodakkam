@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, TouchableOpacity,
-  SafeAreaView, TextInput, Platform, Image
+  SafeAreaView, TextInput, Platform, Image, Animated
 } from 'react-native';
 import {
   Bell, Search, Mail, Settings, LayoutDashboard, Briefcase,
@@ -55,6 +55,24 @@ export default function StudentJobs() {
   const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 800,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, []);
+
   useEffect(() => {
     fetchJobs();
   }, []);
@@ -78,14 +96,14 @@ export default function StudentJobs() {
     <SafeAreaView style={styles.safeArea}>
       <StudentHeader />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        
-        {/* Title Section */}
-        <View style={styles.titleSection}>
-          <Text style={styles.pageTitle}>Recommended for You</Text>
-          <Text style={styles.pageSubtitle}>
-            AI-matched jobs based on your <Text style={{fontWeight: '700'}}>Python</Text> and <Text style={{fontWeight: '700'}}>React</Text> expertise.
-          </Text>
-        </View>
+        <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+          {/* Title Section */}
+          <View style={styles.titleSection}>
+            <Text style={styles.pageTitle}>Recommended for You</Text>
+            <Text style={styles.pageSubtitle}>
+              AI-matched jobs based on your <Text style={{fontWeight: '700'}}>Python</Text> and <Text style={{fontWeight: '700'}}>React</Text> expertise.
+            </Text>
+          </View>
 
         {/* Filter Bar */}
         <View style={styles.filterBar}>
@@ -193,6 +211,7 @@ export default function StudentJobs() {
             <Text style={styles.uploadBtnText}>Upload Resume</Text>
           </TouchableOpacity>
         </View>
+        </Animated.View>
 
       </ScrollView>
 

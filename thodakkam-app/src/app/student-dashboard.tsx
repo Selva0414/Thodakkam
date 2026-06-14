@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, TouchableOpacity,
-  SafeAreaView, TextInput, Platform, Image
+  SafeAreaView, TextInput, Platform, Image, Animated
 } from 'react-native';
 import {
   Bell, Search, Upload, Clock, CheckCircle, Video,
@@ -319,6 +319,24 @@ export default function StudentDashboard() {
   const [userData, setUserData] = useState(userStore);
   const [applications, setApplications] = useState<any[]>([]);
 
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 800,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, []);
+
   useEffect(() => {
     async function fetchUser() {
       try {
@@ -332,7 +350,7 @@ export default function StudentDashboard() {
         }
 
         if (!userId) {
-          // If no ID is passed, fallback to params if they exist, or defaults
+          // If no ID is passed and not found in storage, fallback to defaults
           if (params.userName) {
             const newUserData = {
               id: params.userId as string || '',
@@ -411,18 +429,20 @@ export default function StudentDashboard() {
     <SafeAreaView style={styles.safeArea}>
       <StudentHeader user={userData} />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <WelcomeSection user={userData} />
-        <ApplicationOverview applications={applications} />
-        <UpcomingInterviews applications={applications} />
-        <SkillsInDemand />
-        <ActivityFeed applications={applications} />
-        {applications.some((a: any) => a.status === 'ASSESSMENT SCHEDULED') && (
-          <AssessmentBanner router={router} />
-        )}
-        {applications.some((a: any) => a.status === 'OFFERED') && (
-          <OfferBanner />
-        )}
-        <View style={{ height: 24 }} />
+        <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+          <WelcomeSection user={userData} />
+          <ApplicationOverview applications={applications} />
+          <UpcomingInterviews applications={applications} />
+          <SkillsInDemand />
+          <ActivityFeed applications={applications} />
+          {applications.some((a: any) => a.status === 'ASSESSMENT SCHEDULED') && (
+            <AssessmentBanner router={router} />
+          )}
+          {applications.some((a: any) => a.status === 'OFFERED') && (
+            <OfferBanner />
+          )}
+          <View style={{ height: 24 }} />
+        </Animated.View>
       </ScrollView>
       <BottomTabBar />
     </SafeAreaView>

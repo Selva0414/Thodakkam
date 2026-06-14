@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, TextInput, Image, Platform } from 'react-native';
-import { Bell, Search, Mail, Settings, GraduationCap } from 'lucide-react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, TextInput, Image, Platform, Modal } from 'react-native';
+import { Bell, Search, Mail, Settings, GraduationCap, User, LogOut } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import NotificationModal from './NotificationModal';
-import ProfileModal from './ProfileModal';
 import EmailNotificationModal from './EmailNotificationModal';
 import { userStore } from '../utils/userStore';
 
@@ -13,11 +14,50 @@ const DARK = '#0f172a';
 const GRAY = '#6b7280';
 
 export default function StudentHeader({ user }: { user?: { name: string, profilePhoto?: string | null, email?: string, phone?: string } }) {
+  const router = useRouter();
   const [showNotifications, setShowNotifications] = useState(false);
-  const [showProfile, setShowProfile] = useState(false);
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
-  const defaultUser = user || userStore;
-  const firstLetter = defaultUser.name && defaultUser.name !== 'Student Name' ? defaultUser.name.charAt(0).toUpperCase() : 'S';
+  
+  const [localUser, setLocalUser] = useState(user || userStore);
+
+  useEffect(() => {
+    async function checkUser() {
+      if (!localUser.id) {
+        const storedId = await AsyncStorage.getItem('studentUserId');
+        if (storedId) {
+          try {
+            const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
+            const res = await fetch(`${baseUrl}/api/user/${storedId}`);
+            const data = await res.json();
+            if (data.success && data.user) {
+              let photo = data.user.profilePhoto;
+              if (photo && !photo.startsWith('http') && !photo.startsWith('data:image')) {
+                photo = `${baseUrl}/uploads/${photo.split(/[/\\]/).pop()}`;
+              }
+              const u = {
+                id: data.user.id,
+                name: data.user.fullName,
+                email: data.user.email,
+                profilePhoto: photo,
+                phone: data.user.phone
+              };
+              userStore.id = u.id;
+              userStore.name = u.name;
+              userStore.email = u.email;
+              userStore.profilePhoto = u.profilePhoto;
+              setLocalUser(u as any);
+            }
+          } catch (e) {
+            console.error(e);
+          }
+        }
+      }
+    }
+    checkUser();
+  }, [localUser.id]);
+
+  const firstLetter = localUser.name ? localUser.name.charAt(0).toUpperCase() : 'S';
 
   return (
     <View style={navStyles.headerContainer}>
@@ -33,15 +73,42 @@ export default function StudentHeader({ user }: { user?: { name: string, profile
             <Bell size={18} color={DARK} />
             <View style={navStyles.bellDot} />
           </TouchableOpacity>
-          <TouchableOpacity style={navStyles.avatar} onPress={() => setShowProfile(true)}>
-            {defaultUser.profilePhoto ? (
-              <Image source={{ uri: defaultUser.profilePhoto }} style={navStyles.avatarImage} />
+          <TouchableOpacity style={navStyles.avatar} onPress={() => setShowProfileDropdown(!showProfileDropdown)}>
+            {localUser.profilePhoto ? (
+              <Image source={{ uri: localUser.profilePhoto }} style={navStyles.avatarImage} />
             ) : (
               <Text style={navStyles.avatarText}>{firstLetter}</Text>
             )}
           </TouchableOpacity>
         </View>
       </View>
+      
+      {/* Profile Dropdown */}
+      {showProfileDropdown && (
+        <Modal transparent visible={true} animationType="fade" onRequestClose={() => setShowProfileDropdown(false)}>
+          <TouchableOpacity style={navStyles.dropdownOverlay} onPress={() => setShowProfileDropdown(false)} activeOpacity={1}>
+            <View style={navStyles.dropdownMenu}>
+              <TouchableOpacity style={navStyles.dropdownItem} onPress={() => { setShowProfileDropdown(false); router.push('/student-profile'); }}>
+                <User size={16} color={DARK} />
+                <Text style={navStyles.dropdownItemText}>My Profile</Text>
+              </TouchableOpacity>
+              <View style={navStyles.dropdownDivider} />
+              <TouchableOpacity style={navStyles.dropdownItem} onPress={async () => {
+                setShowProfileDropdown(false);
+                await AsyncStorage.removeItem('studentUserId');
+                userStore.id = '';
+                userStore.name = '';
+                userStore.email = '';
+                userStore.profilePhoto = null;
+                router.replace('/login');
+              }}>
+                <LogOut size={16} color="#ef4444" />
+                <Text style={[navStyles.dropdownItemText, { color: '#ef4444' }]}>Log Out</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </Modal>
+      )}
 
       <View style={navStyles.searchRow}>
         <View style={navStyles.searchBar}>
@@ -61,16 +128,6 @@ export default function StudentHeader({ user }: { user?: { name: string, profile
       </View>
       <NotificationModal visible={showNotifications} onClose={() => setShowNotifications(false)} role="student" />
       <EmailNotificationModal visible={showEmailModal} onClose={() => setShowEmailModal(false)} />
-      
-      <ProfileModal 
-        visible={showProfile}
-        onClose={() => setShowProfile(false)}
-        userType="STUDENT PORTAL"
-        name={defaultUser.name}
-        email={defaultUser.email || 'student@example.com'}
-        phone={defaultUser.phone || '+91 9876543210'}
-        profilePic={defaultUser.profilePhoto}
-      />
     </View>
   );
 }
@@ -95,4 +152,17 @@ const navStyles = StyleSheet.create({
   searchBar: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: BG, borderRadius: 8, paddingHorizontal: 10, height: 36 },
   searchInput: { flex: 1, marginLeft: 6, fontSize: 12, color: DARK },
   iconBtn: { padding: 4 },
+  
+  dropdownOverlay: { flex: 1, backgroundColor: 'transparent' },
+  dropdownMenu: {
+    position: 'absolute', top: Platform.OS === 'ios' ? 90 : 60, right: 16,
+    backgroundColor: WHITE, borderRadius: 12, paddingVertical: 8, width: 160,
+    ...Platform.select({
+      web: { boxShadow: '0 4px 12px rgba(0,0,0,0.1)' },
+      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 8 }
+    })
+  },
+  dropdownItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 16, gap: 10 },
+  dropdownItemText: { fontSize: 13, fontWeight: '600', color: DARK },
+  dropdownDivider: { height: 1, backgroundColor: '#f1f5f9', marginVertical: 4 }
 });

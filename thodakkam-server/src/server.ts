@@ -139,24 +139,6 @@ app.post('/api/login', async (req: Request, res: Response): Promise<void> => {
 
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
-      // INTERCEPT FOR SAMPLE LOGIN
-      if (email === 'student@thodakkam.edu' && password === 'Student@123') {
-        const firstUser = await prisma.user.findFirst();
-        if (firstUser) {
-          res.status(200).json({ 
-            success: true, 
-            message: 'Sample Login successful!', 
-            user: {
-              id: firstUser.id,
-              fullName: firstUser.fullName,
-              email: firstUser.email,
-              phone: firstUser.phone,
-              profilePhoto: firstUser.profilePhoto
-            }
-          });
-          return;
-        }
-      }
       res.status(400).json({ success: false, message: 'Invalid email or password' });
       return;
     }
@@ -199,12 +181,104 @@ app.get('/api/user/:id', async (req: Request, res: Response): Promise<void> => {
         fullName: user.fullName,
         email: user.email,
         phone: user.phone,
-        profilePhoto: user.profilePhoto
+        location: user.location,
+        profilePhoto: user.profilePhoto,
+        resumeFile: user.resumeFile,
+        skills: user.skills,
+        education: user.education,
+        experience: user.experience,
+        portfolioUrl: user.portfolioUrl,
+        githubUrl: user.githubUrl,
+        linkedinUrl: user.linkedinUrl
       }
     });
   } catch (err) {
     console.error('Fetch user error:', err);
     res.status(500).json({ success: false, message: 'Server error fetching user' });
+  }
+});
+
+// GET all users for messaging directory
+app.get('/api/users/all', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const rawUsers = await prisma.user.findMany({
+      select: { id: true, fullName: true, email: true, profilePhoto: true }
+    });
+    const rawStartups = await prisma.startup.findMany({
+      select: { id: true, companyName: true, email: true, profilePhoto: true, companyLogo: true }
+    });
+    
+    const combined = [
+      ...rawUsers.map(u => ({ id: u.id, fullName: u.fullName, email: u.email, role: 'Student', profilePhoto: u.profilePhoto })),
+      ...rawStartups.map(s => ({ id: s.id, fullName: s.companyName, email: s.email, role: 'Startup', profilePhoto: s.companyLogo || s.profilePhoto }))
+    ];
+    
+    res.status(200).json({ success: true, users: combined });
+  } catch (err) {
+    console.error('Fetch all users error:', err);
+    res.status(500).json({ success: false, message: 'Server error fetching all users' });
+  }
+});
+
+// POST send a message
+app.post('/api/messages', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { senderId, receiverId, text } = req.body;
+    if (!senderId || !receiverId || !text) {
+      res.status(400).json({ success: false, message: 'Missing fields' });
+      return;
+    }
+    const message = await (prisma as any).message.create({
+      data: { senderId, receiverId, text }
+    });
+    res.status(201).json({ success: true, message });
+  } catch (err) {
+    console.error('Send message error:', err);
+    res.status(500).json({ success: false, message: 'Server error sending message' });
+  }
+});
+
+// GET conversation between two users
+app.get('/api/messages/:user1/:user2', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { user1, user2 } = req.params;
+    const messages = await (prisma as any).message.findMany({
+      where: {
+        OR: [
+          { senderId: user1, receiverId: user2 },
+          { senderId: user2, receiverId: user1 }
+        ]
+      },
+      orderBy: { createdAt: 'asc' }
+    });
+    res.status(200).json({ success: true, messages });
+  } catch (err) {
+    console.error('Fetch messages error:', err);
+    res.status(500).json({ success: false, message: 'Server error fetching messages' });
+  }
+});
+
+// Update user profile
+app.put('/api/user/:id', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = req.params.id as string;
+    const { 
+      fullName, phone, location, profilePhoto, resumeFile, 
+      skills, education, experience, portfolioUrl, githubUrl, linkedinUrl 
+    } = req.body;
+
+    const updatedUser = await prisma.user.update({
+      where: { id },
+      data: {
+        fullName, phone, location, profilePhoto, resumeFile,
+        skills, education, experience, portfolioUrl, githubUrl, linkedinUrl
+      } as any
+    });
+
+    res.status(200).json({ success: true, user: updatedUser });
+  } catch (err) {
+    console.error('Update user error:', err);
+    res.status(500).json({ success: false, message: 'Server error updating user profile' });
   }
 });
 
@@ -1045,7 +1119,12 @@ app.post('/api/auth/reset-password', async (req: Request, res: Response): Promis
 app.get('/api/posts', async (req: Request, res: Response): Promise<void> => {
   try {
     const posts = await prisma.post.findMany({
-      include: { user: true, startup: true },
+      include: { 
+        user: true, 
+        startup: true,
+        likes: true,
+        comments: { include: { user: true, startup: true } }
+      } as any,
       orderBy: { createdAt: 'desc' }
     });
     res.status(200).json({ success: true, posts });
@@ -1085,7 +1164,7 @@ app.post('/api/posts', async (req: Request, res: Response): Promise<void> => {
       data: {
         text,
         imageUrl: finalImageUrl,
-        category: category || 'Projects',
+        category: category || 'Project',
         userId: userId || undefined,
         startupId: startupId || undefined
       }
@@ -1094,6 +1173,63 @@ app.post('/api/posts', async (req: Request, res: Response): Promise<void> => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Server error creating post' });
+  }
+});
+
+app.post('/api/posts/:id/like', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = req.params.id as string;
+    const { email } = req.body;
+    if (!email) { res.status(400).json({ success: false, message: 'Email required' }); return; }
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) { res.status(404).json({ success: false, message: 'User not found' }); return; }
+
+    // @ts-ignore
+    const existingLike = await prisma.like.findFirst({
+      where: { postId: id, userId: user.id }
+    });
+
+    if (existingLike) {
+      // @ts-ignore
+      await prisma.like.delete({ where: { id: existingLike.id } });
+      res.status(200).json({ success: true, message: 'Unliked', liked: false });
+    } else {
+      // @ts-ignore
+      await prisma.like.create({
+        data: { postId: id, userId: user.id }
+      });
+      res.status(200).json({ success: true, message: 'Liked', liked: true });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error toggling like' });
+  }
+});
+
+app.post('/api/posts/:id/comment', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = req.params.id as string;
+    const { text, email } = req.body;
+    if (!text || !email) { res.status(400).json({ success: false, message: 'Text and email required' }); return; }
+    
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) { res.status(404).json({ success: false, message: 'User not found' }); return; }
+
+    // @ts-ignore
+    const comment = await prisma.comment.create({
+      data: { text, postId: id, userId: user.id }
+    });
+    
+    // @ts-ignore
+    const populatedComment = await prisma.comment.findUnique({
+      where: { id: comment.id },
+      include: { user: true, startup: true }
+    });
+    
+    res.status(201).json({ success: true, comment: populatedComment });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error creating comment' });
   }
 });
 

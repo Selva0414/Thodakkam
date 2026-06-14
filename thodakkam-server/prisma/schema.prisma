@@ -26,6 +26,8 @@ model Startup {
   posts              Post[]
   followingUsers     StartupFollowsUser[]
   followers          UserFollowsStartup[]
+  likes              Like[]
+  comments           Comment[]
   assessments        Assessment[]
 }
 
@@ -57,6 +59,8 @@ model User {
   posts              Post[]
   followedStartups   UserFollowsStartup[]
   startupFollowers   StartupFollowsUser[]
+  likes              Like[]
+  comments           Comment[]
 }
 
 model StartupFollowsUser {
@@ -83,11 +87,13 @@ model Post {
   id        String   @id @default(uuid())
   text      String
   imageUrl  String?
-  category  String   @default("Projects")
+  category  String   @default("Project")
   userId    String?
   user      User?    @relation(fields: [userId], references: [id])
   startupId String?
   startup   Startup? @relation(fields: [startupId], references: [id])
+  likes     Like[]
+  comments  Comment[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -159,3 +165,34 @@ model Assessment {
   updatedAt       DateTime @updatedAt
 }
 
+
+model Message {
+  id         String   @id @default(uuid())
+  senderId   String
+  receiverId String
+  text       String
+  createdAt  DateTime @default(now())
+}
+
+model Like {
+  id        String   @id @default(uuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id])
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  startupId String?
+  startup   Startup? @relation(fields: [startupId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  text      String
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id])
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  startupId String?
+  startup   Startup? @relation(fields: [startupId], references: [id])
+  createdAt DateTime @default(now())
+}

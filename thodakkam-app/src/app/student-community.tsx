@@ -1,16 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, TouchableOpacity,
-  SafeAreaView, TextInput, Platform, Image, Alert, Share
+  SafeAreaView, TextInput, Platform, Image, Alert, Share, Animated
 } from 'react-native';
 import {
   Bell, Search, Mail, Settings, LayoutDashboard, Briefcase,
   MessageSquare, Users, Image as ImageIcon, Send, GraduationCap,
-  Heart, MessageCircle, Share2, Plus, ClipboardList
+  Heart, MessageCircle, Share2, Plus, ClipboardList, ThumbsUp, Repeat, Bookmark, Smile
 } from 'lucide-react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
 import StudentHeader from '../components/StudentHeader';
+import { userStore } from '../utils/userStore';
 
 const PRIMARY = '#6a1b9a';
 const BG = '#f8f9fa';
@@ -56,6 +57,24 @@ export default function StudentCommunity() {
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('All');
 
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 800,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, []);
+
   const fetchPosts = async () => {
     try {
       const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
@@ -94,57 +113,43 @@ export default function StudentCommunity() {
     <SafeAreaView style={styles.safeArea}>
       <StudentHeader />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-
-        <View style={styles.titleRow}>
-          <Text style={styles.pageTitle}>Community Feed</Text>
-          <TouchableOpacity style={styles.addBtn} onPress={() => router.push('/student-add-post' as any)}>
-            <Plus size={18} color={WHITE} />
-          </TouchableOpacity>
-        </View>
-
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={styles.filterContent}>
-          {['All', 'Projects', 'Awards', 'Certifications'].map(cat => (
-            <TouchableOpacity
-              key={cat}
-              style={[styles.filterChip, activeCategory === cat && styles.filterChipActive]}
-              onPress={() => setActiveCategory(cat)}
-            >
-              <Text style={[styles.filterText, activeCategory === cat && styles.filterTextActive]}>{cat}</Text>
+        <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+        {/* Top Search & Filter Card */}
+        <View style={styles.topSearchCard}>
+          <View style={styles.topSearchRow}>
+            <View style={styles.searchInputWrap}>
+              <Search size={20} color={GRAY} style={styles.searchIcon} />
+              <TextInput 
+                style={styles.mainSearchInput}
+                placeholder="Search users, posts, tags..."
+                placeholderTextColor={GRAY}
+              />
+            </View>
+            <TouchableOpacity style={styles.addBtn} onPress={() => router.push('/student-add-post' as any)}>
+              <Plus size={18} color={WHITE} />
             </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        {/* Trending Tags */}
-        <View style={styles.trendingCard}>
-          <Text style={styles.trendingTitle}>Trending Tags</Text>
-          <View style={styles.tagsRow}>
-            <View style={styles.tagBadge}><Text style={styles.tagText}>#NextJS</Text></View>
-            <View style={styles.tagBadge}><Text style={styles.tagText}>#Hiring</Text></View>
-            <View style={styles.tagBadge}><Text style={styles.tagText}>#DesignChallenge</Text></View>
-            <View style={styles.tagBadge}><Text style={styles.tagText}>#TailwindCSS</Text></View>
           </View>
+          <Text style={styles.sortByText}>Sort by:</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={styles.filterContent}>
+            {['All', 'Project', 'Award', 'Certificate', 'Work Experience'].map((cat, index) => {
+              const isActive = activeCategory === cat;
+              return (
+                <TouchableOpacity
+                  key={cat}
+                  style={[styles.newFilterChip, isActive && styles.newFilterChipActive]}
+                  onPress={() => setActiveCategory(cat)}
+                >
+                  {!isActive && index === 1 && <LayoutDashboard size={14} color={GRAY} style={{marginRight: 6}}/>}
+                  {!isActive && index === 2 && <ClipboardList size={14} color={GRAY} style={{marginRight: 6}}/>}
+                  {!isActive && index === 3 && <GraduationCap size={14} color={GRAY} style={{marginRight: 6}}/>}
+                  {!isActive && index === 4 && <Briefcase size={14} color={GRAY} style={{marginRight: 6}}/>}
+                  <Text style={[styles.newFilterText, isActive && styles.newFilterTextActive]}>{cat}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
         </View>
 
-        {/* Recommended to Follow */}
-        <View style={styles.recommendedSection}>
-          <Text style={styles.recommendedTitle}>Recommended to Follow</Text>
-          <View style={styles.recommendedUser}>
-            <Image source={{ uri: 'https://i.pravatar.cc/100?img=33' }} style={styles.recAvatar} />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.recName}>James Wilson</Text>
-              <Text style={styles.recRole}>Full Stack Developer</Text>
-            </View>
-            <TouchableOpacity style={styles.followBtn}><Text style={styles.followBtnText}>Follow</Text></TouchableOpacity>
-          </View>
-          <View style={styles.recommendedUser}>
-            <Image source={{ uri: 'https://i.pravatar.cc/100?img=47' }} style={styles.recAvatar} />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.recName}>Elena Rodriguez</Text>
-              <Text style={styles.recRole}>UX Researcher</Text>
-            </View>
-            <TouchableOpacity style={styles.followBtn}><Text style={styles.followBtnText}>Follow</Text></TouchableOpacity>
-          </View>
-        </View>
 
         {/* Feed */}
         {loading ? (
@@ -154,7 +159,7 @@ export default function StudentCommunity() {
         ) : (
           posts.filter(p => activeCategory === 'All' || p.category === activeCategory).map(post => <PostItem key={post.id} post={post} />)
         )}
-
+        </Animated.View>
       </ScrollView>
 
       <BottomTabBar />
@@ -165,27 +170,70 @@ export default function StudentCommunity() {
 // ─── Post Item Component ───────────────────────────────────────────────────────
 
 function PostItem({ post }: { post: any }) {
-  // Using initial random counts to simulate data
-  const [likesCount, setLikesCount] = useState(() => Math.floor(Math.random() * 100));
-  const [commentsCount] = useState(() => Math.floor(Math.random() * 20));
-  const [liked, setLiked] = useState(false);
+  const initialLikes = post.likes ? post.likes.length : 0;
+  const initiallyLiked = post.likes ? post.likes.some((l: any) => l.user?.email === userStore.email) : false;
+  
+  const [likesCount, setLikesCount] = useState(initialLikes);
+  const [liked, setLiked] = useState(initiallyLiked);
+  
+  const [comments, setComments] = useState<any[]>(post.comments || []);
+  const [showComments, setShowComments] = useState(false);
+  const [commentText, setCommentText] = useState('');
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [isLiking, setIsLiking] = useState(false);
+  const [isCommenting, setIsCommenting] = useState(false);
 
-  const handleLike = () => {
-    if (liked) {
-      setLikesCount(prev => prev - 1);
-      setLiked(false);
-    } else {
-      setLikesCount(prev => prev + 1);
-      setLiked(true);
+  const handleLike = async () => {
+    if (isLiking) return;
+    setIsLiking(true);
+    // Optimistic UI update
+    setLiked(!liked);
+    setLikesCount((prev: number) => liked ? prev - 1 : prev + 1);
+    
+    try {
+      const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
+      await fetch(`${baseUrl}/api/posts/${post.id}/like`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: userStore.email })
+      });
+    } catch (err) {
+      console.error(err);
+      // Revert if error
+      setLiked(liked);
+      setLikesCount(likesCount);
+    } finally {
+      setIsLiking(false);
     }
   };
 
-  const handleComment = () => {
-    Alert.alert('Comments', 'Comment section coming soon!');
+  const submitComment = async () => {
+    if (!commentText.trim() || isCommenting) return;
+    setIsCommenting(true);
+    
+    try {
+      const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
+      const res = await fetch(`${baseUrl}/api/posts/${post.id}/comment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: commentText, email: userStore.email })
+      });
+      const data = await res.json();
+      if (data.success && data.comment) {
+        setComments([...comments, data.comment]);
+        setCommentText('');
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsCommenting(false);
+    }
   };
 
-  const authorName = post.user?.fullName || post.startup?.companyName || 'Anonymous Student';
+  const authorName = post.user?.fullName || post.startup?.companyName || 'Anonymous User';
   const authorInitial = authorName.charAt(0).toUpperCase();
+  const authorRole = post.user ? 'Student' : (post.startup ? 'Startup' : 'Member');
+  const profilePhoto = post.user?.profilePhoto || post.startup?.profilePhoto || post.startup?.companyLogo;
 
   const handleShare = async () => {
     try {
@@ -200,55 +248,131 @@ function PostItem({ post }: { post: any }) {
   return (
     <View style={styles.postCard}>
       <View style={styles.postHeader}>
-        {post.user?.profilePhoto ? (
-          <Image
-            source={{ uri: post.user.profilePhoto }}
-            style={styles.postAvatar}
-          />
-        ) : post.startup?.profilePhoto ? (
-          <Image
-            source={{ uri: post.startup.profilePhoto }}
-            style={styles.postAvatar}
-          />
+        {profilePhoto ? (
+          <Image source={{ uri: profilePhoto }} style={styles.postAvatar} />
         ) : (
           <View style={[styles.postAvatar, { backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center' }]}>
-            <Text style={{ color: WHITE, fontWeight: 'bold', fontSize: 14 }}>
-              {authorInitial}
-            </Text>
+            <Text style={{ color: WHITE, fontWeight: 'bold', fontSize: 16 }}>{authorInitial}</Text>
           </View>
         )}
         <View style={styles.postMeta}>
           <Text style={styles.postAuthor}>{authorName}</Text>
-          <Text style={styles.postTime}>
-            {new Date(post.createdAt).toLocaleDateString()} at {new Date(post.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </Text>
+          <Text style={styles.postTime}>{authorRole} • Just now</Text>
         </View>
-        <View style={styles.badgeWrap}>
-          <Text style={styles.badgeText}>PROJECT</Text>
-        </View>
+        {post.category && (
+          <View style={[styles.badgeWrap, { backgroundColor: '#f3e8ff' }]}>
+            <Text style={[styles.badgeText, { color: PRIMARY }]}>{post.category.toUpperCase()}</Text>
+          </View>
+        )}
+        <TouchableOpacity style={{ marginLeft: 8 }}>
+          <Text style={{ color: GRAY, fontSize: 18, fontWeight: 'bold' }}>···</Text>
+        </TouchableOpacity>
       </View>
 
-      <Text style={styles.postText}>{post.text}</Text>
+      {post.text ? <Text style={styles.postText}>{post.text}</Text> : null}
 
       {post.imageUrl && (
-        <Image source={{ uri: post.imageUrl }} style={styles.postImage} resizeMode="contain" />
+        <Image source={{ uri: post.imageUrl }} style={styles.postImage} resizeMode="cover" />
       )}
 
-      <View style={styles.postFooter}>
+      <View style={[styles.postFooter, showComments && { borderBottomWidth: 1, borderBottomColor: '#f1f5f9', paddingBottom: 16, marginBottom: 16 }]}>
         <TouchableOpacity style={styles.footerAction} onPress={handleLike}>
-          <Heart size={18} color={liked ? '#e11d48' : GRAY} fill={liked ? '#e11d48' : 'transparent'} />
-          <Text style={[styles.footerActionText, liked && { color: '#e11d48', fontWeight: 'bold' }]}>
-            {likesCount}
-          </Text>
+          <ThumbsUp size={18} color={liked ? PRIMARY : GRAY} />
+          <Text style={[styles.footerActionText, liked && { color: PRIMARY }]}>Like ({likesCount})</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.footerAction} onPress={handleComment}>
-          <MessageCircle size={18} color={GRAY} />
-          <Text style={styles.footerActionText}>{commentsCount}</Text>
+
+        <TouchableOpacity 
+          style={[styles.footerAction, showComments && styles.activeFooterBtn]} 
+          onPress={() => setShowComments(!showComments)}
+        >
+          <MessageSquare size={18} color={showComments ? PRIMARY : GRAY} />
+          <Text style={[styles.footerActionText, showComments && { color: PRIMARY }]}>Comment ({comments.length})</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.shareAction} onPress={handleShare}>
-          <Share2 size={18} color={GRAY} />
+
+        <TouchableOpacity style={styles.footerAction}>
+          <Repeat size={18} color={GRAY} />
+          <Text style={styles.footerActionText}>Repost (0)</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={[styles.footerAction, styles.shareAction]}>
+          <Bookmark size={18} color={GRAY} />
         </TouchableOpacity>
       </View>
+
+      {/* Comments Section */}
+      {showComments && (
+        <View style={styles.commentsSection}>
+          {comments.map(c => {
+            const author = c.user?.fullName || c.startup?.companyName || 'Anonymous';
+            const avatar = c.user?.profilePhoto || c.startup?.profilePhoto || c.startup?.companyLogo;
+            const role = c.user ? 'Student' : (c.startup ? 'Startup' : 'Member');
+            return (
+            <View key={c.id} style={styles.commentItem}>
+              {avatar ? (
+                <Image source={{ uri: avatar }} style={styles.commentAvatar} />
+              ) : (
+                <View style={[styles.commentAvatar, { backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center' }]}>
+                  <Text style={{ color: WHITE, fontSize: 10, fontWeight: 'bold' }}>{author.charAt(0).toUpperCase()}</Text>
+                </View>
+              )}
+              <View style={styles.commentBubble}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                  <Text style={styles.commentAuthor}>{author}</Text>
+                  <View style={styles.commentRoleBadge}>
+                    <GraduationCap size={10} color="#10b981" />
+                    <Text style={styles.commentRoleText}>{role}</Text>
+                  </View>
+                </View>
+                <Text style={styles.commentText}>{c.text}</Text>
+              </View>
+            </View>
+          )})}
+
+          {/* Add Comment Input */}
+          <View style={styles.commentInputRow}>
+            {userStore.profilePhoto ? (
+              <Image source={{ uri: userStore.profilePhoto }} style={styles.commentAvatar} />
+            ) : (
+              <View style={[styles.commentAvatar, { backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center' }]}>
+                <Text style={{ color: WHITE, fontSize: 10, fontWeight: 'bold' }}>{userStore.name ? userStore.name.charAt(0).toUpperCase() : 'S'}</Text>
+              </View>
+            )}
+            <View style={styles.commentInputWrap}>
+              <TextInput 
+                style={styles.commentInput}
+                placeholder="Add a comment..."
+                placeholderTextColor={GRAY}
+                value={commentText}
+                onChangeText={setCommentText}
+                onSubmitEditing={submitComment}
+              />
+              <TouchableOpacity style={{ padding: 4 }} onPress={() => setShowEmojiPicker(!showEmojiPicker)}>
+                <Smile size={18} color={'#fbbf24'} />
+              </TouchableOpacity>
+            </View>
+            
+            {showEmojiPicker && (
+              <View style={styles.emojiPicker}>
+                {['👍', '❤️', '😂', '😮', '😢', '👏', '🔥', '🚀'].map(emoji => (
+                  <TouchableOpacity 
+                    key={emoji} 
+                    onPress={() => {
+                      setCommentText(prev => prev + emoji);
+                      setShowEmojiPicker(false);
+                    }}
+                    style={styles.emojiBtn}
+                  >
+                    <Text style={styles.emojiText}>{emoji}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+            <TouchableOpacity style={[styles.commentSendBtn, !commentText.trim() && { opacity: 0.5 }]} onPress={submitComment} disabled={!commentText.trim()}>
+              <Send size={16} color={WHITE} />
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -260,31 +384,87 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: { padding: 16, paddingBottom: 40 },
 
-  titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, marginTop: 4 },
-  pageTitle: { fontSize: 22, fontWeight: '800', color: DARK },
-  addBtn: { width: 32, height: 32, borderRadius: 8, backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center' },
+  topSearchCard: {
+    backgroundColor: WHITE,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
+  },
+  topSearchRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 12 },
+  searchInputWrap: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+    borderRadius: 24,
+    paddingHorizontal: 16,
+    height: 44,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  addBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center' },
+  searchIcon: { marginRight: 8 },
+  mainSearchInput: { flex: 1, fontSize: 14, color: DARK, ...(Platform.OS === 'web' ? { outlineStyle: 'none' } as any : {}) },
+  sortByText: { fontSize: 13, color: GRAY, marginBottom: 8, fontWeight: '500' },
+  
+  newFilterChip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: WHITE, borderWidth: 1, borderColor: '#e2e8f0', marginRight: 8 },
+  newFilterChipActive: { backgroundColor: PRIMARY, borderColor: PRIMARY },
+  newFilterText: { fontSize: 13, fontWeight: '600', color: GRAY },
+  newFilterTextActive: { color: WHITE },
+  filterScroll: { flexGrow: 0 },
+  filterContent: { paddingRight: 16 },
 
-  filterScroll: { marginBottom: 20, flexGrow: 0 },
-  filterContent: { gap: 8, paddingRight: 16 },
-  filterChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 16, backgroundColor: '#e2e8f0' },
-  filterChipActive: { backgroundColor: PRIMARY },
-  filterText: { fontSize: 12, fontWeight: '600', color: GRAY },
-  filterTextActive: { color: WHITE },
+  createPostCard: {
+    backgroundColor: WHITE,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
+  },
+  createPostTopRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  createPostAvatar: { width: 40, height: 40, borderRadius: 20, marginRight: 12 },
+  createPostInputWrap: { flex: 1, backgroundColor: '#f8fafc', borderRadius: 20, paddingHorizontal: 16, height: 44, justifyContent: 'center', borderWidth: 1, borderColor: '#e2e8f0' },
+  createPostInput: { fontSize: 13, color: DARK, ...(Platform.OS === 'web' ? { outlineStyle: 'none' } as any : {}) },
+  
+  createPostTagsScroll: { marginBottom: 16, flexGrow: 0 },
+  createPostTags: { gap: 8, paddingRight: 16 },
+  createTagChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: WHITE, borderWidth: 1, borderColor: '#e2e8f0' },
+  createTagChipActive: { backgroundColor: '#f3e8ff', borderColor: PRIMARY },
+  createTagText: { fontSize: 11, fontWeight: '600', color: GRAY },
+  createTagTextActive: { color: PRIMARY },
 
-  trendingCard: { backgroundColor: '#cbd5e1', borderRadius: 12, padding: 16, marginBottom: 20 },
-  trendingTitle: { fontSize: 12, fontWeight: '800', color: DARK, marginBottom: 12 },
-  tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  tagBadge: { backgroundColor: WHITE, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16 },
-  tagText: { fontSize: 10, fontWeight: '700', color: DARK },
+  createPostFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  createPostActions: { flexDirection: 'row', gap: 12 },
+  createPostActionBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, backgroundColor: WHITE, borderWidth: 1, borderColor: '#e2e8f0' },
+  createPostActionText: { fontSize: 12, fontWeight: '600', color: DARK },
+  postSubmitBtn: { backgroundColor: PRIMARY, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 8 },
+  postSubmitBtnText: { color: WHITE, fontWeight: '700', fontSize: 13 },
 
-  recommendedSection: { marginBottom: 24 },
-  recommendedTitle: { fontSize: 13, fontWeight: '800', color: DARK, marginBottom: 12 },
-  recommendedUser: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  recAvatar: { width: 36, height: 36, borderRadius: 18, marginRight: 10 },
-  recName: { fontSize: 13, fontWeight: '700', color: DARK },
-  recRole: { fontSize: 10, color: GRAY },
-  followBtn: { borderWidth: 1, borderColor: DARK, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 6 },
-  followBtnText: { fontSize: 11, fontWeight: '700', color: DARK },
+  repostCardWrapper: {
+    backgroundColor: WHITE,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
+  },
+  repostHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  repostText: { fontSize: 13, color: GRAY, fontWeight: '500' },
+  
+  nestedCard: {
+    backgroundColor: '#f8fafc',
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  nestedHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  nestedAvatar: { width: 32, height: 32, borderRadius: 16, marginRight: 10 },
+  avatarBadge: { position: 'absolute', bottom: -2, right: -2, backgroundColor: '#10b981', borderRadius: 10, width: 14, height: 14, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: WHITE },
 
   postCard: {
     backgroundColor: WHITE, borderRadius: 16, padding: 16, marginBottom: 16,
@@ -305,9 +485,44 @@ const styles = StyleSheet.create({
   postImage: { width: '100%', height: 300, backgroundColor: '#f8fafc', borderRadius: 12, marginBottom: 16 },
 
   postFooter: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-  footerAction: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  footerActionText: { fontSize: 12, fontWeight: '600', color: GRAY },
-  shareAction: { marginLeft: 'auto' },
+  footerAction: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
+  activeFooterBtn: { backgroundColor: '#f3e8ff', borderWidth: 1, borderColor: PRIMARY },
+  footerActionText: { fontSize: 13, fontWeight: '600', color: GRAY },
+  shareAction: { marginLeft: 'auto', paddingHorizontal: 0 },
+
+  commentsSection: { marginTop: 4 },
+  commentItem: { flexDirection: 'row', gap: 10, marginBottom: 16 },
+  commentAvatar: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#e2e8f0' },
+  commentBubble: { flex: 1, backgroundColor: '#f8fafc', padding: 12, borderRadius: 16, borderWidth: 1, borderColor: '#f1f5f9' },
+  commentAuthor: { fontSize: 13, fontWeight: '700', color: DARK },
+  commentRoleBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#ecfdf5', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 10 },
+  commentRoleText: { fontSize: 9, fontWeight: '700', color: '#10b981', marginLeft: 4 },
+  commentText: { fontSize: 13, color: DARK, lineHeight: 18 },
+
+  commentInputRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 8, position: 'relative' },
+  commentInputWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#f8fafc', borderRadius: 20, borderWidth: 1, borderColor: '#e2e8f0', paddingHorizontal: 12, height: 40 },
+  commentInput: { flex: 1, fontSize: 13, color: DARK, ...(Platform.OS === 'web' ? { outlineStyle: 'none' } as any : {}) },
+  commentSendBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#c084fc', justifyContent: 'center', alignItems: 'center' },
+
+  emojiPicker: {
+    position: 'absolute',
+    bottom: 50,
+    right: 40,
+    backgroundColor: WHITE,
+    borderRadius: 24,
+    padding: 8,
+    flexDirection: 'row',
+    gap: 4,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    ...Platform.select({
+      web: { boxShadow: '0 4px 12px rgba(0,0,0,0.1)' },
+      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 5 },
+    }),
+    zIndex: 100,
+  },
+  emojiBtn: { padding: 6, borderRadius: 16, backgroundColor: '#f8fafc' },
+  emojiText: { fontSize: 18 },
 });
 
 const navStyles = StyleSheet.create({

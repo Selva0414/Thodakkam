@@ -21,7 +21,7 @@ export default function StudentAddPost() {
   const router = useRouter();
   const [text, setText] = useState('');
   const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [category, setCategory] = useState('Projects');
+  const [category, setCategory] = useState('Project');
   const [showDropdown, setShowDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -137,12 +137,12 @@ export default function StudentAddPost() {
 
           {showDropdown && (
             <View style={styles.dropdownMenu}>
-              {['Projects', 'Awards', 'Certifications'].map((cat, index) => (
+              {['Project', 'Certificate', 'Award', 'Work Experience'].map((cat, index) => (
                 <TouchableOpacity
                   key={cat}
                   style={[
                     styles.dropdownItem,
-                    index !== 2 && { borderBottomWidth: 1, borderBottomColor: '#f1f5f9' }
+                    index !== 3 && { borderBottomWidth: 1, borderBottomColor: '#f1f5f9' }
                   ]}
                   onPress={() => {
                     setCategory(cat);

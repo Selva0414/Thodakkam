@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   StyleSheet, Text, View, ScrollView, TouchableOpacity,
-  SafeAreaView, Platform, TextInput, Image, KeyboardAvoidingView, Modal
+  SafeAreaView, Platform, TextInput, Image, KeyboardAvoidingView, Modal, Animated
 } from 'react-native';
 import {
   Menu, Search, Plus, Smile, Send, Briefcase, Users, LayoutDashboard, ClipboardList, MessageSquare, X
@@ -49,24 +50,68 @@ export default function StudentMessages() {
   const router = useRouter();
   const [message, setMessage] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [startups, setStartups] = useState<any[]>([]);
+  const [allUsersToMessage, setAllUsersToMessage] = useState<any[]>([]);
+  const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const [chatMessages, setChatMessages] = useState<Record<string, any[]>>({});
+  const [myUserId, setMyUserId] = useState<string>('');
 
-  const [startups, setStartups] = useState([
-    { id: '1', name: 'Echo Digital', active: true, avatar: 'https://ui-avatars.com/api/?name=Echo+Digital&background=0D8ABC&color=fff' },
-    { id: '2', name: 'Figma', active: false, avatar: 'https://ui-avatars.com/api/?name=Figma&background=F24E1E&color=fff' },
-    { id: '3', name: 'Stripe', active: false, avatar: 'https://ui-avatars.com/api/?name=Stripe&background=635BFF&color=fff' },
-    { id: '4', name: 'Vercel', active: false, avatar: 'https://ui-avatars.com/api/?name=Vercel&background=000&color=fff' }
-  ]);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
 
-  const allUsersToMessage = [
-    { id: 's1', name: 'Tech Startup Inc', type: 'Startup', avatar: 'https://ui-avatars.com/api/?name=Tech+Startup+Inc&background=10b981&color=fff' },
-    { id: 'u1', name: 'Alex Johnson', type: 'Student', avatar: 'https://i.pravatar.cc/150?u=Alex' },
-    { id: 'u2', name: 'Sam Smith', type: 'Student', avatar: 'https://i.pravatar.cc/150?u=Sam' },
-    { id: 's2', name: 'OpenAI', type: 'Startup', avatar: 'https://ui-avatars.com/api/?name=Open+AI&background=000&color=fff' },
-  ];
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 800,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, []);
 
-  const handleStartConversation = (user: any) => {
+  useEffect(() => {
+    AsyncStorage.getItem('userId').then(id => {
+      if (id) setMyUserId(id);
+    });
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/users/all');
+      if (!res.ok) {
+        console.warn('API /api/users/all returned ' + res.status);
+        return;
+      }
+      const data = await res.json();
+      if (data.success) {
+        const formattedUsers = data.users.map((u: any) => {
+          let avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(u.fullName || 'User')}&background=0D8ABC&color=fff`;
+          if (u.profilePhoto && !u.profilePhoto.startsWith('file://')) {
+            avatarUrl = u.profilePhoto;
+          }
+          return {
+            id: u.id,
+            name: u.fullName || u.email,
+            type: u.role,
+            avatar: avatarUrl
+          };
+        });
+        setAllUsersToMessage(formattedUsers);
+      }
+    } catch (err) {
+      console.error('Fetch users error:', err);
+    }
+  };
+
+  const handleStartConversation = async (user: any) => {
     setIsModalVisible(false);
-    // Add user to the horizontal list if not already there and set active
+    setActiveChatId(user.id);
     setStartups(prev => {
       const exists = prev.find(s => s.id === user.id);
       const updated = prev.map(s => ({ ...s, active: false }));
@@ -75,13 +120,81 @@ export default function StudentMessages() {
       }
       return [{ id: user.id, name: user.name, active: true, avatar: user.avatar }, ...updated];
     });
+
+    if (!myUserId) return;
+
+    try {
+      const res = await fetch(`http://localhost:5000/api/messages/${myUserId}/${user.id}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          const formattedMsgs = data.messages.map((m: any) => ({
+            id: m.id,
+            text: m.text,
+            isSentByMe: m.senderId === myUserId,
+            time: new Date(m.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+          }));
+          setChatMessages(prev => ({...prev, [user.id]: formattedMsgs}));
+        }
+      }
+    } catch (err) {
+      console.error('Fetch msgs error:', err);
+    }
+  };
+
+  const handleSelectChat = async (startupId: string) => {
+    setActiveChatId(startupId);
+    setStartups(prev => prev.map(s => ({ ...s, active: s.id === startupId })));
+    
+    if (!myUserId) return;
+    try {
+      const res = await fetch(`http://localhost:5000/api/messages/${myUserId}/${startupId}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          const formattedMsgs = data.messages.map((m: any) => ({
+            id: m.id,
+            text: m.text,
+            isSentByMe: m.senderId === myUserId,
+            time: new Date(m.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+          }));
+          setChatMessages(prev => ({...prev, [startupId]: formattedMsgs}));
+        }
+      }
+    } catch (err) {
+      console.error('Fetch msgs error:', err);
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!message.trim() || !activeChatId || !myUserId) return;
+    const msgText = message;
+    setMessage('');
+    
+    // Optimistic UI update
+    const tempId = Date.now().toString();
+    const newMessage = { id: tempId, text: msgText, isSentByMe: true, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) };
+    setChatMessages(prev => ({
+      ...prev,
+      [activeChatId]: [...(prev[activeChatId] || []), newMessage]
+    }));
+
+    try {
+      await fetch('http://localhost:5000/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ senderId: myUserId, receiverId: activeChatId, text: msgText })
+      });
+    } catch (err) {
+      console.error('Send message error:', err);
+    }
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <StudentHeader />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.container}>
-        
+        <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
         {/* Startup Horizontal List */}
         <View style={styles.startupListContainer}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.startupList}>
@@ -93,7 +206,7 @@ export default function StudentMessages() {
             </TouchableOpacity>
 
             {startups.map(startup => (
-              <TouchableOpacity key={startup.id} style={styles.startupItem}>
+              <TouchableOpacity key={startup.id} style={styles.startupItem} onPress={() => handleSelectChat(startup.id)}>
                 <View style={styles.avatarContainer}>
                   <Image source={{ uri: startup.avatar }} style={[styles.startupAvatar, startup.active && styles.activeAvatarBorder]} />
                   {startup.active && <View style={styles.activeDot} />}
@@ -106,57 +219,36 @@ export default function StudentMessages() {
 
         {/* Chat Area */}
         <ScrollView style={styles.chatArea} contentContainerStyle={styles.chatContent}>
-          <View style={styles.dateLabelContainer}>
-            <View style={styles.dateLabel}>
-              <Text style={styles.dateLabelText}>TODAY</Text>
+          {!activeChatId ? (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 100 }}>
+              <MessageSquare size={48} color="#cbd5e1" />
+              <Text style={{ marginTop: 16, color: '#94a3b8', fontSize: 16 }}>Select or start a new conversation</Text>
             </View>
-          </View>
-
-          {/* Received Message */}
-          <View style={styles.messageRow}>
-            <Image source={{ uri: startups[0].avatar }} style={styles.messageAvatar} />
-            <View style={styles.messageContent}>
-              <Text style={styles.messageMeta}>Echo Digital • 10:24 AM</Text>
-              <View style={styles.messageBubbleReceived}>
-                <Text style={styles.messageTextReceived}>Hey! Did you get a chance to look at the assessment assignment?</Text>
-              </View>
-            </View>
-          </View>
-
-          {/* Sent Message */}
-          <View style={[styles.messageRow, styles.messageRowSent]}>
-            <View style={[styles.messageContent, { alignItems: 'flex-end' }]}>
-              <Text style={styles.messageMeta}>You • 10:30 AM</Text>
-              <View style={styles.messageBubbleSent}>
-                <Text style={styles.messageTextSent}>Yes! I just finished the first draft. Sending it over now.</Text>
-              </View>
-
-              {/* Attachment */}
-              <View style={styles.attachmentCard}>
-                <View style={styles.attachmentPreview}>
-                  <Image source={{ uri: 'https://via.placeholder.com/300x150.png?text=Assignment' }} style={styles.attachmentImg} />
+          ) : (
+            <>
+              <View style={styles.dateLabelContainer}>
+                <View style={styles.dateLabel}>
+                  <Text style={styles.dateLabelText}>TODAY</Text>
                 </View>
-                <View style={styles.attachmentFooter}>
-                  <View>
-                    <Text style={styles.attachmentName}>assignment_v1.pdf</Text>
-                    <Text style={styles.attachmentSize}>2.4 MB</Text>
+              </View>
+
+              {(chatMessages[activeChatId] || []).length === 0 && (
+                <Text style={{ textAlign: 'center', color: TEXT_GRAY, marginTop: 20 }}>No messages yet. Say hi!</Text>
+              )}
+
+              {(chatMessages[activeChatId] || []).map((msg: any) => (
+                <View key={msg.id} style={[styles.messageRow, msg.isSentByMe ? styles.messageRowSent : null]}>
+                  {!msg.isSentByMe && <Image source={{ uri: startups.find(s => s.id === activeChatId)?.avatar }} style={styles.messageAvatar} />}
+                  <View style={[styles.messageContent, msg.isSentByMe ? { alignItems: 'flex-end' } : null]}>
+                    <Text style={styles.messageMeta}>{msg.isSentByMe ? 'You' : startups.find(s => s.id === activeChatId)?.name} • {msg.time}</Text>
+                    <View style={msg.isSentByMe ? styles.messageBubbleSent : styles.messageBubbleReceived}>
+                      <Text style={msg.isSentByMe ? styles.messageTextSent : styles.messageTextReceived}>{msg.text}</Text>
+                    </View>
                   </View>
-                  <Search size={16} color={TEXT_DARK} />
                 </View>
-              </View>
-            </View>
-          </View>
-
-          {/* Received Message */}
-          <View style={styles.messageRow}>
-            <Image source={{ uri: startups[0].avatar }} style={styles.messageAvatar} />
-            <View style={styles.messageContent}>
-              <Text style={styles.messageMeta}>Echo Digital • 10:32 AM</Text>
-              <View style={styles.messageBubbleReceived}>
-                <Text style={styles.messageTextReceived}>This looks amazing! Thanks for getting it to us so quickly. We'll be in touch soon.</Text>
-              </View>
-            </View>
-          </View>
+              ))}
+            </>
+          )}
         </ScrollView>
 
         {/* Input Area */}
@@ -176,11 +268,12 @@ export default function StudentMessages() {
               <Smile size={20} color={TEXT_GRAY} />
             </TouchableOpacity>
           </View>
-          <TouchableOpacity style={styles.sendBtn}>
+          <TouchableOpacity style={[styles.sendBtn, !activeChatId && { opacity: 0.5 }]} onPress={handleSendMessage} disabled={!activeChatId}>
             <Send size={18} color={WHITE} />
           </TouchableOpacity>
         </View>
 
+        </Animated.View>
         {/* Bottom Navigation */}
         <BottomTabBar activeTab="Messages" />
       </KeyboardAvoidingView>

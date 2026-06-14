@@ -1,9 +1,9 @@
 export const userStore = {
   id: '' as string,
-  name: 'Student Name',
+  name: '' as string,
   profilePhoto: null as string | null,
-  email: 'student@example.com',
-  phone: '+91 9876543210'
+  email: '' as string,
+  phone: '' as string
 };
 
 export const updateGlobalUser = (user: any) => {
