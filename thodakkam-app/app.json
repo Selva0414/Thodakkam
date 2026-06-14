@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "thodakkam-app",
+    "name": "Thodakkam",
     "slug": "thodakkam-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -26,10 +26,9 @@
       [
         "expo-splash-screen",
         {
-            "image": "./assets/images/Thodakkam logo.jpeg",
-            "backgroundColor": "#FFFFFF",
-            "imageWidth": 150
-          }
+          "image": "./assets/images/Thodakkam logo.jpeg",
+          "backgroundColor": "#FFFFFF",
+          "imageWidth": 150
         }
       ],
       "@react-native-community/datetimepicker"
