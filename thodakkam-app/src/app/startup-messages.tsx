@@ -446,7 +446,7 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: WHITE },
   container: { flex: 1 },
 
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 50 : 30, paddingBottom: 16, backgroundColor: WHITE },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 50 : 40, paddingBottom: 16, backgroundColor: WHITE },
   headerTitle: { fontSize: 18, fontWeight: '800', color: TEXT_DARK },
   headerRight: { flexDirection: 'row', alignItems: 'center' },
   logoBox: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#f1f5f9', justifyContent: 'center', alignItems: 'center' },

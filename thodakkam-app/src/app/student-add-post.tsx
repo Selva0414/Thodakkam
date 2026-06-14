@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: WHITE },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 50 : 20, paddingBottom: 16,
+    paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 50 : 40, paddingBottom: 16,
     borderBottomWidth: 1, borderBottomColor: '#f1f5f9'
   },
   iconBtn: { padding: 4 },

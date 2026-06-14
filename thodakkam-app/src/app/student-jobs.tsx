@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
   
   headerContainer: {
     backgroundColor: WHITE,
-    paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 50 : 20, paddingBottom: 16,
+    paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 50 : 40, paddingBottom: 16,
   },
   headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   logoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -319,7 +319,7 @@ const tabBarStyles = StyleSheet.create({
   container: {
     flexDirection: 'row', backgroundColor: WHITE,
     borderTopWidth: 1, borderTopColor: '#f0f0f0',
-    paddingBottom: Platform.OS === 'ios' ? 20 : 8,
+    paddingBottom: Platform.OS === 'ios' ? 30 : 24,
     paddingTop: 10,
   },
   tab: { flex: 1, alignItems: 'center', gap: 4 },

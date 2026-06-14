@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: BG },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: WHITE, paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 20,
+    backgroundColor: WHITE, paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40,
     paddingBottom: 20, borderBottomWidth: 1, borderBottomColor: '#e2e8f0'
   },
   backBtn: { flexDirection: 'row', alignItems: 'center', gap: 6 },

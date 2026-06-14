@@ -1054,7 +1054,7 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#fdfcfc' },
   header: { 
     flexDirection: 'row', alignItems: 'center', backgroundColor: WHITE, 
-    paddingHorizontal: 24, paddingTop: Platform.OS === 'ios' ? 60 : 20, paddingBottom: 20,
+    paddingHorizontal: 24, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 20,
     borderBottomWidth: 1, borderBottomColor: BORDER
   },
   headerMobile: { paddingHorizontal: 16 },

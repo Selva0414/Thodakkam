@@ -393,7 +393,7 @@ export default function StartupAddJob() {
                 <X size={20} color={TEXT_DARK} />
               </TouchableOpacity>
             </View>
-            <ScrollView style={{ flex: 1 }}>
+            <ScrollView showsVerticalScrollIndicator={false}>
               {pickerConfig.options.map(opt => (
                 <TouchableOpacity 
                   key={opt} 
@@ -481,7 +481,7 @@ const styles = StyleSheet.create({
   primaryBtnText: { color: WHITE, fontSize: 13, fontWeight: '700' },
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: WHITE, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: '50%' },
+  modalContent: { backgroundColor: WHITE, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: '80%' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   modalTitle: { fontSize: 18, fontWeight: '800', color: TEXT_DARK },
   closeBtn: { padding: 4 },

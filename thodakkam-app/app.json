@@ -11,6 +11,7 @@
       "icon": "./assets/images/Thodakkam logo.jpeg"
     },
     "android": {
+      "package": "com.thodakkam.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/Thodakkam logo.jpeg",
         "backgroundColor": "#FFFFFF"
@@ -36,6 +37,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "41c97160-db4c-4fe3-a46b-6bd2921acce1"
+      }
+    },
+    "owner": "vishnuvadhan"
   }
 }

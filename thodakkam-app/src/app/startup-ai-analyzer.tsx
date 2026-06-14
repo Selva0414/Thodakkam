@@ -245,7 +245,7 @@ export default function StartupAiAnalyzer() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: WHITE },
   
-  headerContainer: { paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 50 : 30, paddingBottom: 16, backgroundColor: WHITE, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
+  headerContainer: { paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 50 : 40, paddingBottom: 16, backgroundColor: WHITE, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
   headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   companyInfo: { flexDirection: 'row', alignItems: 'center' },
   logoBox: { width: 36, height: 36, borderRadius: 8, backgroundColor: '#336155', justifyContent: 'center', alignItems: 'center', marginRight: 10 },

@@ -135,7 +135,7 @@ export default function StudentHeader({ user }: { user?: { id?: string, name: st
 const navStyles = StyleSheet.create({
   headerContainer: {
     backgroundColor: WHITE,
-    paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 50 : 20, paddingBottom: 16,
+    paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 50 : 40, paddingBottom: 16,
   },
   headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   logoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },

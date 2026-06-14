@@ -573,7 +573,7 @@ const tabBarStyles = StyleSheet.create({
   container: {
     flexDirection: 'row', backgroundColor: WHITE,
     borderTopWidth: 1, borderTopColor: '#f0f0f0',
-    paddingBottom: Platform.OS === 'ios' ? 20 : 8,
+    paddingBottom: Platform.OS === 'ios' ? 30 : 24,
     paddingTop: 10,
   },
   tab: { flex: 1, alignItems: 'center', gap: 4 },
