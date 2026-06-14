@@ -258,6 +258,27 @@ app.get('/api/messages/:user1/:user2', async (req: Request, res: Response): Prom
   }
 });
 
+// GET all active conversation user IDs for a user
+app.get('/api/messages/conversations/:userId', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { userId } = req.params;
+    const messages = await (prisma as any).message.findMany({
+      where: {
+        OR: [ { senderId: userId }, { receiverId: userId } ]
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    const uniqueIds = new Set<string>();
+    messages.forEach((m: any) => {
+      uniqueIds.add(m.senderId === userId ? m.receiverId : m.senderId);
+    });
+    res.status(200).json({ success: true, conversationIds: Array.from(uniqueIds) });
+  } catch (err) {
+    console.error('Fetch conversations error:', err);
+    res.status(500).json({ success: false, message: 'Server error fetching conversations' });
+  }
+});
+
 // Update user profile
 app.put('/api/user/:id', async (req: Request, res: Response): Promise<void> => {
   try {
