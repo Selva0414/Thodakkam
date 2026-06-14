@@ -5,7 +5,7 @@ import {
   SafeAreaView, Platform, TextInput, Image, KeyboardAvoidingView, Modal
 } from 'react-native';
 import {
-  Menu, Search, Plus, Smile, Send, Briefcase, Users, Calendar, LayoutGrid, MessageSquare, X
+  Menu, Search, Plus, Smile, Send, Briefcase, Users, Calendar, LayoutGrid, MessageSquare, X, ArrowLeft
 } from 'lucide-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -30,7 +30,21 @@ export default function StartupMessages() {
   const [chatMessages, setChatMessages] = useState<Record<string, any[]>>({});
   const [myUserId, setMyUserId] = useState<string>('');
   const [showEmojis, setShowEmojis] = useState(false);
+  const [companyLogo, setCompanyLogo] = useState<string | null>(null);
   const COMMON_EMOJIS = ['😊', '😂', '❤️', '👍', '🙏', '🔥', '🎉', '🚀', '👀'];
+
+  useEffect(() => {
+    if (companyName) {
+      fetch(`https://thodakkam-backend.onrender.com/api/startup/profile/${encodeURIComponent(companyName)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.startup?.companyLogo) {
+            setCompanyLogo(data.startup.companyLogo);
+          }
+        })
+        .catch(err => console.log('Error fetching logo:', err));
+    }
+  }, [companyName]);
 
   useEffect(() => {
     AsyncStorage.getItem('startupId').then(id => {
@@ -84,14 +98,21 @@ export default function StartupMessages() {
       const convRes = await fetch(`https://thodakkam-backend.onrender.com/api/messages/conversations/${userId}`);
       if (convRes.ok) {
         const convData = await convRes.json();
-        if (convData.success && convData.conversationIds) {
-          const activeCandidates = convData.conversationIds.map((id: string) => {
+        const pinnedStr = await AsyncStorage.getItem(`pinned_candidates_${userId}`);
+        let pinnedIds: string[] = [];
+        if (pinnedStr) {
+          try { pinnedIds = JSON.parse(pinnedStr); } catch(e){}
+        }
+
+        if (convData.success) {
+          const allIds = new Set<string>([...pinnedIds, ...(convData.conversationIds || [])]);
+          const activeCandidates = Array.from(allIds).map((id: string) => {
             const u = formattedUsers.find(u => u.id === id);
             return u ? { id: u.id, name: u.name, active: false, avatar: u.avatar } : null;
           }).filter(Boolean);
           
-          if (activeCandidates.length > 0) {
-            setCandidates(activeCandidates);
+          if (activeCandidates.length > 0 && activeCandidates[0]) {
+            setCandidates(activeCandidates as any[]);
             if (!activeChatId) {
               handleSelectChat(activeCandidates[0].id, true, userId);
             }
@@ -114,6 +135,19 @@ export default function StartupMessages() {
       }
       return [{ id: user.id, name: user.name, active: true, avatar: user.avatar }, ...updated];
     });
+    
+    if (myUserId) {
+      AsyncStorage.getItem(`pinned_candidates_${myUserId}`).then(pinnedStr => {
+        let pinnedIds: string[] = [];
+        if (pinnedStr) {
+          try { pinnedIds = JSON.parse(pinnedStr); } catch(e){}
+        }
+        if (!pinnedIds.includes(user.id)) {
+          pinnedIds.unshift(user.id);
+          AsyncStorage.setItem(`pinned_candidates_${myUserId}`, JSON.stringify(pinnedIds));
+        }
+      });
+    }
     
     if (!myUserId) return;
 
@@ -240,15 +274,16 @@ export default function StartupMessages() {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()}>
-            <Menu size={24} color={TEXT_DARK} />
+            <ArrowLeft size={24} color={TEXT_DARK} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Messages</Text>
           <View style={styles.headerRight}>
-            <TouchableOpacity style={{ marginRight: 16 }}>
-              <Search size={20} color={TEXT_DARK} />
-            </TouchableOpacity>
-            <View style={styles.logoBox}>
-              <Text style={styles.logoText}>{companyName.substring(0, 3).toUpperCase()}</Text>
+            <View style={[styles.logoBox, companyLogo && { backgroundColor: 'transparent', borderWidth: 1, borderColor: '#e2e8f0' }]}>
+              {companyLogo ? (
+                <Image source={{ uri: companyLogo }} style={{ width: '100%', height: '100%', borderRadius: 16, resizeMode: 'cover' }} />
+              ) : (
+                <Text style={styles.logoText}>{companyName.substring(0, 3).toUpperCase()}</Text>
+              )}
             </View>
           </View>
         </View>

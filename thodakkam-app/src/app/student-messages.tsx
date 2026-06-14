@@ -129,14 +129,21 @@ export default function StudentMessages() {
       const convRes = await fetch(`https://thodakkam-backend.onrender.com/api/messages/conversations/${userId}`);
       if (convRes.ok) {
         const convData = await convRes.json();
-        if (convData.success && convData.conversationIds) {
-          const activeStartups = convData.conversationIds.map((id: string) => {
+        const pinnedStr = await AsyncStorage.getItem(`pinned_startups_${userId}`);
+        let pinnedIds: string[] = [];
+        if (pinnedStr) {
+          try { pinnedIds = JSON.parse(pinnedStr); } catch(e){}
+        }
+
+        if (convData.success) {
+          const allIds = new Set<string>([...pinnedIds, ...(convData.conversationIds || [])]);
+          const activeStartups = Array.from(allIds).map((id: string) => {
             const u = formattedUsers.find(u => u.id === id);
             return u ? { id: u.id, name: u.name, active: false, avatar: u.avatar } : null;
           }).filter(Boolean);
           
-          if (activeStartups.length > 0) {
-            setStartups(activeStartups);
+          if (activeStartups.length > 0 && activeStartups[0]) {
+            setStartups(activeStartups as any[]);
             if (!activeChatId) {
               handleSelectChat(activeStartups[0].id, true, userId);
             }
@@ -159,6 +166,19 @@ export default function StudentMessages() {
       }
       return [{ id: user.id, name: user.name, active: true, avatar: user.avatar }, ...updated];
     });
+
+    if (myUserId) {
+      AsyncStorage.getItem(`pinned_startups_${myUserId}`).then(pinnedStr => {
+        let pinnedIds: string[] = [];
+        if (pinnedStr) {
+          try { pinnedIds = JSON.parse(pinnedStr); } catch(e){}
+        }
+        if (!pinnedIds.includes(user.id)) {
+          pinnedIds.unshift(user.id);
+          AsyncStorage.setItem(`pinned_startups_${myUserId}`, JSON.stringify(pinnedIds));
+        }
+      });
+    }
 
     if (!myUserId) return;
 
