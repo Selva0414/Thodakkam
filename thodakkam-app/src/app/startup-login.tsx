@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { 
   StyleSheet, Text, View, TextInput, TouchableOpacity, SafeAreaView, Platform, KeyboardAvoidingView, ScrollView
 } from 'react-native';
@@ -38,6 +39,7 @@ export default function StartupLoginScreen() {
       });
       const data = await response.json();
       if (data.success) {
+        await AsyncStorage.setItem('startupId', data.startup.id);
         alert(`Welcome back, ${data.startup.founderName}!`);
         // Navigate to the startup dashboard
         router.replace({
