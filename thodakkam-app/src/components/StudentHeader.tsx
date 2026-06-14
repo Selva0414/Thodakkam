@@ -13,7 +13,7 @@ const WHITE = '#ffffff';
 const DARK = '#0f172a';
 const GRAY = '#6b7280';
 
-export default function StudentHeader({ user }: { user?: { name: string, profilePhoto?: string | null, email?: string, phone?: string } }) {
+export default function StudentHeader({ user }: { user?: { id?: string, name: string, profilePhoto?: string | null, email?: string, phone?: string } }) {
   const router = useRouter();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
