@@ -79,7 +79,7 @@ export default function StudentApply() {
           return;
         }
 
-        const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
+        const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend.onrender.com' : 'https://thodakkam-backend.onrender.com';
         const response = await fetch(`${baseUrl}/api/apply/check?jobId=${jId}&email=${email}`);
         
         if (!response.ok) {
@@ -108,7 +108,7 @@ export default function StudentApply() {
 
     setLoading(true);
     try {
-      const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
+      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend.onrender.com' : 'https://thodakkam-backend.onrender.com';
       const fallbackId = await AsyncStorage.getItem('studentUserId');
       const finalUserId = userStore.id || fallbackId;
 

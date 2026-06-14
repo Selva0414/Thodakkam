@@ -5,7 +5,7 @@ import { ShieldCheck, Mail, Lock, Eye, EyeOff } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
 
-const BASE_URL = 'http://localhost:5000'; // Make sure this matches your actual backend URL or use your machine's IP address
+const BASE_URL = 'https://thodakkam-backend.onrender.com'; // Make sure this matches your actual backend URL or use your machine's IP address
 
 export default function AdminLoginScreen() {
   const router = useRouter();

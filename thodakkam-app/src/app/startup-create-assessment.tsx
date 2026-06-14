@@ -35,7 +35,7 @@ export default function StartupCreateAssessment() {
 
   const fetchJobs = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/api/jobs/startup/${companyName}`);
+      const response = await fetch(`https://thodakkam-backend.onrender.com/api/jobs/startup/${companyName}`);
       if (!response.ok) throw new Error(`Server returned ${response.status}`);
       const data = await response.json();
       if (data.success) {
@@ -135,7 +135,7 @@ export default function StartupCreateAssessment() {
     }
     
     try {
-      const response = await fetch('http://localhost:5000/api/assessments', {
+      const response = await fetch('https://thodakkam-backend.onrender.com/api/assessments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -307,7 +307,7 @@ export default function StartupCreateAssessment() {
                       
                       <View style={styles.candidateInfo}>
                         {app.user?.profilePhoto || app.profilePhoto ? (
-                          <Image source={{ uri: (app.user?.profilePhoto || app.profilePhoto)?.startsWith('data:') ? (app.user?.profilePhoto || app.profilePhoto) : `http://localhost:5000/${app.user?.profilePhoto || app.profilePhoto}` }} style={styles.candidateAvatar} />
+                          <Image source={{ uri: (app.user?.profilePhoto || app.profilePhoto)?.startsWith('data:') ? (app.user?.profilePhoto || app.profilePhoto) : `https://thodakkam-backend.onrender.com/${app.user?.profilePhoto || app.profilePhoto}` }} style={styles.candidateAvatar} />
                         ) : (
                           <View style={styles.candidateAvatarPlaceholder}>
                             <Text style={styles.candidateInitials}>{(app.fullName || app.user?.fullName || 'U').substring(0, 2).toUpperCase()}</Text>

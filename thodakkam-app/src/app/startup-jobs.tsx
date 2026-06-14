@@ -41,7 +41,7 @@ export default function StartupJobs() {
   const fetchJobs = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:5000/api/jobs/startup/${companyName}`);
+      const response = await fetch(`https://thodakkam-backend.onrender.com/api/jobs/startup/${companyName}`);
       
       if (!response.ok) {
         throw new Error(`Server returned ${response.status}`);

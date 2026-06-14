@@ -366,7 +366,7 @@ export default function StudentDashboard() {
           return;
         }
 
-        const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
+        const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend.onrender.com' : 'https://thodakkam-backend.onrender.com';
         const response = await fetch(`${baseUrl}/api/user/${userId}`);
         const resJson = await response.json();
 
@@ -400,7 +400,7 @@ export default function StudentDashboard() {
       
       if (userIdToFetch) {
         try {
-          const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
+          const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend.onrender.com' : 'https://thodakkam-backend.onrender.com';
           const appRes = await fetch(`${baseUrl}/api/applications/user/${userIdToFetch}`);
           const appJson = await appRes.json();
           if (appJson.success && appJson.applications) {

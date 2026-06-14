@@ -38,7 +38,7 @@ export default function StartupMessages() {
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/users/all');
+      const res = await fetch('https://thodakkam-backend.onrender.com/api/users/all');
       if (!res.ok) {
         console.warn('API /api/users/all returned ' + res.status);
         return;
@@ -79,7 +79,7 @@ export default function StartupMessages() {
     if (!myUserId) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/messages/${myUserId}/${user.id}`);
+      const res = await fetch(`https://thodakkam-backend.onrender.com/api/messages/${myUserId}/${user.id}`);
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
@@ -103,7 +103,7 @@ export default function StartupMessages() {
     
     if (!myUserId) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/messages/${myUserId}/${candidateId}`);
+      const res = await fetch(`https://thodakkam-backend.onrender.com/api/messages/${myUserId}/${candidateId}`);
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
@@ -134,7 +134,7 @@ export default function StartupMessages() {
     }));
 
     try {
-      await fetch('http://localhost:5000/api/messages', {
+      await fetch('https://thodakkam-backend.onrender.com/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ senderId: myUserId, receiverId: activeChatId, text: msgText })

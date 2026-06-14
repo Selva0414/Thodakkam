@@ -59,7 +59,7 @@ export default function LoginScreen() {
     }
     setIsLoading(true);
     try {
-      const BACKEND_URL = Platform.OS === 'web' ? 'http://localhost:5000' : 'http://10.0.2.2:5000';
+      const BACKEND_URL = Platform.OS === 'web' ? 'https://thodakkam-backend.onrender.com' : 'https://thodakkam-backend.onrender.com';
       const response = await fetch(`${BACKEND_URL}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

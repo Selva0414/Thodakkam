@@ -32,7 +32,7 @@ export default function StartupDashboard() {
   useEffect(() => {
     async function fetchApps() {
       try {
-        const baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
+        const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend.onrender.com' : 'https://thodakkam-backend.onrender.com';
         const res = await fetch(`${baseUrl}/api/applications/startup/${encodeURIComponent(companyName)}`);
         const data = await res.json();
         if (data.success && data.applications) {
