@@ -375,10 +375,6 @@ export default function StartupCandidates() {
         
         <View style={styles.fabRow}>
           <View style={{ flex: 1 }} />
-          <TouchableOpacity style={styles.messageFab} onPress={() => router.push({ pathname: '/startup-messages' as any, params: { companyName } })}>
-            <MessageSquare size={16} color={WHITE} style={{ marginRight: 8 }} />
-            <Text style={styles.messageFabText}>Message</Text>
-          </TouchableOpacity>
         </View>
       </View>
 

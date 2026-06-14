@@ -250,10 +250,7 @@ export default function StartupDashboard() {
 
       {/* Floating Elements */}
       <View style={styles.floatingContainer}>
-        <TouchableOpacity style={styles.msgPill} onPress={() => router.push({ pathname: '/startup-messages' as any, params: { companyName } })}>
-          <MessageSquare size={16} color={WHITE} style={{ marginRight: 6 }} />
-          <Text style={styles.msgText}>Message</Text>
-        </TouchableOpacity>
+
         <TouchableOpacity style={styles.botBtn}>
           <MessageSquare size={20} color={WHITE} />
         </TouchableOpacity>

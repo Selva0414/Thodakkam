@@ -531,10 +531,7 @@ export default function StartupJobs() {
             </TouchableOpacity>
           )}
           <View style={{ flex: 1 }} />
-          <TouchableOpacity style={styles.msgPill} onPress={() => router.push({ pathname: '/startup-messages' as any, params: { companyName } })}>
-            <MessageSquare size={16} color={WHITE} style={{ marginRight: 6 }} />
-            <Text style={styles.msgText}>Message</Text>
-          </TouchableOpacity>
+
         </View>
 
         {viewMode === 'Analytics' && (

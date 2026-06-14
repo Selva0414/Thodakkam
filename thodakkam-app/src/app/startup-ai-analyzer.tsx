@@ -217,13 +217,7 @@ export default function StartupAiAnalyzer() {
 
       </ScrollView>
 
-      {/* Floating Actions */}
-      <View style={styles.fabRow}>
-        <TouchableOpacity style={styles.messageFab} onPress={() => router.push({ pathname: '/startup-messages' as any, params: { companyName } })}>
-          <MessageSquare size={16} color={WHITE} style={{ marginRight: 8 }} />
-          <Text style={styles.messageFabText}>Message</Text>
-        </TouchableOpacity>
-      </View>
+
 
       {/* Bottom Navigation */}
       <View style={styles.bottomNav}>
