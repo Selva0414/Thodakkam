@@ -1171,7 +1171,7 @@ app.get('/api/posts', async (req: Request, res: Response): Promise<void> => {
       include: { 
         user: true, 
         startup: true,
-        likes: true,
+        likes: { include: { user: true, startup: true } },
         comments: { include: { user: true, startup: true } }
       } as any,
       orderBy: { createdAt: 'desc' }

@@ -197,10 +197,12 @@ export default function StartupCommunity() {
 // ─── Post Item Component ───────────────────────────────────────────────────────
 
 function PostItem({ post, companyName, companyLogo }: { post: any, companyName: string, companyLogo: string | null }) {
-  const initialLikes = post.likes ? post.likes.length : 0;
+  const initialLikesCount = post.likes ? post.likes.length : 0;
+  const initiallyLiked = post.likes ? post.likes.some((l: any) => l.startup?.companyName === companyName) : false;
+
   // Fallback to random if no likes field
-  const [likesCount, setLikesCount] = useState(post.likes ? initialLikes : Math.floor(Math.random() * 100));
-  const [liked, setLiked] = useState(false);
+  const [likesCount, setLikesCount] = useState(post.likes ? initialLikesCount : Math.floor(Math.random() * 100));
+  const [liked, setLiked] = useState(initiallyLiked);
   
   const [comments, setComments] = useState<any[]>(post.comments || []);
   const [showComments, setShowComments] = useState(false);
