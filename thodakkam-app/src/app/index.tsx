@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { StyleSheet, Text, View, Pressable, SafeAreaView, ScrollView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Briefcase, GraduationCap, ShieldCheck } from 'lucide-react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useEffect } from 'react';
 
 const CARDS = [
   {
@@ -57,6 +59,32 @@ function ActionButton({ title, onPress }: { title: string; onPress?: () => void 
 
 export default function HomeScreen() {
   const router = useRouter();
+
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const studentId = await AsyncStorage.getItem('studentUserId');
+        if (studentId) {
+          router.replace({ pathname: '/student-dashboard', params: { userId: studentId } });
+          return;
+        }
+        const startupId = await AsyncStorage.getItem('startupId');
+        const startupCompanyName = await AsyncStorage.getItem('startupCompanyName');
+        if (startupId) {
+          if (startupCompanyName) {
+            router.replace({ pathname: '/startup-dashboard', params: { startupId, companyName: startupCompanyName } });
+            return;
+          } else {
+            // Broken state (old login without company name), force re-login
+            await AsyncStorage.removeItem('startupId');
+          }
+        }
+      } catch (err) {
+        console.error('Failed to check session', err);
+      }
+    };
+    checkSession();
+  }, []);
 
   return (
     <SafeAreaView style={styles.safeArea}>

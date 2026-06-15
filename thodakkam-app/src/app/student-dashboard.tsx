@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, TouchableOpacity,
-  SafeAreaView, TextInput, Platform, Image, Animated
+  SafeAreaView, TextInput, Platform, Image, Animated, BackHandler
 } from 'react-native';
 import {
   Bell, Search, Upload, Clock, CheckCircle, Video,
@@ -9,7 +9,8 @@ import {
   MessageSquare, Users, LayoutDashboard, ChevronRight, Zap, FileText, GraduationCap,
   Mail, Settings, ClipboardList
 } from 'lucide-react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
+import { useCallback } from 'react';
 import StudentHeader from '../components/StudentHeader';
 import { userStore, updateGlobalUser } from '../utils/userStore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -284,13 +285,13 @@ function OfferBanner() {
 
 function BottomTabBar() {
   const router = useRouter();
-  const [active, setActive] = useState('Dashboard');
+  const [active, setActive] = useState('Home');
   const tabs = [
-    { label: 'Dashboard', icon: LayoutDashboard },
+    { label: 'Home', icon: LayoutDashboard },
     { label: 'Jobs Board', icon: Briefcase, path: '/student-jobs' as any },
-    { label: 'Assessments', icon: ClipboardList, path: '/student-assessments' as any },
-    { label: 'Messages', icon: MessageSquare, path: '/student-messages' },
-    { label: 'Community', icon: Users, path: '/student-community' },
+    { label: 'Tests', icon: ClipboardList, path: '/student-assessments' as any },
+    { label: 'Chat', icon: MessageSquare, path: '/student-messages' },
+    { label: 'Feed', icon: Users, path: '/student-community' },
   ];
   return (
     <View style={tabBarStyles.container}>
@@ -301,7 +302,9 @@ function BottomTabBar() {
             setActive(label);
             if (path) router.push(path);
           }}>
-            <Icon size={22} color={isActive ? PRIMARY : GRAY} />
+            <View style={[{ padding: 8, borderRadius: 20 }, isActive && { backgroundColor: PRIMARY + '20', transform: [{ scale: 1.1 }] }]}>
+                  <Icon size={22} color={isActive ? PRIMARY : GRAY} />
+                </View>
             <Text style={[tabBarStyles.label, isActive && tabBarStyles.labelActive]}>{label}</Text>
           </TouchableOpacity>
         );
@@ -321,6 +324,17 @@ export default function StudentDashboard() {
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
+
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        BackHandler.exitApp();
+        return true;
+      };
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove();
+    }, [])
+  );
 
   useEffect(() => {
     Animated.parallel([

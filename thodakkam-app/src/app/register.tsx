@@ -255,7 +255,7 @@ export default function RegisterScreen() {
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         {/* Success Modal */}
         <Modal
@@ -300,7 +300,7 @@ export default function RegisterScreen() {
           </TouchableOpacity>
         </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           {/* Header Texts */}
           <View style={styles.pageHeader}>
             <Text style={styles.pageTitle}>Personal Details</Text>
@@ -503,7 +503,7 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   pageHeader: {
-    marginBottom: 32,
+    marginBottom: 20,
   },
   pageTitle: {
     fontSize: 24,
@@ -519,7 +519,7 @@ const styles = StyleSheet.create({
   profilePhotoSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 20,
     gap: 16,
   },
   avatarPlaceholder: {
@@ -838,7 +838,7 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     textAlign: 'center',
     lineHeight: 22,
-    marginBottom: 32,
+    marginBottom: 20,
     paddingHorizontal: 10,
   },
   modalDashboardButton: {

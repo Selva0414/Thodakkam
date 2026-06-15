@@ -21,13 +21,13 @@ const BORDER = '#e2e8f0';
 function BottomTabBar() {
   const router = useRouter();
   const tabs = [
-    { label: 'Dashboard', icon: LayoutDashboard, path: '/student-dashboard' },
-    { label: 'Jobs Search', icon: Briefcase, path: '/student-jobs' },
-    { label: 'Assessments', icon: ClipboardList, path: '/student-assessments' },
-    { label: 'Messages', icon: MessageSquare, path: '/student-messages' },
-    { label: 'Community', icon: Users, path: '/student-community' },
+    { label: 'Home', icon: LayoutDashboard, path: '/student-dashboard' },
+    { label: 'Jobs', icon: Briefcase, path: '/student-jobs' },
+    { label: 'Tests', icon: ClipboardList, path: '/student-assessments' },
+    { label: 'Chat', icon: MessageSquare, path: '/student-messages' },
+    { label: 'Feed', icon: Users, path: '/student-community' },
   ];
-  const active = 'Jobs Search';
+  const active = 'Jobs';
 
   return (
     <View style={tabBarStyles.container}>
@@ -41,7 +41,9 @@ function BottomTabBar() {
               if (path) router.replace(path as any);
             }}
           >
-            <Icon size={20} color={isActive ? PRIMARY : GRAY} />
+            <View style={[{ padding: 8, borderRadius: 20 }, isActive && { backgroundColor: PRIMARY + '20', transform: [{ scale: 1.1 }] }]}>
+                  <Icon size={22} color={isActive ? PRIMARY : GRAY} />
+                </View>
             <Text style={[tabBarStyles.label, isActive && tabBarStyles.labelActive]}>{label}</Text>
           </TouchableOpacity>
         );

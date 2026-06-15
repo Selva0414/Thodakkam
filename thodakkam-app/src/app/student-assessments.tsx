@@ -4,7 +4,7 @@ import {
   SafeAreaView, Platform, ActivityIndicator, Animated
 } from 'react-native';
 import {
-  LayoutDashboard, Briefcase, MessageSquare, Users, ClipboardList, Clock, FileText, Play, CheckCircle
+  LayoutDashboard, Briefcase, MessageSquare, Users, ClipboardList, Clock, FileText, Play, CheckCircle, Code
 } from 'lucide-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -21,11 +21,11 @@ const TEXT_GRAY = '#6b7280';
 function BottomTabBar({ activeTab }: { activeTab: string }) {
   const router = useRouter();
   const tabs = [
-    { label: 'Dashboard', icon: LayoutDashboard, path: '/student-dashboard' },
+    { label: 'Home', icon: LayoutDashboard, path: '/student-dashboard' },
     { label: 'Jobs Board', icon: Briefcase, path: '/student-jobs' },
-    { label: 'Assessments', icon: ClipboardList, path: '/student-assessments' },
-    { label: 'Messages', icon: MessageSquare, path: '/student-messages' },
-    { label: 'Community', icon: Users, path: '/student-community' },
+    { label: 'Tests', icon: ClipboardList, path: '/student-assessments' },
+    { label: 'Chat', icon: MessageSquare, path: '/student-messages' },
+    { label: 'Feed', icon: Users, path: '/student-community' },
   ];
   return (
     <View style={tabBarStyles.container}>
@@ -33,14 +33,16 @@ function BottomTabBar({ activeTab }: { activeTab: string }) {
         const isActive = activeTab === label;
         return (
           <TouchableOpacity key={label} style={tabBarStyles.tab} onPress={() => {
-            if (path && path !== '/student-assessments' && activeTab === 'Assessments') {
+            if (path && path !== '/student-assessments' && activeTab === 'Tests') {
                // Navigation logic
                router.push(path as any);
             } else if (path && !isActive) {
                router.push(path as any);
             }
           }}>
-            <Icon size={22} color={isActive ? PRIMARY : TEXT_GRAY} />
+            <View style={[{ padding: 8, borderRadius: 20 }, isActive && { backgroundColor: PRIMARY + '20', transform: [{ scale: 1.1 }] }]}>
+                  <Icon size={22} color={isActive ? PRIMARY : TEXT_GRAY} />
+                </View>
             <Text style={[tabBarStyles.label, isActive && tabBarStyles.labelActive]}>{label}</Text>
           </TouchableOpacity>
         );
@@ -174,11 +176,21 @@ export default function StudentAssessments() {
           </View>
         ) : (
           assessments.map((assessment, i) => {
-            const startDate = assessment.mcqConfig?.startDate ? new Date(assessment.mcqConfig.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Unknown Date';
-            const endDate = assessment.mcqConfig?.endDate ? new Date(assessment.mcqConfig.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : startDate;
-            const startTime = assessment.mcqConfig?.startTime || '00:00';
-            const endTime = assessment.mcqConfig?.endTime || '00:00';
-            const timeString = `${startDate}, ${startTime} - ${endDate}, ${endTime}`;
+            const isCoding = assessment.selectedRounds?.includes('coding');
+            const isMcq = assessment.selectedRounds?.includes('mcq');
+            const hasMcqConfig = !!assessment.mcqConfig;
+            
+            let timeString = 'Anytime';
+            if (hasMcqConfig) {
+              const startDate = assessment.mcqConfig.startDate ? new Date(assessment.mcqConfig.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Unknown Date';
+              const endDate = assessment.mcqConfig.endDate ? new Date(assessment.mcqConfig.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : startDate;
+              const startTime = assessment.mcqConfig.startTime || '00:00';
+              const endTime = assessment.mcqConfig.endTime || '00:00';
+              timeString = `${startDate}, ${startTime} - ${endDate}, ${endTime}`;
+            }
+
+            const badgeText = (isCoding && !isMcq) ? 'Coding Assessment' : (isMcq ? 'MCQ Assessment' : 'Assessment');
+            const badgeIcon = (isCoding && !isMcq) ? <Code size={14} color={PRIMARY} /> : <FileText size={14} color={PRIMARY} />;
             
             const isCompleted = completedAssessments[assessment.id];
             
@@ -204,12 +216,18 @@ export default function StudentAssessments() {
                 
                   <View style={styles.cardActions}>
                     <View style={styles.typeBadge}>
-                      <FileText size={14} color={PRIMARY} />
-                      <Text style={styles.typeBadgeText}>MCQ Assessment</Text>
+                      {badgeIcon}
+                      <Text style={styles.typeBadgeText}>{badgeText}</Text>
                     </View>
                     <TouchableOpacity 
                       style={[styles.continueBtn, isCompleted && { backgroundColor: '#10b981' }]}
-                      onPress={() => router.push({ pathname: '/student-exam' as any, params: { assessmentId: assessment.id } })}
+                      onPress={() => {
+                        if (isCoding && !isMcq) {
+                          router.push({ pathname: '/student-coding-exam' as any, params: { assessmentId: assessment.id } });
+                        } else {
+                          router.push({ pathname: '/student-exam' as any, params: { assessmentId: assessment.id } });
+                        }
+                      }}
                     >
                       {isCompleted ? <CheckCircle size={14} color={WHITE} style={{ marginRight: 4 }} /> : <Play size={14} color={WHITE} style={{ marginRight: 4 }} />}
                       <Text style={styles.continueBtnText}>{isCompleted ? 'Completed' : 'Start'}</Text>

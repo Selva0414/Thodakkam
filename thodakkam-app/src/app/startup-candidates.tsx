@@ -69,13 +69,13 @@ export default function StartupCandidates() {
 
   const handleNavPress = (label: string) => {
     setActiveTab(label);
-    if (label === 'Dashboard') {
+    if (label === 'Home') {
       router.replace({ pathname: '/startup-dashboard' as any, params: { companyName } });
     } else if (label === 'Jobs') {
       router.replace({ pathname: '/startup-jobs' as any, params: { companyName } });
     } else if (label === 'Interviews') {
       router.replace({ pathname: '/startup-interviews' as any, params: { companyName } });
-    } else if (label === 'Community') {
+    } else if (label === 'Feed') {
       router.replace({ pathname: '/startup-community' as any, params: { companyName } });
     }
   };
@@ -381,11 +381,11 @@ export default function StartupCandidates() {
       {/* Bottom Navigation */}
       <View style={styles.bottomNav}>
         {[
-          { label: 'Dashboard', icon: LayoutGrid },
+          { label: 'Home', icon: LayoutGrid },
           { label: 'Jobs', icon: Briefcase },
           { label: 'Candidates', icon: Users },
           { label: 'Interviews', icon: Calendar },
-          { label: 'Community', icon: Users }
+          { label: 'Feed', icon: Users }
         ].map(item => {
           const isActive = activeTab === item.label;
           const Icon = item.icon;
@@ -395,7 +395,9 @@ export default function StartupCandidates() {
               style={styles.navItem}
               onPress={() => handleNavPress(item.label)}
             >
-              <Icon size={20} color={isActive ? PRIMARY : '#94a3b8'} />
+              <View style={[{ padding: 8, borderRadius: 20 }, isActive && { backgroundColor: PRIMARY + '20', transform: [{ scale: 1.1 }] }]}>
+                  <Icon size={22} color={isActive ? PRIMARY : '#94a3b8'} />
+                </View>
               <Text style={[styles.navText, isActive && styles.navTextActive]}>
                 {item.label}
               </Text>

@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, TouchableOpacity,
-  SafeAreaView, TextInput, Platform, ActivityIndicator
+  SafeAreaView, TextInput, Platform, ActivityIndicator, BackHandler
 } from 'react-native';
 import {
   Search, Mail, Bell, Settings, Briefcase, Users,
   Calendar, MessageSquare, LayoutGrid
 } from 'lucide-react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
+import { useCallback } from 'react';
 import StartupHeader from '../components/StartupHeader';
 
 const PRIMARY = '#662483';
@@ -20,7 +21,7 @@ const TEXT_GRAY = '#64748b';
 export default function StartupDashboard() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const [activeTab, setActiveTab] = useState('Dashboard');
+  const [activeTab, setActiveTab] = useState('Home');
   const companyName = (params.companyName as string) || 'Echo Digital';
   
   const [applications, setApplications] = useState<any[]>([]);
@@ -28,6 +29,17 @@ export default function StartupDashboard() {
   
   const [chartDuration, setChartDuration] = useState(30);
   const [isChartDropdownOpen, setIsChartDropdownOpen] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        BackHandler.exitApp();
+        return true;
+      };
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove();
+    }, [])
+  );
 
   useEffect(() => {
     async function fetchApps() {
@@ -253,11 +265,11 @@ export default function StartupDashboard() {
       {/* Bottom Navigation */}
       <View style={styles.bottomNav}>
         {[
-          { label: 'Dashboard', icon: LayoutGrid },
+          { label: 'Home', icon: LayoutGrid },
           { label: 'Jobs', icon: Briefcase },
           { label: 'Candidates', icon: Users },
           { label: 'Interviews', icon: Calendar },
-          { label: 'Community', icon: Users }
+          { label: 'Feed', icon: Users }
         ].map(item => {
           const isActive = activeTab === item.label;
           const Icon = item.icon;
@@ -273,12 +285,14 @@ export default function StartupDashboard() {
                   router.replace({ pathname: '/startup-candidates' as any, params: { companyName } });
                 } else if (item.label === 'Interviews') {
                   router.replace({ pathname: '/startup-interviews' as any, params: { companyName } });
-                } else if (item.label === 'Community') {
+                } else if (item.label === 'Feed') {
                   router.replace({ pathname: '/startup-community' as any, params: { companyName } });
                 }
               }}
             >
-              <Icon size={20} color={isActive ? PRIMARY : '#94a3b8'} />
+              <View style={[{ padding: 8, borderRadius: 20 }, isActive && { backgroundColor: PRIMARY + '20', transform: [{ scale: 1.1 }] }]}>
+                  <Icon size={22} color={isActive ? PRIMARY : '#94a3b8'} />
+                </View>
               <Text style={[styles.navText, isActive && styles.navTextActive]}>
                 {item.label}
               </Text>

@@ -192,7 +192,7 @@ export default function StartupRegisterScreen() {
       <SafeAreaView style={styles.safeArea}>
         <KeyboardAvoidingView 
           style={{ flex: 1 }} 
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
           {/* Success Modal */}
           <Modal
@@ -236,7 +236,7 @@ export default function StartupRegisterScreen() {
             </TouchableOpacity>
           </View>
 
-          <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             <View style={styles.otpCard}>
               {/* Mail Icon in Circle */}
               <View style={styles.mailIconCircle}>
@@ -318,7 +318,7 @@ export default function StartupRegisterScreen() {
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView 
         style={{ flex: 1 }} 
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         {/* Header */}
         <View style={styles.header}>
@@ -333,7 +333,7 @@ export default function StartupRegisterScreen() {
           </TouchableOpacity>
         </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           
           {/* Hero Banner Card */}
           <View style={styles.heroCard}>
@@ -581,7 +581,7 @@ const styles = StyleSheet.create({
   heroCard: {
     width: '100%',
     borderRadius: 12,
-    marginBottom: 32,
+    marginBottom: 20,
     overflow: 'hidden',
     backgroundColor: '#0f172a',
     ...Platform.select({
@@ -800,6 +800,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
+    width: '100%',
     ...Platform.select({
       ios: {
         shadowColor: PRIMARY_COLOR,
@@ -828,7 +829,7 @@ const styles = StyleSheet.create({
   },
   footerLinkContainer: {
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 20,
   },
   footerLinkText: {
     fontSize: 13,
@@ -883,7 +884,7 @@ const styles = StyleSheet.create({
   otpCard: {
     backgroundColor: '#ffffff',
     borderRadius: 12,
-    padding: 32,
+    padding: 24,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: BORDER_COLOR,
@@ -927,7 +928,7 @@ const styles = StyleSheet.create({
     color: '#475569',
     textAlign: 'center',
     lineHeight: 20,
-    marginBottom: 32,
+    marginBottom: 20,
   },
   boldEmail: {
     fontWeight: '700',
@@ -935,14 +936,15 @@ const styles = StyleSheet.create({
   },
   otpInputRow: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 12,
+    justifyContent: 'space-between',
+    gap: 8,
     marginBottom: 36,
     width: '100%',
   },
   otpSingleWrapper: {
     alignItems: 'center',
-    width: 44,
+    flex: 1,
+    maxWidth: 44,
   },
   otpSingleInput: {
     fontSize: 24,

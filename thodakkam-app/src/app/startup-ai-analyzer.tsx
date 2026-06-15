@@ -28,11 +28,11 @@ export default function StartupAiAnalyzer() {
 
   const handleNavPress = (label: string) => {
     setActiveTab(label);
-    if (label === 'Dashboard') router.replace({ pathname: '/startup-dashboard' as any, params: { companyName } });
+    if (label === 'Home') router.replace({ pathname: '/startup-dashboard' as any, params: { companyName } });
     else if (label === 'Jobs') router.replace({ pathname: '/startup-jobs' as any, params: { companyName } });
     else if (label === 'Candidates') router.replace({ pathname: '/startup-candidates' as any, params: { companyName } });
     else if (label === 'Interviews') router.replace({ pathname: '/startup-interviews' as any, params: { companyName } });
-    else if (label === 'Community') router.replace({ pathname: '/startup-community' as any, params: { companyName } });
+    else if (label === 'Feed') router.replace({ pathname: '/startup-community' as any, params: { companyName } });
   };
 
   return (
@@ -222,17 +222,19 @@ export default function StartupAiAnalyzer() {
       {/* Bottom Navigation */}
       <View style={styles.bottomNav}>
         {[
-          { label: 'Dashboard', icon: LayoutGrid },
+          { label: 'Home', icon: LayoutGrid },
           { label: 'Jobs', icon: Briefcase },
           { label: 'Candidates', icon: Users },
           { label: 'Interviews', icon: Calendar },
-          { label: 'Community', icon: Users }
+          { label: 'Feed', icon: Users }
         ].map(item => {
           const isActive = activeTab === item.label;
           const Icon = item.icon;
           return (
             <TouchableOpacity key={item.label} style={styles.navItem} onPress={() => handleNavPress(item.label)}>
-              <Icon size={20} color={isActive ? PRIMARY : '#94a3b8'} />
+              <View style={[{ padding: 8, borderRadius: 20 }, isActive && { backgroundColor: PRIMARY + '20', transform: [{ scale: 1.1 }] }]}>
+                  <Icon size={22} color={isActive ? PRIMARY : '#94a3b8'} />
+                </View>
               <Text style={[styles.navText, isActive && styles.navTextActive]}>{item.label}</Text>
             </TouchableOpacity>
           );

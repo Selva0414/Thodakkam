@@ -23,7 +23,7 @@ export default function StartupCommunity() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const companyName = (params.companyName as string) || 'Echo Digital';
-  const [activeTab, setActiveTab] = useState('Community');
+  const [activeTab, setActiveTab] = useState('Feed');
 
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -98,7 +98,7 @@ export default function StartupCommunity() {
 
   const handleNavPress = (label: string) => {
     setActiveTab(label);
-    if (label === 'Dashboard') {
+    if (label === 'Home') {
       router.replace({ pathname: '/startup-dashboard' as any, params: { companyName } });
     } else if (label === 'Jobs') {
       router.replace({ pathname: '/startup-jobs' as any, params: { companyName } });
@@ -166,11 +166,11 @@ export default function StartupCommunity() {
       {/* Bottom Navigation */}
       <View style={styles.bottomNav}>
         {[
-          { label: 'Dashboard', icon: LayoutGrid },
+          { label: 'Home', icon: LayoutGrid },
           { label: 'Jobs', icon: Briefcase },
           { label: 'Candidates', icon: Users },
           { label: 'Interviews', icon: Calendar },
-          { label: 'Community', icon: Users }
+          { label: 'Feed', icon: Users }
         ].map(item => {
           const isActive = activeTab === item.label;
           const Icon = item.icon;
@@ -180,7 +180,9 @@ export default function StartupCommunity() {
               style={styles.navItem}
               onPress={() => handleNavPress(item.label)}
             >
-              <Icon size={20} color={isActive ? PRIMARY : '#94a3b8'} />
+              <View style={[{ padding: 8, borderRadius: 20 }, isActive && { backgroundColor: PRIMARY + '20', transform: [{ scale: 1.1 }] }]}>
+                  <Icon size={22} color={isActive ? PRIMARY : '#94a3b8'} />
+                </View>
               <Text style={[styles.navText, isActive && styles.navTextActive]}>
                 {item.label}
               </Text>
@@ -298,8 +300,8 @@ function PostItem({ post, companyName, companyLogo }: { post: any, companyName: 
           </View>
         )}
         <View style={styles.postMeta}>
-          <Text style={styles.postAuthor}>{authorName}</Text>
-          <Text style={styles.postTime}>{authorRole} • Just now</Text>
+          <Text style={styles.postAuthor} numberOfLines={1}>{authorName}</Text>
+          <Text style={styles.postTime} numberOfLines={1}>{authorRole} • Just now</Text>
         </View>
         {post.category && (
           <View style={[styles.badgeWrap, { backgroundColor: '#f3e8ff' }]}>
@@ -319,21 +321,21 @@ function PostItem({ post, companyName, companyLogo }: { post: any, companyName: 
 
       <View style={[styles.postFooter, showComments && { borderBottomWidth: 1, borderBottomColor: '#f1f5f9', paddingBottom: 16, marginBottom: 16 }]}>
         <TouchableOpacity style={styles.footerAction} onPress={handleLike}>
-          <ThumbsUp size={18} color={liked ? PRIMARY : GRAY} />
-          <Text style={[styles.footerActionText, liked && { color: PRIMARY }]}>Like ({likesCount})</Text>
+          <ThumbsUp size={20} color={liked ? PRIMARY : GRAY} fill={liked ? PRIMARY : 'transparent'} />
+          <Text style={[styles.footerActionText, liked && { color: PRIMARY }]}>{likesCount}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity 
           style={[styles.footerAction, showComments && styles.activeFooterBtn]} 
           onPress={() => setShowComments(!showComments)}
         >
-          <MessageSquare size={18} color={showComments ? PRIMARY : GRAY} />
-          <Text style={[styles.footerActionText, showComments && { color: PRIMARY }]}>Comment ({comments.length})</Text>
+          <MessageSquare size={20} color={showComments ? PRIMARY : GRAY} />
+          <Text style={[styles.footerActionText, showComments && { color: PRIMARY }]}>{comments.length}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.footerAction}>
-          <Repeat size={18} color={GRAY} />
-          <Text style={styles.footerActionText}>Repost (0)</Text>
+          <Repeat size={20} color={GRAY} />
+          <Text style={styles.footerActionText}>0</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={[styles.footerAction, styles.shareAction]}>
@@ -476,11 +478,11 @@ const styles = StyleSheet.create({
   postText: { fontSize: 13, color: DARK, lineHeight: 20, marginBottom: 12 },
   postImage: { width: '100%', height: 300, backgroundColor: '#f8fafc', borderRadius: 12, marginBottom: 16 },
 
-  postFooter: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-  footerAction: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
+  postFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12 },
+  footerAction: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 8, paddingVertical: 8, borderRadius: 20 },
   activeFooterBtn: { backgroundColor: '#f3e8ff', borderWidth: 1, borderColor: PRIMARY },
   footerActionText: { fontSize: 13, fontWeight: '600', color: GRAY },
-  shareAction: { marginLeft: 'auto', paddingHorizontal: 0 },
+  shareAction: { paddingHorizontal: 0 },
 
   commentsSection: { marginTop: 4 },
   commentItem: { flexDirection: 'row', gap: 10, marginBottom: 16 },

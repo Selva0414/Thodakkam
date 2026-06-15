@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, Platform, Image } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Bell, Search, Mail, Menu, Users, Settings, MessageSquare } from 'lucide-react-native';
+import { Bell, Search, Mail, Menu, Users, Settings, MessageSquare, LogOut } from 'lucide-react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import NotificationModal from './NotificationModal';
 import EmailNotificationModal from './EmailNotificationModal';
 import StartupProfileModal from './StartupProfileModal';
@@ -111,6 +112,14 @@ export default function StartupHeader({ companyName = 'Echo Digital' }: { compan
             <Settings size={16} color={TEXT_DARK} style={styles.menuIcon} />
             <Text style={styles.menuText}>Settings</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={[styles.menuItem, { borderTopWidth: 1, borderTopColor: '#f1f5f9', paddingTop: 8, marginTop: 4 }]} onPress={async () => { 
+            setShowMenu(false); 
+            await AsyncStorage.removeItem('startupId');
+            router.replace('/startup-login');
+          }}>
+            <LogOut size={16} color="#ef4444" style={styles.menuIcon} />
+            <Text style={[styles.menuText, { color: '#ef4444' }]}>Log out</Text>
+          </TouchableOpacity>
         </View>
       )}
 
@@ -135,7 +144,7 @@ export default function StartupHeader({ companyName = 'Echo Digital' }: { compan
 const styles = StyleSheet.create({
   headerCard: {
     backgroundColor: WHITE,
-    paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 20,
+    paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 44 : 32, paddingBottom: 12,
     marginBottom: 16, borderBottomWidth: 1, borderBottomColor: '#f1f5f9',
     zIndex: 50, elevation: 50
   },

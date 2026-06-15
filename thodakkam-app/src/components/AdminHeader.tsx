@@ -58,7 +58,7 @@ const styles = StyleSheet.create({
   headerCard: {
     backgroundColor: WHITE,
     borderBottomLeftRadius: 24, borderBottomRightRadius: 24,
-    paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 20,
+    paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 44 : 32, paddingBottom: 12,
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 3,
     marginBottom: 20,
   },

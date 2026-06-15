@@ -94,9 +94,9 @@ export default function LoginScreen() {
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           {/* Header */}
           <Animated.View style={[styles.header, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
             <View style={styles.headerIconContainer}>
@@ -210,15 +210,15 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 28,
-    paddingTop: 48,
+    paddingHorizontal: 24,
+    paddingTop: 32,
     paddingBottom: 24,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 48,
+    marginBottom: 24,
     gap: 12,
   },
   headerIconContainer: {
@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
     color: TEXT_DARK,
   },
   heroContainer: {
-    marginBottom: 48,
+    marginBottom: 24,
   },
   heroText: {
     fontSize: 32,
@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   welcomeSection: {
-    marginBottom: 32,
+    marginBottom: 24,
   },
   welcomeTitle: {
     fontSize: 22,

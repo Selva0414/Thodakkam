@@ -21,11 +21,11 @@ const TEXT_GRAY = '#64748b';
 function BottomTabBar({ activeTab }: { activeTab: string }) {
   const router = useRouter();
   const tabs = [
-    { label: 'Dashboard', icon: LayoutDashboard, path: '/student-dashboard' },
+    { label: 'Home', icon: LayoutDashboard, path: '/student-dashboard' },
     { label: 'Jobs Board', icon: Briefcase, path: '/student-jobs' },
-    { label: 'Assessments', icon: ClipboardList, path: '/student-assessments' },
-    { label: 'Messages', icon: MessageSquare, path: '/student-messages' },
-    { label: 'Community', icon: Users, path: '/student-community' },
+    { label: 'Tests', icon: ClipboardList, path: '/student-assessments' },
+    { label: 'Chat', icon: MessageSquare, path: '/student-messages' },
+    { label: 'Feed', icon: Users, path: '/student-community' },
   ];
   return (
     <View style={tabBarStyles.container}>
@@ -33,13 +33,15 @@ function BottomTabBar({ activeTab }: { activeTab: string }) {
         const isActive = activeTab === label;
         return (
           <TouchableOpacity key={label} style={tabBarStyles.tab} onPress={() => {
-            if (path && path !== '/student-messages' && activeTab === 'Messages') {
+            if (path && path !== '/student-messages' && activeTab === 'Chat') {
                router.push(path as any);
             } else if (path && !isActive) {
                router.push(path as any);
             }
           }}>
-            <Icon size={22} color={isActive ? PRIMARY : TEXT_GRAY} />
+            <View style={[{ padding: 8, borderRadius: 20 }, isActive && { backgroundColor: PRIMARY + '20', transform: [{ scale: 1.1 }] }]}>
+                  <Icon size={22} color={isActive ? PRIMARY : TEXT_GRAY} />
+                </View>
             <Text style={[tabBarStyles.label, isActive && tabBarStyles.labelActive]}>{label}</Text>
           </TouchableOpacity>
         );
@@ -287,7 +289,7 @@ export default function StudentMessages() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StudentHeader />
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.container}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
         <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
         {/* Startup Horizontal List */}
         <View style={styles.startupListContainer}>

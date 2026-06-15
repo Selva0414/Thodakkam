@@ -22,13 +22,13 @@ const BORDER = '#e2e8f0';
 
 function BottomTabBar() {
   const router = useRouter();
-  const active = 'Community';
+  const active = 'Feed';
   const tabs = [
-    { label: 'Dashboard', icon: LayoutDashboard, path: '/student-dashboard' },
-    { label: 'Jobs Search', icon: Briefcase, path: '/student-jobs' },
-    { label: 'Assessments', icon: ClipboardList, path: '/student-assessments' },
-    { label: 'Messages', icon: MessageSquare, path: '/student-messages' },
-    { label: 'Community', icon: Users, path: '/student-community' },
+    { label: 'Home', icon: LayoutDashboard, path: '/student-dashboard' },
+    { label: 'Jobs', icon: Briefcase, path: '/student-jobs' },
+    { label: 'Tests', icon: ClipboardList, path: '/student-assessments' },
+    { label: 'Chat', icon: MessageSquare, path: '/student-messages' },
+    { label: 'Feed', icon: Users, path: '/student-community' },
   ];
   return (
     <View style={tabBarStyles.container}>
@@ -42,7 +42,9 @@ function BottomTabBar() {
               if (path) router.push(path as any);
             }}
           >
-            <Icon size={22} color={isActive ? PRIMARY : GRAY} />
+            <View style={[{ padding: 8, borderRadius: 20 }, isActive && { backgroundColor: PRIMARY + '20', transform: [{ scale: 1.1 }] }]}>
+                  <Icon size={22} color={isActive ? PRIMARY : GRAY} />
+                </View>
             <Text style={[tabBarStyles.label, isActive && tabBarStyles.labelActive]}>{label}</Text>
           </TouchableOpacity>
         );
@@ -256,8 +258,8 @@ function PostItem({ post }: { post: any }) {
           </View>
         )}
         <View style={styles.postMeta}>
-          <Text style={styles.postAuthor}>{authorName}</Text>
-          <Text style={styles.postTime}>{authorRole} • Just now</Text>
+          <Text style={styles.postAuthor} numberOfLines={1}>{authorName}</Text>
+          <Text style={styles.postTime} numberOfLines={1}>{authorRole} • Just now</Text>
         </View>
         {post.category && (
           <View style={[styles.badgeWrap, { backgroundColor: '#f3e8ff' }]}>
@@ -272,26 +274,26 @@ function PostItem({ post }: { post: any }) {
       {post.text ? <Text style={styles.postText}>{post.text}</Text> : null}
 
       {post.imageUrl && (
-        <Image source={{ uri: post.imageUrl }} style={styles.postImage} resizeMode="cover" />
+        <Image source={{ uri: post.imageUrl }} style={styles.postImage} resizeMode="contain" />
       )}
 
       <View style={[styles.postFooter, showComments && { borderBottomWidth: 1, borderBottomColor: '#f1f5f9', paddingBottom: 16, marginBottom: 16 }]}>
         <TouchableOpacity style={styles.footerAction} onPress={handleLike}>
-          <ThumbsUp size={18} color={liked ? PRIMARY : GRAY} />
-          <Text style={[styles.footerActionText, liked && { color: PRIMARY }]}>Like ({likesCount})</Text>
+          <ThumbsUp size={20} color={liked ? PRIMARY : GRAY} fill={liked ? PRIMARY : 'transparent'} />
+          <Text style={[styles.footerActionText, liked && { color: PRIMARY }]}>{likesCount}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity 
           style={[styles.footerAction, showComments && styles.activeFooterBtn]} 
           onPress={() => setShowComments(!showComments)}
         >
-          <MessageSquare size={18} color={showComments ? PRIMARY : GRAY} />
-          <Text style={[styles.footerActionText, showComments && { color: PRIMARY }]}>Comment ({comments.length})</Text>
+          <MessageSquare size={20} color={showComments ? PRIMARY : GRAY} />
+          <Text style={[styles.footerActionText, showComments && { color: PRIMARY }]}>{comments.length}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.footerAction}>
-          <Repeat size={18} color={GRAY} />
-          <Text style={styles.footerActionText}>Repost (0)</Text>
+          <Repeat size={20} color={GRAY} />
+          <Text style={styles.footerActionText}>0</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={[styles.footerAction, styles.shareAction]}>
@@ -386,25 +388,25 @@ const styles = StyleSheet.create({
 
   topSearchCard: {
     backgroundColor: WHITE,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: '#f1f5f9',
   },
-  topSearchRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 12 },
+  topSearchRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 10 },
   searchInputWrap: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#f8fafc',
-    borderRadius: 24,
-    paddingHorizontal: 16,
-    height: 44,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    height: 40,
     borderWidth: 1,
     borderColor: '#e2e8f0',
   },
-  addBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center' },
+  addBtn: { width: 40, height: 40, borderRadius: 10, backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center' },
   searchIcon: { marginRight: 8 },
   mainSearchInput: { flex: 1, fontSize: 14, color: DARK, ...(Platform.OS === 'web' ? { outlineStyle: 'none' } as any : {}) },
   sortByText: { fontSize: 13, color: GRAY, marginBottom: 8, fontWeight: '500' },
@@ -473,22 +475,22 @@ const styles = StyleSheet.create({
       default: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
     }),
   },
-  postHeader: { flexDirection: 'row', gap: 12, alignItems: 'center', marginBottom: 12 },
+  postHeader: { flexDirection: 'row', gap: 10, alignItems: 'center', marginBottom: 12 },
   postAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#e2e8f0' },
-  postMeta: { flex: 1 },
-  postAuthor: { fontSize: 14, fontWeight: '800', color: DARK },
+  postMeta: { flex: 1, marginRight: 8 },
+  postAuthor: { fontSize: 14, fontWeight: '800', color: DARK, flexShrink: 1 },
   postTime: { fontSize: 11, color: GRAY, marginTop: 2 },
   badgeWrap: { backgroundColor: '#f1f5f9', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4 },
   badgeText: { fontSize: 9, fontWeight: '800', color: DARK, letterSpacing: 0.5 },
 
   postText: { fontSize: 13, color: DARK, lineHeight: 20, marginBottom: 12 },
-  postImage: { width: '100%', height: 300, backgroundColor: '#f8fafc', borderRadius: 12, marginBottom: 16 },
+  postImage: { width: '100%', height: 220, backgroundColor: '#f8fafc', borderRadius: 12, marginBottom: 12 },
 
-  postFooter: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-  footerAction: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
+  postFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12 },
+  footerAction: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 8, paddingVertical: 8, borderRadius: 20 },
   activeFooterBtn: { backgroundColor: '#f3e8ff', borderWidth: 1, borderColor: PRIMARY },
   footerActionText: { fontSize: 13, fontWeight: '600', color: GRAY },
-  shareAction: { marginLeft: 'auto', paddingHorizontal: 0 },
+  shareAction: { paddingHorizontal: 0 },
 
   commentsSection: { marginTop: 4 },
   commentItem: { flexDirection: 'row', gap: 10, marginBottom: 16 },

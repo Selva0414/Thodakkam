@@ -4,30 +4,30 @@
     "slug": "thodakkam-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/Thodakkam logo.jpeg",
+    "icon": "./assets/images/Thodakkam logo.png",
     "scheme": "thodakkamapp",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/images/Thodakkam logo.jpeg"
+      "icon": "./assets/images/Thodakkam logo.png"
     },
     "android": {
       "package": "com.thodakkam.app",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/Thodakkam logo.jpeg",
+        "foregroundImage": "./assets/images/Thodakkam logo.png",
         "backgroundColor": "#FFFFFF"
       },
       "predictiveBackGestureEnabled": false
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/Thodakkam logo.jpeg"
+      "favicon": "./assets/images/Thodakkam logo.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/Thodakkam logo.jpeg",
+          "image": "./assets/images/Thodakkam logo.png",
           "backgroundColor": "#FFFFFF",
           "imageWidth": 150
         }

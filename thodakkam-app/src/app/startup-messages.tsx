@@ -254,7 +254,7 @@ export default function StartupMessages() {
   };
 
   const handleNavPress = (label: string) => {
-    if (label === 'Dashboard') {
+    if (label === 'Home') {
       router.replace({ pathname: '/startup-dashboard' as any, params: { companyName } });
     } else if (label === 'Jobs') {
       router.replace({ pathname: '/startup-jobs' as any, params: { companyName } });
@@ -262,14 +262,14 @@ export default function StartupMessages() {
       router.replace({ pathname: '/startup-candidates' as any, params: { companyName } });
     } else if (label === 'Interviews') {
       router.replace({ pathname: '/startup-interviews' as any, params: { companyName } });
-    } else if (label === 'Community') {
+    } else if (label === 'Feed') {
       router.replace({ pathname: '/startup-community' as any, params: { companyName } });
     }
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.container}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
         
         {/* Header */}
         <View style={styles.header}>
@@ -384,11 +384,11 @@ export default function StartupMessages() {
         {/* Bottom Navigation */}
         <View style={styles.bottomNav}>
           {[
-            { label: 'Dashboard', icon: LayoutGrid },
+            { label: 'Home', icon: LayoutGrid },
             { label: 'Jobs', icon: Briefcase },
             { label: 'Candidates', icon: Users, active: true },
             { label: 'Interviews', icon: Calendar },
-            { label: 'Community', icon: Users }
+            { label: 'Feed', icon: Users }
           ].map(item => {
             const isActive = item.active;
             const Icon = item.icon;
@@ -398,7 +398,9 @@ export default function StartupMessages() {
                 style={styles.navItem}
                 onPress={() => handleNavPress(item.label)}
               >
-                <Icon size={20} color={isActive ? PRIMARY : '#94a3b8'} />
+                <View style={[{ padding: 8, borderRadius: 20 }, isActive && { backgroundColor: PRIMARY + '20', transform: [{ scale: 1.1 }] }]}>
+                  <Icon size={22} color={isActive ? PRIMARY : '#94a3b8'} />
+                </View>
                 <Text style={[styles.navText, isActive && styles.navTextActive]}>
                   {item.label}
                 </Text>

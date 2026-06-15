@@ -100,13 +100,13 @@ export default function StartupInterviews() {
 
   const handleNavPress = (label: string) => {
     setActiveTab(label);
-    if (label === 'Dashboard') {
+    if (label === 'Home') {
       router.replace({ pathname: '/startup-dashboard' as any, params: { companyName } });
     } else if (label === 'Jobs') {
       router.replace({ pathname: '/startup-jobs' as any, params: { companyName } });
     } else if (label === 'Candidates') {
       router.replace({ pathname: '/startup-candidates' as any, params: { companyName } });
-    } else if (label === 'Community') {
+    } else if (label === 'Feed') {
       router.replace({ pathname: '/startup-community' as any, params: { companyName } });
     }
   };
@@ -209,11 +209,11 @@ export default function StartupInterviews() {
       {!isWide && (
         <View style={styles.bottomNav}>
           {[
-            { label: 'Dashboard', icon: LayoutGrid },
+            { label: 'Home', icon: LayoutGrid },
             { label: 'Jobs', icon: Briefcase },
             { label: 'Candidates', icon: Users },
             { label: 'Interviews', icon: Calendar },
-            { label: 'Community', icon: Users }
+            { label: 'Feed', icon: Users }
           ].map(item => {
             const isActive = activeTab === item.label;
             const Icon = item.icon;
@@ -225,7 +225,9 @@ export default function StartupInterviews() {
                 style={styles.navItem}
                 onPress={() => handleNavPress(item.label)}
               >
-                <Icon size={20} color={isActive ? tabColor : '#94a3b8'} />
+                <View style={[{ padding: 8, borderRadius: 20 }, isActive && { backgroundColor: tabColor + '20', transform: [{ scale: 1.1 }] }]}>
+                  <Icon size={22} color={isActive ? tabColor : '#94a3b8'} />
+                </View>
                 <Text style={[styles.navText, isActive && { color: tabColor, fontWeight: '700' }]}>
                   {item.label}
                 </Text>

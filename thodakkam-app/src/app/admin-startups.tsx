@@ -22,7 +22,7 @@ export default function AdminStartups() {
 
   const handleTabPress = (label: string) => {
     setActiveTab(label);
-    if (label === 'Dashboard') {
+    if (label === 'Home') {
       router.replace('/admin-dashboard' as any);
     } else if (label === 'Students') {
       router.replace('/admin-students' as any);
@@ -321,7 +321,7 @@ export default function AdminStartups() {
       {/* Bottom Navigation */}
       <View style={styles.bottomNav}>
         {[
-          { label: 'Dashboard', icon: Home },
+          { label: 'Home', icon: Home },
           { label: 'Startups', icon: Rocket },
           { label: 'Students', icon: Users },
           { label: 'Analytics', icon: BarChart2 },
@@ -335,7 +335,9 @@ export default function AdminStartups() {
               style={styles.navItem}
               onPress={() => handleTabPress(item.label)}
             >
-              <Icon size={20} color={isActive ? PRIMARY : '#94a3b8'} />
+              <View style={[{ padding: 8, borderRadius: 20 }, isActive && { backgroundColor: PRIMARY + '20', transform: [{ scale: 1.1 }] }]}>
+                  <Icon size={22} color={isActive ? PRIMARY : '#94a3b8'} />
+                </View>
               <Text style={[styles.navText, isActive && styles.navTextActive]}>
                 {item.label}
               </Text>

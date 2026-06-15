@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, TextInput, Image, Platform, Modal } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, TextInput, Image, Platform, Modal, ScrollView, Animated } from 'react-native';
 import { Bell, Search, Mail, Settings, GraduationCap, User, LogOut } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -63,9 +63,7 @@ export default function StudentHeader({ user }: { user?: { id?: string, name: st
     <View style={navStyles.headerContainer}>
       <View style={navStyles.headerTop}>
         <View style={navStyles.logoRow}>
-          <View style={navStyles.logoBox}>
-            <GraduationCap size={14} color={WHITE} />
-          </View>
+          <Image source={require('../../assets/images/Thodakkam logo.png')} style={{ width: 44, height: 44 }} resizeMode="contain" />
           <Text style={navStyles.logoText}>Student Portal</Text>
         </View>
         <View style={navStyles.headerIcons}>
@@ -83,17 +81,44 @@ export default function StudentHeader({ user }: { user?: { id?: string, name: st
         </View>
       </View>
       
-      {/* Profile Dropdown */}
-      {showProfileDropdown && (
-        <Modal transparent visible={true} animationType="fade" onRequestClose={() => setShowProfileDropdown(false)}>
-          <TouchableOpacity style={navStyles.dropdownOverlay} onPress={() => setShowProfileDropdown(false)} activeOpacity={1}>
-            <View style={navStyles.dropdownMenu}>
-              <TouchableOpacity style={navStyles.dropdownItem} onPress={() => { setShowProfileDropdown(false); router.push('/student-profile'); }}>
-                <User size={16} color={DARK} />
-                <Text style={navStyles.dropdownItemText}>My Profile</Text>
+      {/* Profile Drawer */}
+      <Modal transparent visible={showProfileDropdown} animationType="fade" onRequestClose={() => setShowProfileDropdown(false)}>
+        <View style={navStyles.drawerOverlay}>
+          <TouchableOpacity style={navStyles.drawerOverlayBg} onPress={() => setShowProfileDropdown(false)} activeOpacity={1} />
+          <View style={navStyles.drawerContent}>
+            <View style={{ paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 20 }}>
+              <TouchableOpacity onPress={() => { setShowProfileDropdown(false); router.push('/student-profile'); }}>
+                {localUser.profilePhoto ? (
+                  <Image source={{ uri: localUser.profilePhoto }} style={navStyles.drawerAvatar} />
+                ) : (
+                  <View style={navStyles.drawerAvatarFallback}>
+                    <Text style={navStyles.drawerAvatarText}>{firstLetter}</Text>
+                  </View>
+                )}
+                <Text style={navStyles.drawerName}>{localUser.name || 'Student'}</Text>
+                {localUser.email ? <Text style={navStyles.drawerBio}>{localUser.email}</Text> : null}
+                {localUser.phone ? <Text style={navStyles.drawerLocation}>{localUser.phone}</Text> : null}
               </TouchableOpacity>
-              <View style={navStyles.dropdownDivider} />
-              <TouchableOpacity style={navStyles.dropdownItem} onPress={async () => {
+            </View>
+
+            <View style={navStyles.drawerDivider} />
+
+
+
+            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12 }}>
+              <TouchableOpacity style={navStyles.drawerMenuItem} onPress={() => { setShowProfileDropdown(false); router.push('/student-profile'); }}><Text style={navStyles.drawerMenuText}>My profile</Text></TouchableOpacity>
+              <TouchableOpacity style={navStyles.drawerMenuItem}><Text style={navStyles.drawerMenuText}>Saved posts</Text></TouchableOpacity>
+              <TouchableOpacity style={navStyles.drawerMenuItem}><Text style={navStyles.drawerMenuText}>My Network</Text></TouchableOpacity>
+            </ScrollView>
+
+            <View style={navStyles.drawerDivider} />
+
+            <View style={{ paddingHorizontal: 20, paddingVertical: 20, paddingBottom: Platform.OS === 'ios' ? 40 : 20 }}>
+              <TouchableOpacity style={navStyles.drawerFooterItem} onPress={() => setShowProfileDropdown(false)}>
+                <Settings size={22} color={DARK} />
+                <Text style={navStyles.drawerFooterText}>Settings</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[navStyles.drawerFooterItem, { marginTop: 24 }]} onPress={async () => {
                 setShowProfileDropdown(false);
                 await AsyncStorage.removeItem('studentUserId');
                 userStore.id = '';
@@ -102,13 +127,13 @@ export default function StudentHeader({ user }: { user?: { id?: string, name: st
                 userStore.profilePhoto = null;
                 router.replace('/login');
               }}>
-                <LogOut size={16} color="#ef4444" />
-                <Text style={[navStyles.dropdownItemText, { color: '#ef4444' }]}>Log Out</Text>
+                <LogOut size={22} color="#ef4444" />
+                <Text style={[navStyles.drawerFooterText, { color: '#ef4444' }]}>Log out</Text>
               </TouchableOpacity>
             </View>
-          </TouchableOpacity>
-        </Modal>
-      )}
+          </View>
+        </View>
+      </Modal>
 
       <View style={navStyles.searchRow}>
         <View style={navStyles.searchBar}>
@@ -122,9 +147,6 @@ export default function StudentHeader({ user }: { user?: { id?: string, name: st
         <TouchableOpacity style={navStyles.iconBtn} onPress={() => setShowEmailModal(true)}>
           <Mail size={18} color={GRAY} />
         </TouchableOpacity>
-        <TouchableOpacity style={navStyles.iconBtn}>
-          <Settings size={18} color={GRAY} />
-        </TouchableOpacity>
       </View>
       <NotificationModal visible={showNotifications} onClose={() => setShowNotifications(false)} role="student" />
       <EmailNotificationModal visible={showEmailModal} onClose={() => setShowEmailModal(false)} />
@@ -135,12 +157,12 @@ export default function StudentHeader({ user }: { user?: { id?: string, name: st
 const navStyles = StyleSheet.create({
   headerContainer: {
     backgroundColor: WHITE,
-    paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 50 : 40, paddingBottom: 16,
+    paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 44 : 32, paddingBottom: 12,
   },
   headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   logoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   logoBox: { width: 24, height: 24, borderRadius: 6, backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center' },
-  logoText: { fontSize: 13, fontWeight: '800', color: DARK },
+  logoText: { fontSize: 22, fontWeight: '900', color: DARK },
   headerIcons: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   bellWrapper: { position: 'relative' },
   bellDot: { position: 'absolute', top: 0, right: 2, width: 6, height: 6, borderRadius: 3, backgroundColor: '#ef4444', borderWidth: 1, borderColor: WHITE },
@@ -153,16 +175,18 @@ const navStyles = StyleSheet.create({
   searchInput: { flex: 1, marginLeft: 6, fontSize: 12, color: DARK },
   iconBtn: { padding: 4 },
   
-  dropdownOverlay: { flex: 1, backgroundColor: 'transparent' },
-  dropdownMenu: {
-    position: 'absolute', top: Platform.OS === 'ios' ? 90 : 60, right: 16,
-    backgroundColor: WHITE, borderRadius: 12, paddingVertical: 8, width: 160,
-    ...Platform.select({
-      web: { boxShadow: '0 4px 12px rgba(0,0,0,0.1)' },
-      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 8 }
-    })
-  },
-  dropdownItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 16, gap: 10 },
-  dropdownItemText: { fontSize: 13, fontWeight: '600', color: DARK },
-  dropdownDivider: { height: 1, backgroundColor: '#f1f5f9', marginVertical: 4 }
+  drawerOverlay: { flex: 1, flexDirection: 'row-reverse' },
+  drawerOverlayBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' },
+  drawerContent: { width: '80%', maxWidth: 320, backgroundColor: WHITE, height: '100%', position: 'absolute', right: 0, top: 0, bottom: 0, elevation: 10, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 10, shadowOffset: { width: -2, height: 0 } },
+  drawerAvatar: { width: 72, height: 72, borderRadius: 36, marginBottom: 16 },
+  drawerAvatarFallback: { width: 72, height: 72, borderRadius: 36, backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
+  drawerAvatarText: { color: WHITE, fontSize: 24, fontWeight: '700' },
+  drawerName: { fontSize: 20, fontWeight: '700', color: DARK, marginBottom: 8 },
+  drawerBio: { fontSize: 14, color: DARK, fontWeight: '500', marginBottom: 4 },
+  drawerLocation: { fontSize: 14, color: '#475569', fontWeight: '500', marginBottom: 4 },
+  drawerDivider: { height: 1, backgroundColor: '#e2e8f0' },
+  drawerMenuItem: { paddingHorizontal: 20, paddingVertical: 14 },
+  drawerMenuText: { fontSize: 16, fontWeight: '700', color: DARK },
+  drawerFooterItem: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  drawerFooterText: { fontSize: 16, fontWeight: '700', color: DARK },
 });

@@ -40,6 +40,7 @@ export default function StartupLoginScreen() {
       const data = await response.json();
       if (data.success) {
         await AsyncStorage.setItem('startupId', data.startup.id);
+        await AsyncStorage.setItem('startupCompanyName', data.startup.companyName);
         alert(`Welcome back, ${data.startup.founderName}!`);
         // Navigate to the startup dashboard
         router.replace({
@@ -60,9 +61,9 @@ export default function StartupLoginScreen() {
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView 
         style={{ flex: 1 }} 
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.headerIconContainer}>
@@ -178,7 +179,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    marginBottom: 40,
+    marginBottom: 20,
     alignSelf: 'center',
   },
   headerIconContainer: {
@@ -195,7 +196,7 @@ const styles = StyleSheet.create({
     color: '#0f172a',
   },
   welcomeSection: {
-    marginBottom: 32,
+    marginBottom: 20,
     alignItems: 'center',
   },
   welcomeTitle: {
