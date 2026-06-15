@@ -6,7 +6,7 @@ import {
 import {
   Search, Mail, Bell, Settings, Briefcase, Users,
   Calendar, MessageSquare, LayoutGrid, Plus,
-  List as ListIcon, BarChart2, Edit2, MapPin, MoreHorizontal, X, ExternalLink
+  List as ListIcon, BarChart2, Edit2, MapPin, MoreHorizontal, X, ExternalLink, Clock
 } from 'lucide-react-native';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import StartupHeader from '../components/StartupHeader';
@@ -28,7 +28,9 @@ export default function StartupJobs() {
   const [loading, setLoading] = useState(true);
   const [selectedJob, setSelectedJob] = useState<any>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [analyticsTime, setAnalyticsTime] = useState(30);
+  const [globalCompanyLogo, setGlobalCompanyLogo] = useState<string | null>(null);
 
   const companyName = (params.companyName as string) || 'Echo Digital';
 
@@ -51,10 +53,57 @@ export default function StartupJobs() {
       if (data.success) {
         setJobs(data.jobs);
       }
+
+      const profileRes = await fetch(`https://thodakkam-backend.onrender.com/api/startup/profile/${encodeURIComponent(companyName)}`);
+      if (profileRes.ok) {
+        const profileData = await profileRes.json();
+        if (profileData.success && profileData.startup?.companyLogo) {
+          setGlobalCompanyLogo(profileData.startup.companyLogo);
+        }
+      }
     } catch (err) {
       console.error('Fetch Jobs Error:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleUpdateStatus = async (jobId: string, newStatus: string) => {
+    setActiveMenuId(null);
+    const targetJob = jobs.find(j => j.id === jobId);
+    
+    // Optimistic UI update
+    setJobs(prevJobs => prevJobs.map(j => j.id === jobId ? { ...j, status: newStatus } : j));
+    
+    try {
+      const payload = targetJob ? { ...targetJob, status: newStatus } : { status: newStatus };
+      const res = await fetch(`https://thodakkam-backend.onrender.com/api/jobs/${jobId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        fetchJobs();
+      }
+    } catch (err) {
+      console.error('Update Job Status Error:', err);
+    }
+  };
+
+  const handleDeleteJob = async (jobId: string) => {
+    setActiveMenuId(null);
+    // Optimistic UI update
+    setJobs(prevJobs => prevJobs.filter(j => j.id !== jobId));
+
+    try {
+      const res = await fetch(`https://thodakkam-backend.onrender.com/api/jobs/${jobId}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        fetchJobs();
+      }
+    } catch (err) {
+      console.error('Delete Job Error:', err);
     }
   };
 
@@ -231,19 +280,85 @@ export default function StartupJobs() {
                     return job.status.toLowerCase() === targetStatus;
                   })
                   .map(job => (
-                  <View key={job.id} style={styles.jobCard}>
-                    <View style={styles.cardHeader}>
-                      <View style={styles.badgeRow}>
-                        <View style={[styles.badge, { backgroundColor: job.status === 'ACTIVE' ? '#dcfce7' : '#f1f5f9' }]}>
-                          <Text style={[styles.badgeText, { color: job.status === 'ACTIVE' ? '#16a34a' : TEXT_GRAY }]}>{job.status}</Text>
-                        </View>
-                        <Text style={styles.postedText}>Posted recently</Text>
+                  <View key={job.id} style={[styles.jobCard, { zIndex: activeMenuId === job.id ? 100 : 1 }]}>
+                    <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 16 }}>
+                      <View style={[styles.jobCardLogo, (job.companyLogo || globalCompanyLogo) && { backgroundColor: 'transparent', borderWidth: 1, borderColor: '#e2e8f0' }]}>
+                        {(job.companyLogo || globalCompanyLogo) ? (
+                          <Image 
+                            source={{ uri: (job.companyLogo || globalCompanyLogo) as string }} 
+                            style={{ width: '100%', height: '100%', borderRadius: 8 }} 
+                            resizeMode="cover"
+                          />
+                        ) : (
+                          <Text style={styles.jobCardLogoText}>{companyInitials.toUpperCase()}</Text>
+                        )}
                       </View>
+                      
+                      <View style={{ flex: 1, marginLeft: 12 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 6 }}>
+                          <Text style={styles.jobTitle}>{job.title}</Text>
+                          <View style={[styles.badge, { backgroundColor: job.status === 'ACTIVE' ? '#dcfce7' : '#f1f5f9' }]}>
+                            <Text style={[styles.badgeText, { color: job.status === 'ACTIVE' ? '#16a34a' : TEXT_GRAY }]}>{job.status}</Text>
+                          </View>
+                        </View>
+                        
+                        <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                            <Calendar size={12} color={TEXT_GRAY} />
+                            <Text style={styles.jobCardMetaText}>Posted recently</Text>
+                          </View>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                            <MapPin size={12} color={TEXT_GRAY} />
+                            <Text style={styles.jobCardMetaText}>{job.location}</Text>
+                          </View>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                            <Clock size={12} color={TEXT_GRAY} />
+                            <Text style={styles.jobCardMetaText}>{job.type || 'Full-time'}</Text>
+                          </View>
+                        </View>
+                      </View>
+
+                      {job.status === 'ACTIVE' && (
+                        <View style={styles.daysLeftPill}>
+                          <Clock size={10} color="#ea580c" />
+                          <Text style={styles.daysLeftText}>Live</Text>
+                        </View>
+                      )}
+                    </View>
+
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 16 }}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.statLabel}>APPLICANTS</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                          <Text style={styles.statValue}>{job.applications?.length || 0}</Text>
+                          <Text style={styles.statTrend}>↗ +0 today</Text>
+                        </View>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.statLabel}>INTERVIEWS</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                          <Calendar size={14} color={PRIMARY} />
+                          <Text style={styles.statValueSmall}>0 scheduled</Text>
+                        </View>
+                      </View>
+                    </View>
+
+                    <View style={styles.cardActions}>
                       <TouchableOpacity 
-                        style={styles.editBtn}
+                        style={[styles.primaryActionBtn, { backgroundColor: PRIMARY, shadowColor: PRIMARY, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 }]}
+                        onPress={() => {
+                          setSelectedJob(job);
+                          setIsModalVisible(true);
+                        }}
+                      >
+                        <Text style={[styles.actionBtnText, { color: WHITE }]}>View Applicants</Text>
+                      </TouchableOpacity>
+                      
+                      <TouchableOpacity 
+                        style={styles.outlineActionBtn}
                         onPress={() => {
                           router.push({
-                            pathname: '/startup-edit-job' as any,
+                            pathname: '/startup-job-details' as any,
                             params: {
                               companyName,
                               jobId: job.id,
@@ -264,42 +379,68 @@ export default function StartupJobs() {
                           });
                         }}
                       >
-                        <Edit2 size={14} color={TEXT_GRAY} />
+                        <Text style={styles.outlineActionBtnText}>View Details</Text>
                       </TouchableOpacity>
-                    </View>
-                    
-                    <Text style={styles.jobTitle}>{job.title}</Text>
-                    <View style={styles.locationRow}>
-                      <MapPin size={12} color={TEXT_GRAY} />
-                      <Text style={styles.locationText}>{job.location}</Text>
-                    </View>
 
-                    <View style={styles.jobStatsRow}>
-                      <View style={styles.applicantsCol}>
-                        <Text style={styles.applicantsNumber}>{job.applications?.length || 0}</Text>
-                        <Text style={styles.applicantsLabel}>APPLICANTS</Text>
-                      </View>
-                      <View style={{ flex: 1 }} />
-                      <View style={styles.miniChart}>
-                        <View style={[styles.chartBar, { height: 12, backgroundColor: '#e2e8f0' }]} />
-                        <View style={[styles.chartBar, { height: 12, backgroundColor: '#e2e8f0' }]} />
-                        <View style={[styles.chartBar, { height: 12, backgroundColor: '#e2e8f0' }]} />
-                      </View>
-                    </View>
+                      <View style={{ position: 'relative', zIndex: 100 }}>
+                        <TouchableOpacity 
+                          style={styles.moreBtn}
+                          onPress={() => setActiveMenuId(activeMenuId === job.id ? null : job.id)}
+                        >
+                          <MoreHorizontal size={18} color={TEXT_GRAY} />
+                        </TouchableOpacity>
 
-                    <View style={styles.cardActions}>
-                      <TouchableOpacity 
-                        style={[styles.primaryActionBtn, { backgroundColor: PRIMARY, shadowColor: PRIMARY, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 }]}
-                        onPress={() => {
-                          setSelectedJob(job);
-                          setIsModalVisible(true);
-                        }}
-                      >
-                        <Text style={[styles.actionBtnText, { color: WHITE }]}>View Applicants</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity style={styles.moreBtn}>
-                        <MoreHorizontal size={18} color={TEXT_GRAY} />
-                      </TouchableOpacity>
+                        {activeMenuId === job.id && (
+                          <View style={styles.dropdownMenu}>
+                            <TouchableOpacity 
+                              style={styles.dropdownItem}
+                              onPress={() => {
+                                setActiveMenuId(null);
+                                router.push({
+                                  pathname: '/startup-edit-job' as any,
+                                  params: {
+                                    companyName,
+                                    jobId: job.id,
+                                    title: job.title,
+                                    location: job.location,
+                                    type: job.type,
+                                    salary: job.salary,
+                                    description: job.description,
+                                    requirements: (job.requirements || []).join(', '),
+                                    department: job.department,
+                                    workMode: job.workMode,
+                                    experience: job.experience,
+                                    education: job.education,
+                                    openings: job.openings,
+                                    deadline: job.deadline,
+                                    applicationMethod: job.applicationMethod
+                                  }
+                                });
+                              }}
+                            >
+                              <Text style={styles.dropdownItemText}>Edit Job</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity 
+                              style={styles.dropdownItem}
+                              onPress={() => handleUpdateStatus(job.id, 'DRAFT')}
+                            >
+                              <Text style={styles.dropdownItemText}>Move to Draft</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity 
+                              style={styles.dropdownItem}
+                              onPress={() => handleUpdateStatus(job.id, 'CLOSED')}
+                            >
+                              <Text style={styles.dropdownItemText}>Close Job</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity 
+                              style={styles.dropdownItem}
+                              onPress={() => handleDeleteJob(job.id)}
+                            >
+                              <Text style={[styles.dropdownItemText, { color: '#ef4444' }]}>Delete Job</Text>
+                            </TouchableOpacity>
+                          </View>
+                        )}
+                      </View>
                     </View>
                   </View>
                 ))
@@ -561,7 +702,9 @@ export default function StartupJobs() {
               style={styles.navItem}
               onPress={() => handleNavPress(item.label)}
             >
-              <Icon size={20} color={isActive ? PRIMARY : '#94a3b8'} />
+              <View style={[{ padding: 8, borderRadius: 20 }, isActive && { backgroundColor: PRIMARY + '20', transform: [{ scale: 1.1 }] }]}>
+                <Icon size={22} color={isActive ? PRIMARY : '#94a3b8'} />
+              </View>
               <Text style={[styles.navText, isActive && styles.navTextActive]}>
                 {item.label}
               </Text>
@@ -642,10 +785,27 @@ const styles = StyleSheet.create({
   chartBar: { width: 6, borderRadius: 3 },
   positionFilledText: { fontSize: 12, color: '#94a3b8', fontWeight: '500' },
 
-  cardActions: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  cardActions: { flexDirection: 'row', alignItems: 'center', gap: 12, position: 'relative', zIndex: 50 },
   primaryActionBtn: { flex: 1, paddingVertical: 14, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   actionBtnText: { fontSize: 13, fontWeight: '700' },
-  moreBtn: { width: 44, height: 44, borderRadius: 8, borderWidth: 1, borderColor: '#e2e8f0', justifyContent: 'center', alignItems: 'center' },
+  outlineActionBtn: { flex: 1, paddingVertical: 14, borderRadius: 8, borderWidth: 1, borderColor: '#e2e8f0', alignItems: 'center', justifyContent: 'center', backgroundColor: WHITE },
+  outlineActionBtnText: { fontSize: 13, fontWeight: '700', color: TEXT_DARK },
+  moreBtn: { width: 44, height: 44, borderRadius: 8, borderWidth: 1, borderColor: '#e2e8f0', justifyContent: 'center', alignItems: 'center', backgroundColor: WHITE },
+  
+  dropdownMenu: { position: 'absolute', top: 50, right: 0, width: 140, backgroundColor: WHITE, borderRadius: 12, paddingVertical: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 10, zIndex: 999 },
+  dropdownItem: { paddingVertical: 10, paddingHorizontal: 16 },
+  dropdownItemText: { fontSize: 13, fontWeight: '600', color: TEXT_DARK },
+
+  jobCardLogo: { width: 40, height: 40, borderRadius: 8, backgroundColor: '#0f172a', justifyContent: 'center', alignItems: 'center' },
+  jobCardLogoText: { color: WHITE, fontSize: 16, fontWeight: '800' },
+  jobCardMetaText: { fontSize: 11, color: TEXT_GRAY },
+  daysLeftPill: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#ffedd5', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
+  daysLeftText: { fontSize: 10, fontWeight: '700', color: '#ea580c' },
+  
+  statLabel: { fontSize: 9, fontWeight: '700', color: TEXT_GRAY, letterSpacing: 0.5, marginBottom: 4 },
+  statValue: { fontSize: 22, fontWeight: '800', color: TEXT_DARK },
+  statValueSmall: { fontSize: 15, fontWeight: '700', color: TEXT_DARK },
+  statTrend: { fontSize: 11, fontWeight: '700', color: '#16a34a' },
 
   floatingContainer: { position: 'absolute', bottom: Platform.OS === 'ios' ? 140 : 120, left: 20, right: 20, zIndex: 10, pointerEvents: 'box-none' },
   floatingTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },

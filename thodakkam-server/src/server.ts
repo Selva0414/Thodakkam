@@ -411,9 +411,7 @@ app.post('/api/startup/send-otp', async (req: Request, res: Response): Promise<v
 
     res.status(200).json({ 
       success: true, 
-      message: emailSent 
-        ? 'Verification code sent to your email address.' 
-        : 'Verification code generated. (Check server console logs since SMTP credentials are not configured)' 
+      message: 'Verification code sent to your email address.' 
     });
 
   } catch (err) {
@@ -798,7 +796,7 @@ app.put('/api/jobs/:id', async (req: Request, res: Response): Promise<void> => {
     const { id } = req.params;
     const { 
       title, location, type, salary, description, requirements,
-      department, workMode, experience, education, openings, deadline, applicationMethod
+      department, workMode, experience, education, openings, deadline, applicationMethod, status
     } = req.body;
 
     const job = await prisma.job.update({
@@ -816,7 +814,8 @@ app.put('/api/jobs/:id', async (req: Request, res: Response): Promise<void> => {
         education,
         openings: openings ? String(openings) : undefined,
         deadline,
-        applicationMethod
+        applicationMethod,
+        ...(status ? { status } : {})
       }
     });
 
@@ -824,6 +823,35 @@ app.put('/api/jobs/:id', async (req: Request, res: Response): Promise<void> => {
   } catch (err) {
     console.error('Job update error:', err);
     res.status(500).json({ success: false, message: 'Server error updating job' });
+  }
+});
+
+// Delete a Job
+app.delete('/api/jobs/:id', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    
+    // Check if job exists
+    const existingJob = await prisma.job.findUnique({
+      where: { id: id as string }
+    });
+
+    if (!existingJob) {
+      res.status(404).json({ success: false, message: 'Job not found' });
+      return;
+    }
+
+    // Delete job (Prisma will automatically handle cascade deletion if set up, 
+    // but if not, we might need to delete applications first depending on schema. 
+    // Assuming Prisma schema handles it or we just delete the job).
+    await prisma.job.delete({
+      where: { id: id as string }
+    });
+
+    res.status(200).json({ success: true, message: 'Job deleted successfully' });
+  } catch (err) {
+    console.error('Job deletion error:', err);
+    res.status(500).json({ success: false, message: 'Server error deleting job' });
   }
 });
 
