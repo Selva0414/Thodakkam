@@ -61,6 +61,7 @@ model User {
   startupFollowers   StartupFollowsUser[]
   likes              Like[]
   comments           Comment[]
+  assessmentResults  AssessmentResult[]
 }
 
 model StartupFollowsUser {
@@ -163,6 +164,23 @@ model Assessment {
   interviewConfig Json?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  results         AssessmentResult[]
+}
+
+model AssessmentResult {
+  id              String     @id @default(uuid())
+  assessmentId    String
+  assessment      Assessment @relation(fields: [assessmentId], references: [id])
+  userId          String
+  user            User       @relation(fields: [userId], references: [id])
+  jobId           String?
+  roundType       String     // e.g., "MCQ_ROUND", "CODING_ROUND", "INTERVIEW"
+  score           Float?
+  status          String     @default("PENDING") // "PENDING", "PASSED", "FAILED"
+  completedAt     DateTime?
+  details         Json?      // Store extra data like code output or answers
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
 }
 
 

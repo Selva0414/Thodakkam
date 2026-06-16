@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, TextInput, Platform, Image } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, TextInput, Platform, Image, Modal, ScrollView, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Bell, Search, Mail, Menu, Users, Settings, MessageSquare, LogOut } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -24,6 +24,27 @@ export default function StartupHeader({ companyName = 'Echo Digital' }: { compan
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showNetworkModal, setShowNetworkModal] = useState(false);
   const [companyLogo, setCompanyLogo] = useState<string | null>(null);
+  const [founderName, setFounderName] = useState<string>('');
+  const [founderEmail, setFounderEmail] = useState<string>('');
+
+  const slideAnim = React.useRef(new Animated.Value(400)).current;
+
+  const openMenu = () => {
+    setShowMenu(true);
+    Animated.timing(slideAnim, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const closeMenu = () => {
+    Animated.timing(slideAnim, {
+      toValue: 400,
+      duration: 300,
+      useNativeDriver: true,
+    }).start(() => setShowMenu(false));
+  };
 
   useEffect(() => {
     if (companyName) {
@@ -31,11 +52,13 @@ export default function StartupHeader({ companyName = 'Echo Digital' }: { compan
       fetch(`${baseUrl}/api/startup/profile/${encodeURIComponent(companyName)}`)
         .then(res => res.json())
         .then(data => {
-          if (data.success && data.startup?.companyLogo) {
-            setCompanyLogo(data.startup.companyLogo);
+          if (data.success && data.startup) {
+            if (data.startup.companyLogo) setCompanyLogo(data.startup.companyLogo);
+            if (data.startup.founderName) setFounderName(data.startup.founderName);
+            if (data.startup.email) setFounderEmail(data.startup.email);
           }
         })
-        .catch(err => console.log('Error fetching logo:', err));
+        .catch(err => console.log('Error fetching logo/profile:', err));
     }
   }, [companyName]);
 
@@ -53,13 +76,7 @@ export default function StartupHeader({ companyName = 'Echo Digital' }: { compan
     <View style={styles.headerCard}>
       <View style={styles.headerTop}>
         <View style={styles.adminInfo}>
-          <View style={[styles.logoBox, companyLogo && { backgroundColor: 'transparent', borderWidth: 1, borderColor: '#e2e8f0' }]}>
-            {companyLogo ? (
-              <Image source={{ uri: companyLogo }} style={{ width: '100%', height: '100%', borderRadius: 10, resizeMode: 'cover' }} />
-            ) : (
-              <Text style={styles.logoText}>{companyInitials}</Text>
-            )}
-          </View>
+          <Image source={require('../../assets/images/Thodakkam logo.png')} style={{ width: 44, height: 44, marginRight: 12 }} resizeMode="contain" />
           <View>
             <Text style={styles.companyTitle}>{companyName}</Text>
             <Text style={styles.companySubtitle}>PREMIUM PLAN</Text>
@@ -72,8 +89,14 @@ export default function StartupHeader({ companyName = 'Echo Digital' }: { compan
           <TouchableOpacity style={styles.actionIcon} onPress={() => setShowNotifications(true)}>
             <Bell size={20} color={TEXT_GRAY} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionIcon} onPress={() => setShowMenu(!showMenu)}>
-            <Menu size={20} color={TEXT_GRAY} />
+          <TouchableOpacity style={[styles.actionIcon, { padding: 0 }]} onPress={openMenu}>
+            <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#f1f5f9', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', borderWidth: 1, borderColor: '#e2e8f0' }}>
+              {companyLogo ? (
+                <Image source={{ uri: companyLogo }} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
+              ) : (
+                <Text style={{ fontSize: 12, fontWeight: '700', color: TEXT_GRAY }}>{companyInitials}</Text>
+              )}
+            </View>
           </TouchableOpacity>
         </View>
       </View>
@@ -98,30 +121,65 @@ export default function StartupHeader({ companyName = 'Echo Digital' }: { compan
       <NotificationModal visible={showNotifications} onClose={() => setShowNotifications(false)} role="startup" />
       <EmailNotificationModal visible={showEmailModal} onClose={() => setShowEmailModal(false)} />
 
-      {showMenu && (
-        <View style={styles.menuDropdown}>
-          <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMenu(false); setShowProfileModal(true); }}>
-            <Users size={16} color={TEXT_DARK} style={styles.menuIcon} />
-            <Text style={styles.menuText}>Profile</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMenu(false); setShowNetworkModal(true); }}>
-            <Users size={16} color={TEXT_DARK} style={styles.menuIcon} />
-            <Text style={styles.menuText}>My Network</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem} onPress={() => { setShowMenu(false); setShowSettingsModal(true); }}>
-            <Settings size={16} color={TEXT_DARK} style={styles.menuIcon} />
-            <Text style={styles.menuText}>Settings</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.menuItem, { borderTopWidth: 1, borderTopColor: '#f1f5f9', paddingTop: 8, marginTop: 4 }]} onPress={async () => { 
-            setShowMenu(false); 
-            await AsyncStorage.removeItem('startupId');
-            router.replace('/startup-login');
-          }}>
-            <LogOut size={16} color="#ef4444" style={styles.menuIcon} />
-            <Text style={[styles.menuText, { color: '#ef4444' }]}>Log out</Text>
-          </TouchableOpacity>
+      <Modal transparent visible={showMenu} animationType="none" onRequestClose={closeMenu}>
+        <View style={styles.drawerOverlay}>
+          <TouchableOpacity style={styles.drawerOverlayBg} onPress={closeMenu} activeOpacity={1} />
+          <Animated.View style={[styles.drawerContent, { transform: [{ translateX: slideAnim }] }]}>
+            <View>
+              <View style={{ height: 100, backgroundColor: PRIMARY, width: '100%', borderTopLeftRadius: 24 }} />
+              <View style={{ paddingHorizontal: 20, paddingBottom: 20, marginTop: -36 }}>
+                <TouchableOpacity onPress={() => { closeMenu(); setShowProfileModal(true); }}>
+                  <View style={{ backgroundColor: WHITE, padding: 4, borderRadius: 20, alignSelf: 'flex-start', marginBottom: 12 }}>
+                    {companyLogo ? (
+                      <Image source={{ uri: companyLogo }} style={{ width: 72, height: 72, borderRadius: 16 }} />
+                    ) : (
+                      <View style={[styles.drawerAvatarFallback, { borderRadius: 16, marginBottom: 0 }]}>
+                        <Text style={styles.drawerAvatarText}>{companyInitials}</Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text style={styles.drawerName}>{founderName || companyName}</Text>
+                  {founderEmail ? <Text style={styles.drawerEmail}>{founderEmail}</Text> : null}
+                  {founderName ? <Text style={styles.drawerCompanyText}>{companyName}</Text> : null}
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.drawerDivider} />
+
+            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12 }}>
+              <TouchableOpacity style={styles.drawerMenuItem} onPress={() => { closeMenu(); setShowProfileModal(true); }}>
+                <Text style={styles.drawerMenuText}>My profile</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.drawerMenuItem}>
+                <Text style={styles.drawerMenuText}>Saved posts</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.drawerMenuItem} onPress={() => { closeMenu(); setShowNetworkModal(true); }}>
+                <Text style={styles.drawerMenuText}>My Network</Text>
+              </TouchableOpacity>
+            </ScrollView>
+
+            <View style={styles.drawerDivider} />
+
+            <View style={{ paddingHorizontal: 20, paddingVertical: 20, paddingBottom: Platform.OS === 'ios' ? 40 : 20 }}>
+              <TouchableOpacity style={styles.drawerFooterItem} onPress={() => { closeMenu(); setShowSettingsModal(true); }}>
+                <Settings size={22} color={TEXT_DARK} />
+                <Text style={styles.drawerFooterText}>Settings</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.drawerFooterItem, { marginTop: 24 }]} onPress={async () => { 
+                closeMenu();
+                setTimeout(async () => {
+                  await AsyncStorage.removeItem('startupId');
+                  router.replace('/startup-login');
+                }, 300);
+              }}>
+                <LogOut size={22} color="#ef4444" />
+                <Text style={[styles.drawerFooterText, { color: '#ef4444' }]}>Log out</Text>
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
         </View>
-      )}
+      </Modal>
 
       <StartupProfileModal 
         visible={showProfileModal} 
@@ -162,4 +220,18 @@ const styles = StyleSheet.create({
   menuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 12, borderRadius: 8 },
   menuIcon: { marginRight: 10 },
   menuText: { fontSize: 14, fontWeight: '600', color: TEXT_DARK },
+  drawerOverlay: { flex: 1, flexDirection: 'row-reverse' },
+  drawerOverlayBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' },
+  drawerContent: { width: '80%', maxWidth: 320, backgroundColor: WHITE, height: '100%', position: 'absolute', right: 0, top: 0, bottom: 0, elevation: 10, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 10, shadowOffset: { width: -2, height: 0 }, borderTopLeftRadius: 24, borderBottomLeftRadius: 24, overflow: 'hidden' },
+  drawerAvatar: { width: 72, height: 72, borderRadius: 36, marginBottom: 16 },
+  drawerAvatarFallback: { width: 72, height: 72, borderRadius: 36, backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
+  drawerAvatarText: { color: WHITE, fontSize: 24, fontWeight: '700' },
+  drawerName: { fontSize: 20, fontWeight: '700', color: TEXT_DARK, marginBottom: 4 },
+  drawerEmail: { fontSize: 14, color: TEXT_DARK, fontWeight: '500', marginBottom: 4 },
+  drawerCompanyText: { fontSize: 13, color: TEXT_GRAY, fontWeight: '600', marginBottom: 8 },
+  drawerDivider: { height: 1, backgroundColor: '#e2e8f0' },
+  drawerMenuItem: { paddingHorizontal: 20, paddingVertical: 14 },
+  drawerMenuText: { fontSize: 16, fontWeight: '700', color: TEXT_DARK },
+  drawerFooterItem: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  drawerFooterText: { fontSize: 16, fontWeight: '700', color: TEXT_DARK },
 });

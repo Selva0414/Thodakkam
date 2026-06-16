@@ -1466,6 +1466,60 @@ app.get('/api/assessments/:startupId', async (req: Request, res: Response): Prom
   }
 });
 
+
+// Create or Update Assessment Result
+app.post('/api/assessment-results', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { assessmentId, userId, jobId, roundType, score, status, details } = req.body;
+    
+    // Check if result already exists
+    const existing = await prisma.assessmentResult.findFirst({
+      where: { assessmentId, userId, roundType }
+    });
+
+    if (existing) {
+      const updated = await prisma.assessmentResult.update({
+        where: { id: existing.id },
+        data: { score, status, details, completedAt: new Date() }
+      });
+      res.status(200).json({ success: true, result: updated });
+    } else {
+      const result = await prisma.assessmentResult.create({
+        data: {
+          assessmentId,
+          userId,
+          jobId,
+          roundType,
+          score,
+          status,
+          details,
+          completedAt: new Date()
+        } as any
+      });
+      res.status(201).json({ success: true, result });
+    }
+  } catch (error) {
+    console.error('Error saving assessment result:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// Get Assessment Results for User and Job
+app.get('/api/assessment-results/:userId/:jobId', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.params.userId as string;
+    const jobId = req.params.jobId as string;
+    const results = await prisma.assessmentResult.findMany({
+      where: { userId, jobId },
+      orderBy: { createdAt: 'asc' }
+    });
+    res.status(200).json({ success: true, results });
+  } catch (error) {
+    console.error('Error fetching results:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 // Start Server
 app.listen(PORT, () => {
   console.log(`Thodakkam backend server running on http://localhost:${PORT}`);

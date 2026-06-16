@@ -208,31 +208,25 @@ function PostItem({ post, companyName, companyLogo }: { post: any, companyName: 
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [isLiking, setIsLiking] = useState(false);
   const [isCommenting, setIsCommenting] = useState(false);
 
   const handleLike = async () => {
-    if (isLiking) return;
-    setIsLiking(true);
-    // Optimistic UI update
-    setLiked(!liked);
-    setLikesCount((prev: number) => liked ? prev - 1 : prev + 1);
+    const newLikedState = !liked;
+    setLiked(newLikedState);
+    setLikesCount((prev: number) => newLikedState ? prev + 1 : prev - 1);
     
-    // We try to call the backend, but since backend doesn't support startup likes perfectly via email without user table, it might 404. We keep optimistic UI.
     try {
       const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend.onrender.com' : 'https://thodakkam-backend.onrender.com';
       await fetch(`${baseUrl}/api/posts/${post.id}/like`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ companyName }) // Send companyName to identify the startup
+        body: JSON.stringify({ companyName })
       });
     } catch (err) {
       console.error(err);
       // Revert if error
-      setLiked(liked);
-      setLikesCount(likesCount);
-    } finally {
-      setIsLiking(false);
+      setLiked(!newLikedState);
+      setLikesCount((prev: number) => newLikedState ? prev - 1 : prev + 1);
     }
   };
 

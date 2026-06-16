@@ -182,15 +182,12 @@ function PostItem({ post }: { post: any }) {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [isLiking, setIsLiking] = useState(false);
   const [isCommenting, setIsCommenting] = useState(false);
 
   const handleLike = async () => {
-    if (isLiking) return;
-    setIsLiking(true);
-    // Optimistic UI update
-    setLiked(!liked);
-    setLikesCount((prev: number) => liked ? prev - 1 : prev + 1);
+    const newLikedState = !liked;
+    setLiked(newLikedState);
+    setLikesCount((prev: number) => newLikedState ? prev + 1 : prev - 1);
     
     try {
       const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend.onrender.com' : 'https://thodakkam-backend.onrender.com';
@@ -202,10 +199,8 @@ function PostItem({ post }: { post: any }) {
     } catch (err) {
       console.error(err);
       // Revert if error
-      setLiked(liked);
-      setLikesCount(likesCount);
-    } finally {
-      setIsLiking(false);
+      setLiked(!newLikedState);
+      setLikesCount((prev: number) => newLikedState ? prev - 1 : prev + 1);
     }
   };
 
