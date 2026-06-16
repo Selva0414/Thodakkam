@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, Pressable, SafeAreaView, ScrollView, Platform, Dimensions, Image, useWindowDimensions, LayoutAnimation } from 'react-native';
-import { useVideoPlayer, VideoView, VideoPlayer } from 'expo-video';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import { useRouter } from 'expo-router';
+import { Image as ExpoImage } from 'expo-image';
 import { Briefcase, GraduationCap, ShieldCheck, ArrowRight, Sparkles, Star, MessageSquare, CheckCircle2, Check, Zap, Activity, TrendingUp, UserCog, X, ChevronLeft, ChevronRight, Rocket } from 'lucide-react-native';
 import Animated, { FadeIn, FadeInDown, FadeInUp, FadeOutDown, useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing } from 'react-native-reanimated';
 const { width } = Dimensions.get('window');
@@ -153,10 +154,11 @@ function FeatureSection() {
         Our intelligent matching engine orchestrates every step of the hiring journey, connecting vetted students directly with fast-growing startups.
       </Text>
 
-      <View style={{ transform: [{ scale: scaleRatio }], alignItems: 'center', justifyContent: 'center', height: 460 * scaleRatio, marginVertical: 60 }}>
-        <View style={[styles.orbitContainer, { marginVertical: 0 }]}>
-          {/* The dashed circular ring */}
-          <View style={styles.orbitRing} />
+      <View style={{ width: 750 * scaleRatio, height: 460 * scaleRatio, alignItems: 'center', justifyContent: 'center', marginVertical: 60 }}>
+        <View style={{ width: 750, height: 460, transform: [{ scale: scaleRatio }], alignItems: 'center', justifyContent: 'center' }}>
+          <View style={[styles.orbitContainer, { marginVertical: 0 }]}>
+            {/* The dashed circular ring */}
+            <View style={styles.orbitRing} />
 
           {/* Top Floating Badge */}
           <Animated.View style={[styles.floatingBadge, { top: 10, left: 70 }]} entering={FadeInUp.delay(200)}>
@@ -234,31 +236,32 @@ function FeatureSection() {
           </Animated.View>
         </View>
       </View>
+      </View>
     </View>
   );
 }
 
 function TrustedSection() {
   const partners = [
-    { name: 'Nexyuga Innovations Private Limited', icon: Zap, color: '#722DB6', bg: '#f3e8ff' },
-    { name: 'ZENTRO SOLUTIONS', icon: Activity, color: '#3b82f6', bg: '#dbeafe' },
-    { name: 'ECHODIGITALWORKS', icon: ShieldCheck, color: '#ef4444', bg: '#fee2e2' },
-    { name: 'Echo Digital', icon: Briefcase, color: '#722DB6', bg: '#f3e8ff' },
+    { name: 'Nexyuga Innovations Private Limited', image: require('../../assets/images/nexyuga-logo.png') },
+    { name: 'ZENTRO SOLUTIONS', image: require('../../assets/images/zentro-logo.png') },
+    { name: 'ECHODIGITALWORKS', image: require('../../assets/images/echo-digital-logo.png') },
+    { name: 'Echo Digital', image: require('../../assets/images/echo-digital-logo.png') },
     { name: 'BITS Pilani', icon: GraduationCap, color: '#3b82f6', bg: '#dbeafe' },
     { name: 'IIT Madras', icon: Star, color: '#ef4444', bg: '#fee2e2' },
     { name: 'StayVista', icon: Briefcase, color: '#3b82f6', bg: '#dbeafe' },
     { name: 'EatFit', icon: Sparkles, color: '#10b981', bg: '#dcfce7' },
   ];
 
-  const duplicatedPartners = [...partners, ...partners];
   const [contentWidth, setContentWidth] = useState(0);
   const translateX = useSharedValue(0);
 
   React.useEffect(() => {
     if (contentWidth > 0) {
+      translateX.value = 0;
       translateX.value = withRepeat(
-        withTiming(-contentWidth / 2, {
-          duration: 20000,
+        withTiming(-contentWidth, {
+          duration: 21050,
           easing: Easing.linear,
         }),
         -1, // infinite repeat
@@ -276,24 +279,138 @@ function TrustedSection() {
     };
   });
 
+  const renderPartner = (partner: any, index: number, prefix: string) => (
+    <View key={`${prefix}-${index}`} style={[styles.trustedCard, { marginRight: 16 }]}>
+      <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: partner.bg || 'transparent', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+        {partner.image ? (
+          <ExpoImage source={partner.image} style={{ width: '100%', height: '100%' }} contentFit="contain" />
+        ) : (
+          partner.icon && <partner.icon size={16} color={partner.color} />
+        )}
+      </View>
+      <Text style={styles.trustedCardText}>{partner.name}</Text>
+    </View>
+  );
+
   return (
     <View style={styles.trustedSection}>
       <Text style={styles.trustedHeading}>TRUSTED BY FAST-GROWING STARTUPS ACROSS INDIA</Text>
       <View style={{ width: '100%', overflow: 'hidden' }}>
-        <Animated.View
-          style={animatedStyle}
-          onLayout={(e) => setContentWidth(e.nativeEvent.layout.width)}
-        >
-          {duplicatedPartners.map((partner, index) => (
-            <View key={index} style={[styles.trustedCard, { marginRight: 16 }]}>
-              <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: partner.bg, alignItems: 'center', justifyContent: 'center' }}>
-                <partner.icon size={16} color={partner.color} />
-              </View>
-              <Text style={styles.trustedCardText}>{partner.name}</Text>
-            </View>
-          ))}
+        <Animated.View style={animatedStyle}>
+          <View
+            onLayout={(e) => setContentWidth(e.nativeEvent.layout.width)}
+            style={{ flexDirection: 'row' }}
+          >
+            {partners.map((p, i) => renderPartner(p, i, '1'))}
+          </View>
+          <View style={{ flexDirection: 'row' }}>
+            {partners.map((p, i) => renderPartner(p, i, '2'))}
+          </View>
         </Animated.View>
       </View>
+    </View>
+  );
+}
+
+function SuperchargeSection() {
+  const { width } = useWindowDimensions();
+  const isMobile = width < 768;
+
+  const floatY = useSharedValue(0);
+
+  React.useEffect(() => {
+    floatY.value = withRepeat(
+      withTiming(-10, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true
+    );
+  }, [floatY]);
+
+  const animatedFloatingStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ translateY: floatY.value }]
+    };
+  });
+
+  return (
+    <View style={{ width: '100%', maxWidth: 1000, alignSelf: 'center', paddingVertical: 80, alignItems: 'flex-start' }}>
+      
+      {/* Badge */}
+      <View style={{ backgroundColor: '#f3e8ff', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, marginBottom: 24, borderWidth: 1, borderColor: '#e9d5ff' }}>
+        <Text style={{ color: PRIMARY, fontSize: 11, fontWeight: '800', letterSpacing: 0.5 }}>FOR STARTUPS (HIRING)</Text>
+      </View>
+
+      {/* Heading */}
+      <Text style={{ fontSize: isMobile ? 32 : 42, fontWeight: '800', color: '#0f172a', marginBottom: 24, lineHeight: isMobile ? 40 : 50, letterSpacing: -1 }}>
+        Supercharge Your Recruitment with AI Screening
+      </Text>
+
+      {/* Description */}
+      <Text style={{ fontSize: 16, color: '#475569', lineHeight: 28, marginBottom: 48, maxWidth: 800 }}>
+        Say goodbye to generic job boards and endless manual screening. Thodakkam automates sourcing, resume parsing, and compatibility analysis to deliver shortlisted, highly qualified student talent in minutes.
+      </Text>
+
+      {/* Bullets */}
+      <View style={{ gap: 32, marginBottom: 64, width: '100%' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+          <View style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: '#f8fafc', alignItems: 'center', justifyContent: 'center', marginRight: 20, marginTop: 2, borderWidth: 1, borderColor: '#e2e8f0' }}>
+            <Check size={20} color={PRIMARY} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 18, fontWeight: '800', color: '#0f172a', marginBottom: 6 }}>Automated ATS Match shortlists</Text>
+            <Text style={{ fontSize: 15, color: '#64748b', lineHeight: 24 }}>Our matching engine scores resumes against role requirements instantly so you only review fit candidates.</Text>
+          </View>
+        </View>
+
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+          <View style={{ width: 48, height: 48, borderRadius: 12, backgroundColor: '#f8fafc', alignItems: 'center', justifyContent: 'center', marginRight: 20, marginTop: 2, borderWidth: 1, borderColor: '#e2e8f0' }}>
+            <Check size={20} color={PRIMARY} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 18, fontWeight: '800', color: '#0f172a', marginBottom: 6 }}>Vetted student project portfolios</Text>
+            <Text style={{ fontSize: 15, color: '#64748b', lineHeight: 24 }}>Skip resume keyword filters. Inspect live Figma, GitHub repos, and deployed applications directly.</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Mockup Box (Stacked under the text, animated) */}
+      <Animated.View entering={FadeInUp.duration(1000).delay(300).springify()} style={[{ width: '100%', backgroundColor: '#ffffff', borderRadius: 24, padding: 32, borderWidth: 1, borderColor: '#f1f5f9', ...Platform.select({ web: { boxShadow: '0 20px 60px rgba(0,0,0,0.06)' } }) }, animatedFloatingStyle]}>
+        <Text style={{ fontSize: 18, fontWeight: '800', color: '#0f172a', marginBottom: 24 }}>Active Shortlist • Frontend Developer</Text>
+        
+        {/* Item 1 */}
+        <View style={{ backgroundColor: '#f8fafc', borderRadius: 16, padding: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, borderWidth: 1, borderColor: '#f1f5f9' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: PRIMARY, alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
+              <Text style={{ color: '#fff', fontSize: 16, fontWeight: '800' }}>AS</Text>
+            </View>
+            <View>
+              <Text style={{ fontSize: 16, fontWeight: '800', color: '#0f172a' }}>Shabari</Text>
+              <Text style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>React • TailwindCSS</Text>
+            </View>
+          </View>
+          <View style={{ backgroundColor: '#f3e8ff', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20 }}>
+            <Text style={{ color: PRIMARY, fontSize: 11, fontWeight: '800', letterSpacing: 0.5 }}>98% MATCH</Text>
+          </View>
+        </View>
+
+        {/* Item 2 */}
+        <View style={{ backgroundColor: '#f8fafc', borderRadius: 16, padding: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: '#f1f5f9' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: '#c084fc', alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
+              <Text style={{ color: '#fff', fontSize: 16, fontWeight: '800' }}>MU</Text>
+            </View>
+            <View>
+              <Text style={{ fontSize: 16, fontWeight: '800', color: '#0f172a' }}>Mukesh</Text>
+              <Text style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>Vue.js • Node.js</Text>
+            </View>
+          </View>
+          <View style={{ backgroundColor: '#dcfce7', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20 }}>
+            <Text style={{ color: '#10b981', fontSize: 11, fontWeight: '800', letterSpacing: 0.5 }}>92% MATCH</Text>
+          </View>
+        </View>
+
+      </Animated.View>
+
     </View>
   );
 }
@@ -952,12 +1069,280 @@ function CTASection() {
   );
 }
 
+const SUCCESS_STORIES = [
+  {
+    id: 1,
+    name: 'Shabari',
+    role: 'UI/UX Designer at Echo Digitals',
+    text: "As a UI/UX designer, having a platform that understands design portfolios and connects me with the right startups has been a massive boost to my career.",
+    avatar: require('../../assets/images/shabari.png'),
+  },
+  {
+    id: 2,
+    name: 'Poovarasan S',
+    role: 'Full Stack Developer at Echo Digitals',
+    text: "Becoming a full stack developer at Echo Digitals was a dream come true. The AI matching perfectly aligned my skills with their requirements. I had an offer in less than a week!",
+    avatar: require('../../assets/images/poovarasan.jpeg'),
+  },
+  {
+    id: 3,
+    name: 'Mukesh A',
+    role: 'Full Stack Developer at Echo Digitals',
+    text: "Echo Digitals is the perfect place to grow as a full stack developer. The quality of vetted opportunities on this platform is miles ahead of traditional job boards.",
+    avatar: require('../../assets/images/mukesh.jpeg'),
+  },
+
+  {
+    id: 6,
+    name: 'Vishnuvardhan K',
+    role: 'App developer at Echo Digitals',
+    text: "Building scalable and performant apps has been an incredible journey. The platform enabled me to connect with visionary startups and showcase my mobile app development skills.",
+    avatar: require('../../assets/images/vishnuvardhan.jpeg'),
+  },
+  {
+    id: 7,
+    name: 'Selva P',
+    role: 'App developer at Echo Digitals',
+    text: "This platform changed how I found opportunities as an App developer. The AI-driven process highlighted my strengths, helping me land a high-impact role swiftly.",
+    avatar: require('../../assets/images/selva.jpeg'),
+  }
+];
+
+function SuccessStoriesSection() {
+  const { width } = useWindowDimensions();
+  const isMobile = width < 768;
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  const continuousIndex = React.useRef(0);
+  const indicatorAngle = useSharedValue(-90);
+  const indicatorWidth = useSharedValue(120 - 26);
+
+  const ripple1 = useSharedValue(0);
+  const ripple2 = useSharedValue(0);
+
+  React.useEffect(() => {
+    ripple1.value = withRepeat(
+      withTiming(1, { duration: 3000, easing: Easing.out(Easing.ease) }),
+      -1,
+      false
+    );
+    setTimeout(() => {
+      ripple2.value = withRepeat(
+        withTiming(1, { duration: 3000, easing: Easing.out(Easing.ease) }),
+        -1,
+        false
+      );
+    }, 1500);
+
+    const interval = setInterval(() => {
+      setActiveIndex((current) => (current + 1) % SUCCESS_STORIES.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  React.useEffect(() => {
+    let currentMod = continuousIndex.current % 5;
+    if (currentMod < 0) currentMod += 5;
+    
+    if (activeIndex === 0 && currentMod === 4) {
+       continuousIndex.current += 1;
+    } else if (activeIndex === 4 && currentMod === 0) {
+       continuousIndex.current -= 1;
+    } else {
+       continuousIndex.current += (activeIndex - currentMod);
+    }
+
+    const targetAngle = -90 + continuousIndex.current * 72;
+    const targetRadius = (activeIndex % 2 === 0 ? 120 : 180) - 26;
+
+    indicatorAngle.value = withTiming(targetAngle, { duration: 800, easing: Easing.out(Easing.back(1.2)) });
+    indicatorWidth.value = withTiming(targetRadius, { duration: 800, easing: Easing.out(Easing.back(1.2)) });
+  }, [activeIndex]);
+
+  const animatedIndicatorStyle = useAnimatedStyle(() => {
+    const w = indicatorWidth.value;
+    return {
+      width: w,
+      transform: [
+        { translateX: -(w / 2) },
+        { rotate: `${indicatorAngle.value}deg` },
+        { translateX: w / 2 }
+      ]
+    };
+  });
+
+  const animatedRippleStyle1 = useAnimatedStyle(() => ({
+    transform: [{ scale: 1 + ripple1.value * 8 }],
+    opacity: 0.4 * (1 - ripple1.value),
+  }));
+
+  const animatedRippleStyle2 = useAnimatedStyle(() => ({
+    transform: [{ scale: 1 + ripple2.value * 8 }],
+    opacity: 0.4 * (1 - ripple2.value),
+  }));
+
+  const activeStory = SUCCESS_STORIES[activeIndex];
+
+  return (
+    <View style={styles.successSection}>
+      <Text style={styles.successTitle}>Success Stories</Text>
+      <Text style={styles.successSubtitle}>
+        Hear directly from the students using Thodakkam to launch their careers.
+      </Text>
+
+      <View style={[styles.successContent, isMobile && { flexDirection: 'column' }]}>
+        <View style={styles.successOrbitContainer}>
+           <View style={styles.successOrbitRing1} />
+           <View style={styles.successOrbitRing2} />
+
+           {/* Radar scanning ripples */}
+           <Animated.View style={[{
+             position: 'absolute',
+             width: 48,
+             height: 48,
+             borderRadius: 24,
+             backgroundColor: PRIMARY,
+             zIndex: 5,
+           }, animatedRippleStyle1]} />
+           <Animated.View style={[{
+             position: 'absolute',
+             width: 48,
+             height: 48,
+             borderRadius: 24,
+             backgroundColor: PRIMARY,
+             zIndex: 5,
+           }, animatedRippleStyle2]} />
+
+           <View style={styles.successOrbitCenter}>
+             <Star size={24} color="#fff" />
+           </View>
+
+           {/* The animated pointing line */}
+           <Animated.View style={[{
+             position: 'absolute',
+             left: 200,
+             top: 199,
+             height: 2,
+             backgroundColor: PRIMARY,
+             zIndex: 8,
+             opacity: 0.6,
+           }, animatedIndicatorStyle]} />
+
+           {SUCCESS_STORIES.map((story, i) => {
+             const isActive = i === activeIndex;
+             const angle = (i / SUCCESS_STORIES.length) * Math.PI * 2 - Math.PI / 2;
+             const radius = i % 2 === 0 ? 120 : 180;
+             const x = Math.cos(angle) * radius;
+             const y = Math.sin(angle) * radius;
+             
+             return (
+               <View 
+                 key={story.id}
+                 style={{ position: 'absolute', transform: [{ translateX: x }, { translateY: y }], zIndex: isActive ? 15 : 5 }}
+               >
+                 <View style={[
+                   styles.successAvatarWrapper,
+                   { position: 'relative' },
+                   isActive && { borderColor: PRIMARY, borderWidth: 2, transform: [{ scale: 1.2 }] }
+                 ]}>
+                   <Pressable onPress={() => setActiveIndex(i)} style={{ width: '100%', height: '100%' }}>
+                     <ExpoImage source={typeof story.avatar === 'string' ? { uri: story.avatar } : story.avatar} style={styles.successAvatar} contentFit="cover" />
+                   </Pressable>
+                 </View>
+               </View>
+             );
+           })}
+        </View>
+
+        <Animated.View key={activeIndex} entering={FadeIn.duration(400)} style={styles.successCard}>
+          <View style={styles.successCardBadge}>
+            <Star size={12} color="#722DB6" fill="#722DB6" />
+            <Text style={styles.successCardBadgeText}>SUCCESS STORY</Text>
+          </View>
+          <Text style={styles.successQuote}>"{activeStory.text}"</Text>
+          
+          <View style={styles.successAuthorRow}>
+            <ExpoImage source={typeof activeStory.avatar === 'string' ? { uri: activeStory.avatar } : activeStory.avatar} style={styles.successAuthorAvatar} contentFit="cover" />
+            <View>
+              <Text style={styles.successAuthorName}>{activeStory.name}</Text>
+              <Text style={styles.successAuthorRole}>{activeStory.role}</Text>
+              <View style={{ flexDirection: 'row', marginTop: 4 }}>
+                {[1,2,3,4,5].map(star => <Star key={star} size={10} color="#f59e0b" fill="#f59e0b" />)}
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.successDots}>
+            {SUCCESS_STORIES.map((_, i) => (
+              <Pressable key={i} onPress={() => setActiveIndex(i)}>
+                <View style={[styles.successDot, i === activeIndex && styles.successDotActive]} />
+              </Pressable>
+            ))}
+          </View>
+        </Animated.View>
+      </View>
+    </View>
+  );
+}
+
+const TYPEWRITER_STRINGS = [
+  "Creative Founders.",
+  "Next-Gen Unicorns.",
+  "Fast-Growing Startups.",
+  "Future Innovators."
+];
+
+function TypewriterText({ strings }: { strings: string[] }) {
+  const [text, setText] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [loopNum, setLoopNum] = useState(0);
+
+  React.useEffect(() => {
+    let timeout: NodeJS.Timeout;
+    
+    const i = loopNum % strings.length;
+    const fullText = strings[i];
+
+    if (isDeleting) {
+      timeout = setTimeout(() => {
+        setText(fullText.substring(0, text.length - 1));
+      }, 50);
+    } else {
+      timeout = setTimeout(() => {
+        setText(fullText.substring(0, text.length + 1));
+      }, 100);
+    }
+
+    if (!isDeleting && text === fullText) {
+      timeout = setTimeout(() => setIsDeleting(true), 2000);
+    } else if (isDeleting && text === '') {
+      setIsDeleting(false);
+      setLoopNum((prev) => prev + 1);
+    }
+
+    return () => clearTimeout(timeout);
+  }, [text, isDeleting, loopNum, strings]);
+
+  const [cursorVisible, setCursorVisible] = useState(true);
+  React.useEffect(() => {
+    const interval = setInterval(() => setCursorVisible(v => !v), 500);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <Text style={{ color: PRIMARY }}>
+      {text}
+      <Text style={{ opacity: cursorVisible ? 1 : 0 }}>|</Text>
+    </Text>
+  );
+}
+
 export default function HomeScreen() {
   const router = useRouter();
   const { height, width } = useWindowDimensions();
   const isMobile = width < 768;
 
-  const player = useVideoPlayer(require('../../assets/images/Backgound.mp4'), (player: VideoPlayer) => {
+  const player = useVideoPlayer(require('../../assets/images/background-video.mp4'), (player: any) => {
     player.loop = true;
     player.muted = true;
     player.play();
@@ -967,13 +1352,19 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 
+        {/* Top Navigation / Logo */}
+        <Animated.View entering={FadeInDown.duration(800).delay(100)} style={{ width: '100%', maxWidth: 1200, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', marginBottom: 10 }}>
+          <Image source={require('../../assets/images/Thodakkam logo.png')} style={{ width: 64, height: 64, marginRight: 16 }} resizeMode="contain" />
+          <Text style={{ fontSize: 38, fontWeight: '900', color: '#9333ea', letterSpacing: -1 }}>Thodakkam</Text>
+        </Animated.View>
+
         {/* Header / Hero Section */}
         <View style={[styles.heroWrapper, !isMobile && { minHeight: height }]}>
           <Animated.View style={styles.heroAnimationContainer} entering={FadeIn.duration(1000)}>
             {/* Background video */}
             {Platform.OS === 'web' ? (
               <video
-                src={require('../../assets/images/Backgound.mp4')}
+                src={require('../../assets/images/background-video.mp4')}
                 autoPlay
                 loop
                 muted
@@ -1006,8 +1397,12 @@ export default function HomeScreen() {
               <Sparkles size={16} color={PRIMARY} />
               <Text style={[styles.badgeText, isMobile && { fontSize: 12 }]}>Powered by Echo Digital Works</Text>
             </View>
-            <Text style={[styles.heroTitle, isMobile && { fontSize: 32, lineHeight: 40 }]}>
-              Where Ambitious <Text style={{ color: PRIMARY }}>Students</Text>{'\n'}Meet Creative <Text style={{ color: PRIMARY }}>Founders.</Text>
+            <Text style={[
+              styles.heroTitle, 
+              isMobile && { fontSize: 32, lineHeight: 40 },
+              { minHeight: isMobile ? 120 : 192 } // Pre-allocate height for up to 3 lines to prevent jumping
+            ]}>
+              Where Ambitious{'\n'}Students Meet <TypewriterText strings={TYPEWRITER_STRINGS} />
             </Text>
             <Text style={[styles.heroSubtitle, isMobile && { fontSize: 14, lineHeight: 22 }]}>
               India's AI-powered hiring ecosystem by Echo Digital Works. Startups discover verified student talent in minutes, while students build real-world proof of work and land high-growth internship roles.
@@ -1021,6 +1416,9 @@ export default function HomeScreen() {
         {/* Trusted By Section */}
         <TrustedSection />
 
+        {/* Supercharge Section */}
+        <SuperchargeSection />
+
         {/* Operations Section */}
         <OperationsSection />
 
@@ -1031,6 +1429,9 @@ export default function HomeScreen() {
         <ShowcaseSection />
         <StatsSection />
         <CTASection />
+
+        {/* Success Stories Section */}
+        <SuccessStoriesSection />
 
         {/* Footer */}
         <Animated.View style={styles.footer} entering={FadeInUp.delay(1000).duration(800)}>
@@ -1114,11 +1515,11 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)', // Muted glass blend so video shows through
+    backgroundColor: 'rgba(255, 255, 255, 0.15)', // Increased fade to 15% for text readability
     ...Platform.select({
       web: {
-        backdropFilter: 'blur(2px)',
-        WebkitBackdropFilter: 'blur(2px)',
+        backdropFilter: 'blur(0px)',
+        WebkitBackdropFilter: 'blur(0px)',
       }
     }),
     zIndex: 1,
@@ -1909,4 +2310,25 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
   },
+  successSection: { width: '100%', maxWidth: 1200, alignSelf: 'center', paddingVertical: 80, alignItems: 'center' },
+  successTitle: { fontSize: Platform.OS === 'web' ? 42 : 32, fontWeight: '800', color: '#0f172a', marginBottom: 12, textAlign: 'center', letterSpacing: -1 },
+  successSubtitle: { fontSize: 16, color: '#64748b', textAlign: 'center', marginBottom: 60, maxWidth: 600, lineHeight: 24 },
+  successContent: { flexDirection: 'row', width: '100%', alignItems: 'center', justifyContent: 'center', gap: 60 },
+  successOrbitContainer: { width: 400, height: 400, alignItems: 'center', justifyContent: 'center', position: 'relative' },
+  successOrbitRing1: { position: 'absolute', width: 240, height: 240, borderRadius: 120, borderWidth: 1, borderColor: '#e2e8f0', borderStyle: 'dashed' },
+  successOrbitRing2: { position: 'absolute', width: 360, height: 360, borderRadius: 180, borderWidth: 1, borderColor: '#e2e8f0', borderStyle: 'dashed' },
+  successOrbitCenter: { width: 48, height: 48, borderRadius: 24, backgroundColor: PRIMARY, alignItems: 'center', justifyContent: 'center', zIndex: 10, ...Platform.select({ web: { boxShadow: `0 0 20px rgba(114, 45, 182, 0.4)` } }) },
+  successAvatarWrapper: { position: 'absolute', width: 48, height: 48, borderRadius: 24, padding: 3, backgroundColor: '#ffffff', zIndex: 5, ...Platform.select({ web: { transition: 'all 0.3s ease' }}) },
+  successAvatar: { width: '100%', height: '100%', borderRadius: 20, overflow: 'hidden' },
+  successCard: { backgroundColor: '#ffffff', borderRadius: 24, padding: 40, width: '100%', maxWidth: 500, borderWidth: 1, borderColor: '#f1f5f9', ...Platform.select({ web: { boxShadow: '0 20px 40px rgba(0,0,0,0.05)' } }) },
+  successCardBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#faf5ff', alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, marginBottom: 24, borderWidth: 1, borderColor: '#f3e8ff' },
+  successCardBadgeText: { color: PRIMARY, fontSize: 10, fontWeight: '800', marginLeft: 6, letterSpacing: 0.5 },
+  successQuote: { fontSize: 18, color: '#1e293b', lineHeight: 28, fontWeight: '500', marginBottom: 32 },
+  successAuthorRow: { flexDirection: 'row', alignItems: 'center' },
+  successAuthorAvatar: { width: 48, height: 48, borderRadius: 24, marginRight: 16, overflow: 'hidden' },
+  successAuthorName: { fontSize: 15, fontWeight: '700', color: '#0f172a' },
+  successAuthorRole: { fontSize: 12, color: '#64748b', marginTop: 2 },
+  successDots: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 32, gap: 8 },
+  successDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#cbd5e1', ...Platform.select({ web: { transition: 'all 0.3s ease' } }) },
+  successDotActive: { width: 24, backgroundColor: PRIMARY },
 });
