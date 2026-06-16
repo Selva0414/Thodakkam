@@ -12,16 +12,12 @@ import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import StartupHeader from '../components/StartupHeader';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { globalNotificationStore } from '../utils/notificationStore';
-
-const PRIMARY = '#662483';
-const BG = '#f8fafc';
-const WHITE = '#ffffff';
-const TEXT_DARK = '#0f172a';
-const TEXT_GRAY = '#64748b';
+import { useAppTheme } from '../context/ThemeContext';
 
 export default function StartupJobs() {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const { colors, isDark } = useAppTheme();
   const [activeTab, setActiveTab] = useState('Jobs');
   const [jobFilter, setJobFilter] = useState('All Jobs');
   const [viewMode, setViewMode] = useState<'List' | 'Analytics' | 'Tracking' | 'CandidateDetail'>('List');
@@ -157,8 +153,13 @@ export default function StartupJobs() {
               setAssessmentResults(data.results);
             }
           })
-          .catch(err => {
+          .catch(async err => {
             console.log('Assessment results API not yet deployed or error:', err.message);
+            // Fallback to local storage mock
+            const mockStr = await AsyncStorage.getItem(`mock_assessment_result_${selectedCandidate.userId}_${jobToTrack.id}`);
+            if (mockStr) {
+              setAssessmentResults(JSON.parse(mockStr));
+            }
           });
       }
     }
@@ -300,23 +301,23 @@ export default function StartupJobs() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StartupHeader companyName={companyName} />
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scroll} contentContainerStyle={[styles.scrollContent, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
         
         {/* Job Actions Header */}
-        <View style={styles.headerCard}>
+        <View style={[styles.headerCard, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
 
           {/* Job Filter Tabs */}
           {viewMode === 'List' && (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterTabs}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[styles.filterTabs, { borderBottomColor: colors.border }]}>
               {tabsData.map(tab => (
                 <TouchableOpacity 
                   key={tab.label} 
-                  style={[styles.filterTab, jobFilter === tab.label && styles.filterTabActive]}
+                  style={[styles.filterTab, jobFilter === tab.label && { borderBottomColor: colors.text }]}
                   onPress={() => setJobFilter(tab.label)}
                 >
-                  <Text style={[styles.filterTabText, jobFilter === tab.label && styles.filterTabTextActive]}>
+                  <Text style={[styles.filterTabText, { color: colors.textSecondary }, jobFilter === tab.label && { color: colors.text, fontWeight: '700' }]}>
                     {tab.label} ({tab.count})
                   </Text>
                 </TouchableOpacity>
@@ -327,10 +328,10 @@ export default function StartupJobs() {
           {/* Floating Add Job Button for List View */}
           {viewMode === 'List' && (
             <TouchableOpacity 
-              style={styles.addJobBtn}
+              style={[styles.addJobBtn, { backgroundColor: colors.primary, shadowColor: colors.primary }]}
               onPress={() => router.push({ pathname: '/startup-add-job' as any, params: { companyName } })}
             >
-              <Plus size={28} color={WHITE} />
+              <Plus size={28} color="#ffffff" />
             </TouchableOpacity>
           )}
         </View>
@@ -340,31 +341,31 @@ export default function StartupJobs() {
           <>
             {/* Sub-bar (View toggles and sort) */}
             <View style={styles.subBar}>
-              <View style={styles.viewToggles}>
+              <View style={[styles.viewToggles, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <TouchableOpacity 
-                  style={[styles.viewBtn, styles.viewBtnActive]}
+                  style={[styles.viewBtn, styles.viewBtnActive, { backgroundColor: colors.inputBg }]}
                   onPress={() => setViewMode('List')}
                 >
-                  <ListIcon size={14} color={TEXT_DARK} style={{ marginRight: 6 }} />
-                  <Text style={[styles.viewBtnText, styles.viewBtnTextActive]}>List</Text>
+                  <ListIcon size={14} color={colors.text} style={{ marginRight: 6 }} />
+                  <Text style={[styles.viewBtnText, styles.viewBtnTextActive, { color: colors.text }]}>List</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
                   style={styles.viewBtn}
                   onPress={() => setViewMode('Tracking')}
                 >
-                  <BarChart2 size={14} color={TEXT_GRAY} style={{ marginRight: 6 }} />
-                  <Text style={styles.viewBtnText}>Tracking</Text>
+                  <BarChart2 size={14} color={colors.textSecondary} style={{ marginRight: 6 }} />
+                  <Text style={[styles.viewBtnText, { color: colors.textSecondary }]}>Tracking</Text>
                 </TouchableOpacity>
               </View>
-              <Text style={styles.sortText}>Sorted by: <Text style={styles.sortTextBold}>Recently Added</Text></Text>
+              <Text style={[styles.sortText, { color: colors.textSecondary }]}>Sorted by: <Text style={[styles.sortTextBold, { color: colors.text }]}>Recently Added</Text></Text>
             </View>
 
             {/* Job List */}
             <View style={styles.jobList}>
               {loading ? (
-                <ActivityIndicator color={PRIMARY} style={{ marginTop: 40 }} />
+                <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
               ) : jobs.length === 0 ? (
-                <Text style={{ textAlign: 'center', color: TEXT_GRAY, marginTop: 40 }}>No jobs found. Create one!</Text>
+                <Text style={{ textAlign: 'center', color: colors.textSecondary, marginTop: 40 }}>No jobs found. Create one!</Text>
               ) : (
                 jobs
                   .filter(job => {
@@ -373,9 +374,9 @@ export default function StartupJobs() {
                     return job.status.toLowerCase() === targetStatus;
                   })
                   .map(job => (
-                  <View key={job.id} style={[styles.jobCard, { zIndex: activeMenuId === job.id ? 100 : 1 }]}>
+                  <View key={job.id} style={[styles.jobCard, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, zIndex: activeMenuId === job.id ? 100 : 1 }]}>
                     <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 16 }}>
-                      <View style={[styles.jobCardLogo, (job.companyLogo || globalCompanyLogo) && { backgroundColor: 'transparent', borderWidth: 1, borderColor: '#e2e8f0' }]}>
+                      <View style={[styles.jobCardLogo, { backgroundColor: isDark ? colors.inputBg : '#0f172a' }, (job.companyLogo || globalCompanyLogo) && { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.border }]}>
                         {(job.companyLogo || globalCompanyLogo) ? (
                           <Image 
                             source={{ uri: (job.companyLogo || globalCompanyLogo) as string }} 
@@ -389,30 +390,30 @@ export default function StartupJobs() {
                       
                       <View style={{ flex: 1, marginLeft: 12 }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 6 }}>
-                          <Text style={styles.jobTitle}>{job.title}</Text>
-                          <View style={[styles.badge, { backgroundColor: job.status === 'ACTIVE' ? '#dcfce7' : '#f1f5f9' }]}>
-                            <Text style={[styles.badgeText, { color: job.status === 'ACTIVE' ? '#16a34a' : TEXT_GRAY }]}>{job.status}</Text>
+                          <Text style={[styles.jobTitle, { color: colors.text }]}>{job.title}</Text>
+                          <View style={[styles.badge, { backgroundColor: job.status === 'ACTIVE' ? (isDark ? colors.success + '20' : '#dcfce7') : colors.inputBg }]}>
+                            <Text style={[styles.badgeText, { color: job.status === 'ACTIVE' ? (isDark ? colors.success : '#16a34a') : colors.textSecondary }]}>{job.status}</Text>
                           </View>
                         </View>
                         
                         <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
                           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                            <Calendar size={12} color={TEXT_GRAY} />
-                            <Text style={styles.jobCardMetaText}>Posted recently</Text>
+                            <Calendar size={12} color={colors.textSecondary} />
+                            <Text style={[styles.jobCardMetaText, { color: colors.textSecondary }]}>Posted recently</Text>
                           </View>
                           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                            <MapPin size={12} color={TEXT_GRAY} />
-                            <Text style={styles.jobCardMetaText}>{job.location}</Text>
+                            <MapPin size={12} color={colors.textSecondary} />
+                            <Text style={[styles.jobCardMetaText, { color: colors.textSecondary }]}>{job.location}</Text>
                           </View>
                           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                            <Clock size={12} color={TEXT_GRAY} />
-                            <Text style={styles.jobCardMetaText}>{job.type || 'Full-time'}</Text>
+                            <Clock size={12} color={colors.textSecondary} />
+                            <Text style={[styles.jobCardMetaText, { color: colors.textSecondary }]}>{job.type || 'Full-time'}</Text>
                           </View>
                         </View>
                       </View>
 
                       {job.status === 'ACTIVE' && (
-                        <View style={styles.daysLeftPill}>
+                        <View style={[styles.daysLeftPill, { backgroundColor: isDark ? '#ea580c20' : '#ffedd5' }]}>
                           <Clock size={10} color="#ea580c" />
                           <Text style={styles.daysLeftText}>Live</Text>
                         </View>
@@ -421,34 +422,34 @@ export default function StartupJobs() {
 
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 16 }}>
                       <View style={{ flex: 1 }}>
-                        <Text style={styles.statLabel}>APPLICANTS</Text>
+                        <Text style={[styles.statLabel, { color: colors.textSecondary }]}>APPLICANTS</Text>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                          <Text style={styles.statValue}>{job.applications?.length || 0}</Text>
-                          <Text style={styles.statTrend}>↗ +0 today</Text>
+                          <Text style={[styles.statValue, { color: colors.text }]}>{job.applications?.length || 0}</Text>
+                          <Text style={[styles.statTrend, { color: isDark ? colors.success : '#16a34a' }]}>↗ +0 today</Text>
                         </View>
                       </View>
                       <View style={{ flex: 1 }}>
-                        <Text style={styles.statLabel}>INTERVIEWS</Text>
+                        <Text style={[styles.statLabel, { color: colors.textSecondary }]}>INTERVIEWS</Text>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                          <Calendar size={14} color={PRIMARY} />
-                          <Text style={styles.statValueSmall}>0 scheduled</Text>
+                          <Calendar size={14} color={colors.primary} />
+                          <Text style={[styles.statValueSmall, { color: colors.text }]}>0 scheduled</Text>
                         </View>
                       </View>
                     </View>
 
                     <View style={styles.cardActions}>
                       <TouchableOpacity 
-                        style={[styles.primaryActionBtn, { backgroundColor: PRIMARY, shadowColor: PRIMARY, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 }]}
+                        style={[styles.primaryActionBtn, { backgroundColor: colors.primary, shadowColor: colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 }]}
                         onPress={() => {
                           setSelectedJob(job);
                           setViewMode('Tracking');
                         }}
                       >
-                        <Text style={[styles.actionBtnText, { color: WHITE }]}>View Applicants</Text>
+                        <Text style={[styles.actionBtnText, { color: '#ffffff' }]}>View Applicants</Text>
                       </TouchableOpacity>
                       
                       <TouchableOpacity 
-                        style={styles.outlineActionBtn}
+                        style={[styles.outlineActionBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
                         onPress={() => {
                           router.push({
                             pathname: '/startup-job-details' as any,
@@ -472,19 +473,19 @@ export default function StartupJobs() {
                           });
                         }}
                       >
-                        <Text style={styles.outlineActionBtnText}>View Details</Text>
+                        <Text style={[styles.outlineActionBtnText, { color: colors.text }]}>View Details</Text>
                       </TouchableOpacity>
 
                       <View style={{ position: 'relative', zIndex: 100 }}>
                         <TouchableOpacity 
-                          style={styles.moreBtn}
+                          style={[styles.moreBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
                           onPress={() => setActiveMenuId(activeMenuId === job.id ? null : job.id)}
                         >
-                          <MoreHorizontal size={18} color={TEXT_GRAY} />
+                          <MoreHorizontal size={18} color={colors.textSecondary} />
                         </TouchableOpacity>
 
                         {activeMenuId === job.id && (
-                          <View style={styles.dropdownMenu}>
+                          <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}>
                             <TouchableOpacity 
                               style={styles.dropdownItem}
                               onPress={() => {
@@ -511,25 +512,25 @@ export default function StartupJobs() {
                                 });
                               }}
                             >
-                              <Text style={styles.dropdownItemText}>Edit Job</Text>
+                              <Text style={[styles.dropdownItemText, { color: colors.text }]}>Edit Job</Text>
                             </TouchableOpacity>
                             <TouchableOpacity 
                               style={styles.dropdownItem}
                               onPress={() => handleUpdateStatus(job.id, 'DRAFT')}
                             >
-                              <Text style={styles.dropdownItemText}>Move to Draft</Text>
+                              <Text style={[styles.dropdownItemText, { color: colors.text }]}>Move to Draft</Text>
                             </TouchableOpacity>
                             <TouchableOpacity 
                               style={styles.dropdownItem}
                               onPress={() => handleUpdateStatus(job.id, 'CLOSED')}
                             >
-                              <Text style={styles.dropdownItemText}>Close Job</Text>
+                              <Text style={[styles.dropdownItemText, { color: colors.text }]}>Close Job</Text>
                             </TouchableOpacity>
                             <TouchableOpacity 
                               style={styles.dropdownItem}
                               onPress={() => handleDeleteJob(job.id)}
                             >
-                              <Text style={[styles.dropdownItemText, { color: '#ef4444' }]}>Delete Job</Text>
+                              <Text style={[styles.dropdownItemText, { color: isDark ? colors.danger : '#ef4444' }]}>Delete Job</Text>
                             </TouchableOpacity>
                           </View>
                         )}
@@ -543,78 +544,78 @@ export default function StartupJobs() {
         ) : viewMode === 'Tracking' ? (
           jobToTrack ? (
             <View style={{ paddingHorizontal: 20, paddingBottom: 40, marginTop: 20 }}>
-            <Text style={{ fontSize: 24, fontWeight: '800', color: TEXT_DARK, marginBottom: 4 }}>Job Management</Text>
-            <Text style={{ fontSize: 13, color: TEXT_GRAY, marginBottom: 20 }}>Review listings and track candidate journey across hiring stages.</Text>
+            <Text style={{ fontSize: 24, fontWeight: '800', color: colors.text, marginBottom: 4 }}>Job Management</Text>
+            <Text style={{ fontSize: 13, color: colors.textSecondary, marginBottom: 20 }}>Review listings and track candidate journey across hiring stages.</Text>
 
-            <View style={{ backgroundColor: WHITE, borderRadius: 16, padding: 20, borderWidth: 1, borderColor: '#e2e8f0', marginBottom: 20 }}>
+            <View style={{ backgroundColor: colors.card, borderRadius: 16, padding: 20, borderWidth: 1, borderColor: colors.border, marginBottom: 20 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
                 <TouchableOpacity onPress={() => setViewMode('List')}>
-                  <Text style={{ fontSize: 12, color: TEXT_GRAY, fontWeight: '600' }}>Jobs  <Text style={{ color: '#cbd5e1' }}>{'>'}</Text>  </Text>
+                  <Text style={{ fontSize: 12, color: colors.textSecondary, fontWeight: '600' }}>Jobs  <Text style={{ color: colors.border }}>{'>'}</Text>  </Text>
                 </TouchableOpacity>
-                <Text style={{ fontSize: 12, color: TEXT_DARK, fontWeight: '600' }}>Tracking</Text>
+                <Text style={{ fontSize: 12, color: colors.text, fontWeight: '600' }}>Tracking</Text>
               </View>
               
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
                 <View>
-                  <Text style={{ fontSize: 20, fontWeight: '800', color: TEXT_DARK, marginBottom: 4 }}>{jobToTrack.title}</Text>
-                  <Text style={{ fontSize: 11, color: TEXT_GRAY }}>ID: {jobToTrack.id}</Text>
+                  <Text style={{ fontSize: 20, fontWeight: '800', color: colors.text, marginBottom: 4 }}>{jobToTrack.title}</Text>
+                  <Text style={{ fontSize: 11, color: colors.textSecondary }}>ID: {jobToTrack.id}</Text>
                 </View>
-                <View style={{ backgroundColor: '#dcfce7', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}>
-                  <Text style={{ color: '#16a34a', fontSize: 10, fontWeight: '800' }}>ACTIVE</Text>
+                <View style={{ backgroundColor: isDark ? colors.success + '20' : '#dcfce7', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}>
+                  <Text style={{ color: isDark ? colors.success : '#16a34a', fontSize: 10, fontWeight: '800' }}>ACTIVE</Text>
                 </View>
               </View>
 
               {/* Filters ScrollView */}
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 24 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                  <View style={styles.tFilterPill}><Briefcase size={14} color={TEXT_GRAY} /><Text style={styles.tFilterText}>{jobToTrack.title}</Text></View>
-                  <View style={styles.tFilterPill}><Text style={styles.tFilterText}>All Stages</Text></View>
-                  <View style={styles.tFilterPill}><Text style={styles.tFilterText}>All Status</Text></View>
-                  <View style={styles.tFilterPill}><Text style={styles.tFilterText}>mm/dd/yyyy</Text><Calendar size={14} color={TEXT_GRAY} /></View>
-                  <View style={styles.tFilterPill}><Text style={styles.tFilterText}>mm/dd/yyyy</Text><Calendar size={14} color={TEXT_GRAY} /></View>
-                  <TouchableOpacity><Text style={{ color: TEXT_DARK, fontSize: 12, fontWeight: '600', marginLeft: 8 }}>Clear Filters</Text></TouchableOpacity>
+                  <View style={[styles.tFilterPill, { borderColor: colors.border, backgroundColor: colors.inputBg }]}><Briefcase size={14} color={colors.textSecondary} /><Text style={[styles.tFilterText, { color: colors.text }]}>{jobToTrack.title}</Text></View>
+                  <View style={[styles.tFilterPill, { borderColor: colors.border, backgroundColor: colors.inputBg }]}><Text style={[styles.tFilterText, { color: colors.text }]}>All Stages</Text></View>
+                  <View style={[styles.tFilterPill, { borderColor: colors.border, backgroundColor: colors.inputBg }]}><Text style={[styles.tFilterText, { color: colors.text }]}>All Status</Text></View>
+                  <View style={[styles.tFilterPill, { borderColor: colors.border, backgroundColor: colors.inputBg }]}><Text style={[styles.tFilterText, { color: colors.text }]}>mm/dd/yyyy</Text><Calendar size={14} color={colors.textSecondary} /></View>
+                  <View style={[styles.tFilterPill, { borderColor: colors.border, backgroundColor: colors.inputBg }]}><Text style={[styles.tFilterText, { color: colors.text }]}>mm/dd/yyyy</Text><Calendar size={14} color={colors.textSecondary} /></View>
+                  <TouchableOpacity><Text style={{ color: colors.text, fontSize: 12, fontWeight: '600', marginLeft: 8 }}>Clear Filters</Text></TouchableOpacity>
                 </View>
               </ScrollView>
 
               {/* 4 Cards */}
               <View style={styles.trackingGrid}>
                 {/* Total Applicants */}
-                <View style={[styles.trackingCard, { borderColor: '#bfdbfe' }]}>
-                  <View style={[styles.trackingIconBox, { backgroundColor: '#eff6ff' }]}>
+                <View style={[styles.trackingCard, { backgroundColor: colors.card, borderColor: isDark ? '#3b82f650' : '#bfdbfe' }]}>
+                  <View style={[styles.trackingIconBox, { backgroundColor: isDark ? '#3b82f620' : '#eff6ff' }]}>
                     <Users size={18} color="#3b82f6" />
                   </View>
-                  <Text style={styles.trackingLabel}>TOTAL APPLICANTS</Text>
-                  <Text style={styles.trackingValue}>{jobToTrack.applications?.length || 0}</Text>
+                  <Text style={[styles.trackingLabel, { color: colors.textSecondary }]}>TOTAL APPLICANTS</Text>
+                  <Text style={[styles.trackingValue, { color: colors.text }]}>{jobToTrack.applications?.length || 0}</Text>
                   <Text style={[styles.trackingSubtext, { color: '#3b82f6' }]}>+{(jobToTrack.applications?.length || 0) > 0 ? 1 : 0} this week</Text>
                 </View>
 
                 {/* Shortlisted */}
-                <View style={[styles.trackingCard, { borderColor: '#fef08a' }]}>
-                  <View style={[styles.trackingIconBox, { backgroundColor: '#fefce8' }]}>
+                <View style={[styles.trackingCard, { backgroundColor: colors.card, borderColor: isDark ? '#eab30850' : '#fef08a' }]}>
+                  <View style={[styles.trackingIconBox, { backgroundColor: isDark ? '#eab30820' : '#fefce8' }]}>
                     <UserCheck size={18} color="#eab308" />
                   </View>
-                  <Text style={styles.trackingLabel}>SHORTLISTED</Text>
-                  <Text style={styles.trackingValue}>0</Text>
+                  <Text style={[styles.trackingLabel, { color: colors.textSecondary }]}>SHORTLISTED</Text>
+                  <Text style={[styles.trackingValue, { color: colors.text }]}>0</Text>
                   <Text style={[styles.trackingSubtext, { color: '#eab308' }]}>+0 this week</Text>
                 </View>
 
                 {/* Interviews Scheduled */}
-                <View style={[styles.trackingCard, { borderColor: '#e9d5ff' }]}>
-                  <View style={[styles.trackingIconBox, { backgroundColor: '#faf5ff' }]}>
+                <View style={[styles.trackingCard, { backgroundColor: colors.card, borderColor: isDark ? '#a855f750' : '#e9d5ff' }]}>
+                  <View style={[styles.trackingIconBox, { backgroundColor: isDark ? '#a855f720' : '#faf5ff' }]}>
                     <Calendar size={18} color="#a855f7" />
                   </View>
-                  <Text style={styles.trackingLabel}>INTERVIEWS SCHEDULED</Text>
-                  <Text style={styles.trackingValue}>0</Text>
+                  <Text style={[styles.trackingLabel, { color: colors.textSecondary }]}>INTERVIEWS SCHEDULED</Text>
+                  <Text style={[styles.trackingValue, { color: colors.text }]}>0</Text>
                   <Text style={[styles.trackingSubtext, { color: '#a855f7' }]}>+0 this week</Text>
                 </View>
 
                 {/* Selected */}
-                <View style={[styles.trackingCard, { borderColor: '#bbf7d0' }]}>
-                  <View style={[styles.trackingIconBox, { backgroundColor: '#f0fdf4' }]}>
+                <View style={[styles.trackingCard, { backgroundColor: colors.card, borderColor: isDark ? '#22c55e50' : '#bbf7d0' }]}>
+                  <View style={[styles.trackingIconBox, { backgroundColor: isDark ? '#22c55e20' : '#f0fdf4' }]}>
                     <CheckCircle size={18} color="#22c55e" />
                   </View>
-                  <Text style={styles.trackingLabel}>SELECTED</Text>
-                  <Text style={styles.trackingValue}>0</Text>
+                  <Text style={[styles.trackingLabel, { color: colors.textSecondary }]}>SELECTED</Text>
+                  <Text style={[styles.trackingValue, { color: colors.text }]}>0</Text>
                   <Text style={[styles.trackingSubtext, { color: '#22c55e' }]}>+0 this week</Text>
                 </View>
               </View>
@@ -622,43 +623,43 @@ export default function StartupJobs() {
               {/* Applicant List */}
               <View>
                 {!jobToTrack?.applications || jobToTrack.applications.length === 0 ? (
-                  <Text style={{ textAlign: 'center', color: TEXT_GRAY, marginTop: 20 }}>No applicants yet.</Text>
+                  <Text style={{ textAlign: 'center', color: colors.textSecondary, marginTop: 20 }}>No applicants yet.</Text>
                 ) : (
                   jobToTrack.applications.map((app: any) => (
                     <TouchableOpacity 
                       key={app.id} 
-                      style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderWidth: 1, borderColor: '#f1f5f9', borderRadius: 12, marginBottom: 12, backgroundColor: WHITE }}
+                      style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderWidth: 1, borderColor: colors.border, borderRadius: 12, marginBottom: 12, backgroundColor: colors.card }}
                       onPress={() => {
                         setSelectedCandidate(app);
                         setViewMode('CandidateDetail');
                       }}
                     >
-                      <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#e2e8f0', marginRight: 12, overflow: 'hidden', justifyContent: 'center', alignItems: 'center' }}>
+                      <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: colors.inputBg, marginRight: 12, overflow: 'hidden', justifyContent: 'center', alignItems: 'center' }}>
                         {app.user?.profilePhoto ? (
                           <Image source={{ uri: app.user.profilePhoto }} style={{ width: '100%', height: '100%' }} />
                         ) : (
-                          <Text style={{ fontSize: 16, fontWeight: '700', color: TEXT_GRAY }}>
+                          <Text style={{ fontSize: 16, fontWeight: '700', color: colors.textSecondary }}>
                             {app.fullName ? app.fullName.charAt(0).toUpperCase() : 'U'}
                           </Text>
                         )}
                       </View>
                       
                       <View style={{ flex: 1, marginRight: 12 }}>
-                        <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT_DARK }} numberOfLines={1}>{app.fullName}</Text>
-                        <Text style={{ fontSize: 12, color: TEXT_GRAY }} numberOfLines={1}>{app.email}</Text>
+                        <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text }} numberOfLines={1}>{app.fullName}</Text>
+                        <Text style={{ fontSize: 12, color: colors.textSecondary }} numberOfLines={1}>{app.email}</Text>
                       </View>
 
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end', flex: 1.2 }}>
-                        <View style={{ backgroundColor: '#eff6ff', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}>
+                        <View style={{ backgroundColor: isDark ? '#3b82f620' : '#eff6ff', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}>
                           <Text style={{ color: '#3b82f6', fontSize: 10, fontWeight: '600' }}>MCQ Round</Text>
                         </View>
-                        <View style={{ borderWidth: 1, borderColor: '#e2e8f0', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}>
-                          <Text style={{ color: TEXT_DARK, fontSize: 10, fontWeight: '600' }}>Round 1/1</Text>
+                        <View style={{ borderWidth: 1, borderColor: colors.border, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}>
+                          <Text style={{ color: colors.text, fontSize: 10, fontWeight: '600' }}>Round 1/1</Text>
                         </View>
-                        <Text style={{ fontSize: 11, color: TEXT_DARK, fontWeight: '600', marginLeft: 4 }}>
+                        <Text style={{ fontSize: 11, color: colors.text, fontWeight: '600', marginLeft: 4 }}>
                           {new Date(app.appliedAt || Date.now()).toLocaleDateString()}
                         </Text>
-                        <View style={{ backgroundColor: '#dbeafe', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                        <View style={{ backgroundColor: isDark ? '#2563eb20' : '#dbeafe', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
                           <Text style={{ color: '#2563eb', fontSize: 9, fontWeight: '800' }}>NEW</Text>
                         </View>
                       </View>
@@ -669,42 +670,42 @@ export default function StartupJobs() {
             </View>
           </View>
           ) : (
-            <Text style={{ textAlign: 'center', color: TEXT_GRAY, marginTop: 40 }}>No jobs available to track.</Text>
+            <Text style={{ textAlign: 'center', color: colors.textSecondary, marginTop: 40 }}>No jobs available to track.</Text>
           )
         ) : viewMode === 'CandidateDetail' && selectedCandidate ? (
           <View style={{ paddingHorizontal: 20, paddingBottom: 40, marginTop: 20 }}>
             {/* Back button */}
             <TouchableOpacity 
-              style={{ alignSelf: 'flex-start', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: '#e2e8f0', backgroundColor: WHITE, flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}
+              style={{ alignSelf: 'flex-start', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card, flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}
               onPress={() => setViewMode('Tracking')}
             >
-              <Text style={{ fontSize: 13, fontWeight: '600', color: TEXT_DARK }}>{'<  Back to Tracking'}</Text>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: colors.text }}>{'<  Back to Tracking'}</Text>
             </TouchableOpacity>
 
             {/* Header Card */}
-            <View style={{ backgroundColor: WHITE, borderRadius: 12, padding: 20, borderWidth: 1, borderColor: '#e2e8f0', marginBottom: 16 }}>
+            <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: 20, borderWidth: 1, borderColor: colors.border, marginBottom: 16 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                  <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: '#eff6ff', justifyContent: 'center', alignItems: 'center', marginRight: 16 }}>
+                  <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: isDark ? colors.primary + '20' : '#eff6ff', justifyContent: 'center', alignItems: 'center', marginRight: 16 }}>
                      {selectedCandidate.user?.profilePhoto ? (
                         <Image source={{ uri: selectedCandidate.user.profilePhoto }} style={{ width: '100%', height: '100%', borderRadius: 24 }} />
                       ) : (
-                        <Text style={{ fontSize: 20, fontWeight: '700', color: PRIMARY }}>
+                        <Text style={{ fontSize: 20, fontWeight: '700', color: colors.primary }}>
                           {selectedCandidate.fullName ? selectedCandidate.fullName.charAt(0).toUpperCase() : 'U'}
                         </Text>
                       )}
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 20, fontWeight: '800', color: TEXT_DARK, marginBottom: 4 }}>{selectedCandidate.fullName}</Text>
+                    <Text style={{ fontSize: 20, fontWeight: '800', color: colors.text, marginBottom: 4 }}>{selectedCandidate.fullName}</Text>
                     <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-                      <Text style={{ fontSize: 12, color: TEXT_GRAY }}>✉ {selectedCandidate.email}</Text>
-                      <Text style={{ fontSize: 12, color: TEXT_GRAY }}>📞 {selectedCandidate.phone || '—'}</Text>
-                      <Text style={{ fontSize: 12, color: TEXT_GRAY }}>📍 {selectedCandidate.user?.location || 'Salem, India'}</Text>
+                      <Text style={{ fontSize: 12, color: colors.textSecondary }}>✉ {selectedCandidate.email}</Text>
+                      <Text style={{ fontSize: 12, color: colors.textSecondary }}>📞 {selectedCandidate.phone || '—'}</Text>
+                      <Text style={{ fontSize: 12, color: colors.textSecondary }}>📍 {selectedCandidate.user?.location || 'Salem, India'}</Text>
                     </View>
                   </View>
                 </View>
-                <View style={{ backgroundColor: '#eff6ff', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 }}>
-                  <Text style={{ color: PRIMARY, fontSize: 11, fontWeight: '700' }}>MCQ Round</Text>
+                <View style={{ backgroundColor: isDark ? colors.primary + '20' : '#eff6ff', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 }}>
+                  <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '700' }}>MCQ Round</Text>
                 </View>
               </View>
             </View>
@@ -718,49 +719,49 @@ export default function StartupJobs() {
               const isCurrentStage = activeIdx === currentStageIndex;
               
               let statusLabel = 'Not Started';
-              let statusColor = '#94a3b8';
-              let statusBg = '#f1f5f9';
+              let statusColor = colors.textSecondary;
+              let statusBg = colors.inputBg;
 
               if (resultData?.status === 'PASSED') {
                 statusLabel = 'Passed';
-                statusColor = '#22c55e';
-                statusBg = '#dcfce7';
+                statusColor = isDark ? colors.success : '#22c55e';
+                statusBg = isDark ? colors.success + '20' : '#dcfce7';
               } else if (resultData?.status === 'FAILED') {
                 statusLabel = 'Failed';
-                statusColor = '#ef4444';
-                statusBg = '#fee2e2';
+                statusColor = isDark ? colors.danger : '#ef4444';
+                statusBg = isDark ? colors.danger + '20' : '#fee2e2';
               } else if (isPastStage) {
                 statusLabel = 'Completed';
-                statusColor = '#22c55e';
-                statusBg = '#dcfce7';
+                statusColor = isDark ? colors.success : '#22c55e';
+                statusBg = isDark ? colors.success + '20' : '#dcfce7';
               } else if (isCurrentStage) {
                 statusLabel = 'In Progress';
                 statusColor = '#a855f7';
-                statusBg = '#f3e8ff';
+                statusBg = isDark ? '#a855f720' : '#f3e8ff';
               }
 
               return (
-                <View style={{ backgroundColor: WHITE, borderRadius: 12, padding: 20, borderWidth: 1, borderColor: '#e2e8f0', borderLeftWidth: 4, borderLeftColor: PRIMARY, marginBottom: 16 }}>
+                <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: 20, borderWidth: 1, borderColor: colors.border, borderLeftWidth: 4, borderLeftColor: colors.primary, marginBottom: 16 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                     <Text style={{ fontSize: 16, marginRight: 8 }}>📝</Text>
-                    <Text style={{ fontSize: 16, fontWeight: '800', color: TEXT_DARK }}>Stage Details — {activeStage.label}</Text>
+                    <Text style={{ fontSize: 16, fontWeight: '800', color: colors.text }}>Stage Details — {activeStage.label}</Text>
                   </View>
-                  <Text style={{ fontSize: 12, color: '#94a3b8', marginBottom: 20 }}>Click any pipeline stage below to explore its details.</Text>
+                  <Text style={{ fontSize: 12, color: colors.textSecondary, marginBottom: 20 }}>Click any pipeline stage below to explore its details.</Text>
                   
                   <View style={{ flexDirection: 'row', gap: 12, flexWrap: 'wrap' }}>
-                    <View style={{ flex: 1, minWidth: 90, padding: 12, borderRadius: 8, borderWidth: 1, borderColor: '#f1f5f9', backgroundColor: '#fafaf9' }}>
-                      <Text style={{ fontSize: 10, fontWeight: '700', color: '#94a3b8', marginBottom: 8 }}>SCORE</Text>
-                      <Text style={{ fontSize: 16, fontWeight: '700', color: TEXT_DARK }}>{resultData?.score !== null && resultData?.score !== undefined ? `${resultData.score}%` : '—'}</Text>
+                    <View style={{ flex: 1, minWidth: 90, padding: 12, borderRadius: 8, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.inputBg }}>
+                      <Text style={{ fontSize: 10, fontWeight: '700', color: colors.textSecondary, marginBottom: 8 }}>SCORE</Text>
+                      <Text style={{ fontSize: 16, fontWeight: '700', color: colors.text }}>{resultData?.score !== null && resultData?.score !== undefined ? `${resultData.score}%` : '—'}</Text>
                     </View>
-                    <View style={{ flex: 1, minWidth: 90, padding: 12, borderRadius: 8, borderWidth: 1, borderColor: '#f1f5f9', backgroundColor: '#fafaf9' }}>
-                      <Text style={{ fontSize: 10, fontWeight: '700', color: '#94a3b8', marginBottom: 8 }}>STATUS</Text>
+                    <View style={{ flex: 1, minWidth: 90, padding: 12, borderRadius: 8, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.inputBg }}>
+                      <Text style={{ fontSize: 10, fontWeight: '700', color: colors.textSecondary, marginBottom: 8 }}>STATUS</Text>
                       <View style={{ alignSelf: 'flex-start', backgroundColor: statusBg, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 }}>
                         <Text style={{ color: statusColor, fontSize: 11, fontWeight: '700' }}>{statusLabel}</Text>
                       </View>
                     </View>
-                    <View style={{ flex: 1, minWidth: 100, padding: 12, borderRadius: 8, borderWidth: 1, borderColor: '#f1f5f9', backgroundColor: '#fafaf9' }}>
-                      <Text style={{ fontSize: 10, fontWeight: '700', color: '#94a3b8', marginBottom: 8 }}>COMPLETED ON</Text>
-                      <Text style={{ fontSize: 14, fontWeight: '700', color: TEXT_DARK }}>
+                    <View style={{ flex: 1, minWidth: 100, padding: 12, borderRadius: 8, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.inputBg }}>
+                      <Text style={{ fontSize: 10, fontWeight: '700', color: colors.textSecondary, marginBottom: 8 }}>COMPLETED ON</Text>
+                      <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text }}>
                         {resultData?.completedAt ? new Date(resultData.completedAt).toLocaleDateString() : '—'}
                       </Text>
                     </View>
@@ -770,14 +771,16 @@ export default function StartupJobs() {
             })()}
 
             {/* Application Pipeline */}
-            <View style={{ backgroundColor: WHITE, borderRadius: 12, paddingVertical: 20, borderWidth: 1, borderColor: '#e2e8f0', marginBottom: 16 }}>
-              <Text style={{ fontSize: 16, fontWeight: '800', color: TEXT_DARK, marginBottom: 30, paddingHorizontal: 20 }}>Application Pipeline</Text>
+            <View style={{ backgroundColor: colors.card, borderRadius: 12, paddingVertical: 20, borderWidth: 1, borderColor: colors.border, marginBottom: 16 }}>
+              <Text style={{ fontSize: 16, fontWeight: '800', color: colors.text, marginBottom: 30, paddingHorizontal: 20 }}>Application Pipeline</Text>
               
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 <View style={{ flexDirection: 'row', alignItems: 'flex-start', paddingHorizontal: 20, paddingBottom: 10 }}>
                   {PIPELINE_STAGES.map((stage, index) => {
                     const isCompleted = currentStageIndex > index;
                     const isCurrent = currentStageIndex === index;
+                    const cColor = isDark ? colors.success : '#22c55e';
+                    const currColor = '#a855f7';
                     
                     return (
                       <React.Fragment key={stage.id}>
@@ -788,23 +791,23 @@ export default function StartupJobs() {
                         >
                           <View style={{ height: 28, justifyContent: 'center', alignItems: 'center', marginBottom: 8 }}>
                             {isCompleted ? (
-                              <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: WHITE, borderWidth: 2, borderColor: '#22c55e', justifyContent: 'center', alignItems: 'center', shadowColor: activeStageView === stage.id ? '#22c55e' : 'transparent', shadowOpacity: 0.5, shadowRadius: 4 }}>
-                                <Check size={14} color="#22c55e" />
+                              <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: colors.card, borderWidth: 2, borderColor: cColor, justifyContent: 'center', alignItems: 'center', shadowColor: activeStageView === stage.id ? cColor : 'transparent', shadowOpacity: 0.5, shadowRadius: 4 }}>
+                                <Check size={14} color={cColor} />
                               </View>
                             ) : isCurrent ? (
-                              <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#fdf4ff', borderWidth: 2, borderColor: '#a855f7', justifyContent: 'center', alignItems: 'center', shadowColor: activeStageView === stage.id ? '#a855f7' : 'transparent', shadowOpacity: 0.5, shadowRadius: 4 }}>
-                                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#a855f7' }} />
+                              <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: isDark ? currColor + '20' : '#fdf4ff', borderWidth: 2, borderColor: currColor, justifyContent: 'center', alignItems: 'center', shadowColor: activeStageView === stage.id ? currColor : 'transparent', shadowOpacity: 0.5, shadowRadius: 4 }}>
+                                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: currColor }} />
                               </View>
                             ) : (
-                              <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: WHITE, borderWidth: 2, borderColor: '#e2e8f0', justifyContent: 'center', alignItems: 'center' }} />
+                              <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.border, justifyContent: 'center', alignItems: 'center' }} />
                             )}
                           </View>
-                          <Text style={{ fontSize: 10, fontWeight: '600', color: isCompleted ? '#22c55e' : isCurrent ? '#a855f7' : '#94a3b8', textAlign: 'center' }}>{stage.label}</Text>
+                          <Text style={{ fontSize: 10, fontWeight: '600', color: isCompleted ? cColor : isCurrent ? currColor : colors.textSecondary, textAlign: 'center' }}>{stage.label}</Text>
                         </TouchableOpacity>
 
                         {/* Connecting Line */}
                         {index < PIPELINE_STAGES.length - 1 && (
-                          <View style={{ width: 40, height: 2, backgroundColor: isCompleted ? '#22c55e' : '#e2e8f0', marginTop: 13, marginHorizontal: -4, zIndex: -1 }} />
+                          <View style={{ width: 40, height: 2, backgroundColor: isCompleted ? cColor : colors.border, marginTop: 13, marginHorizontal: -4, zIndex: -1 }} />
                         )}
                       </React.Fragment>
                     );
@@ -814,57 +817,55 @@ export default function StartupJobs() {
             </View>
 
             {/* Stage Actions */}
-            <View style={{ backgroundColor: WHITE, borderRadius: 12, padding: 20, borderWidth: 1, borderColor: '#e2e8f0', marginBottom: 16 }}>
-              <Text style={{ fontSize: 16, fontWeight: '800', color: TEXT_DARK, marginBottom: 16 }}>Stage Actions</Text>
+            <View style={{ backgroundColor: colors.card, borderRadius: 12, padding: 20, borderWidth: 1, borderColor: colors.border, marginBottom: 16 }}>
+              <Text style={{ fontSize: 16, fontWeight: '800', color: colors.text, marginBottom: 16 }}>Stage Actions</Text>
               
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
                 {selectedCandidate?.status === 'REJECTED' ? (
-                  <Text style={{ fontSize: 13, fontWeight: '700', color: '#ef4444' }}>Candidate Rejected</Text>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: isDark ? colors.danger : '#ef4444' }}>Candidate Rejected</Text>
                 ) : selectedCandidate?.status === 'SELECTED' ? (
-                  <Text style={{ fontSize: 13, fontWeight: '700', color: '#22c55e' }}>Candidate Selected!</Text>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: isDark ? colors.success : '#22c55e' }}>Candidate Selected!</Text>
                 ) : (
                   <>
                     {currentStageIndex < PIPELINE_STAGES.length - 2 && (
                       <TouchableOpacity 
-                        style={{ paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20, backgroundColor: PRIMARY }}
+                        style={{ paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20, backgroundColor: colors.primary }}
                         onPress={() => handleUpdateApplicationStatus(PIPELINE_STAGES[currentStageIndex + 1].id)}
                       >
-                        <Text style={{ fontSize: 13, fontWeight: '700', color: WHITE }}>Move to {PIPELINE_STAGES[currentStageIndex + 1].label}</Text>
+                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#ffffff' }}>Move to {PIPELINE_STAGES[currentStageIndex + 1].label}</Text>
                       </TouchableOpacity>
                     )}
                     
                     <TouchableOpacity 
-                      style={{ paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20, backgroundColor: '#22c55e' }}
+                      style={{ paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20, backgroundColor: isDark ? colors.success : '#22c55e' }}
                       onPress={() => handleUpdateApplicationStatus('SELECTED')}
                     >
-                      <Text style={{ fontSize: 13, fontWeight: '700', color: WHITE }}>Select Candidate</Text>
+                      <Text style={{ fontSize: 13, fontWeight: '700', color: '#ffffff' }}>Select Candidate</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity 
-                      style={{ paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20, borderWidth: 1, borderColor: '#ef4444', backgroundColor: WHITE }}
+                      style={{ paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20, borderWidth: 1, borderColor: isDark ? colors.danger : '#ef4444', backgroundColor: colors.card }}
                       onPress={() => handleUpdateApplicationStatus('REJECTED')}
                     >
-                      <Text style={{ fontSize: 13, fontWeight: '600', color: '#ef4444' }}>Reject</Text>
+                      <Text style={{ fontSize: 13, fontWeight: '600', color: isDark ? colors.danger : '#ef4444' }}>Reject</Text>
                     </TouchableOpacity>
                   </>
                 )}
               </View>
 
-              <Text style={{ fontSize: 11, color: '#94a3b8' }}>Update the pipeline status or reject the candidate entirely.</Text>
+              <Text style={{ fontSize: 11, color: colors.textSecondary }}>Update the pipeline status or reject the candidate entirely.</Text>
             </View>
 
           </View>
         ) : null}
       </ScrollView>
 
-
-
       {/* Floating Elements */}
       <View style={styles.floatingContainer}>
         <View style={styles.floatingTopRow}>
           {viewMode === 'Analytics' && (
-            <TouchableOpacity style={styles.addJobFloatingBtn}>
-              <Plus size={20} color={WHITE} />
+            <TouchableOpacity style={[styles.addJobFloatingBtn, { backgroundColor: colors.primary }]}>
+              <Plus size={20} color="#ffffff" />
             </TouchableOpacity>
           )}
           <View style={{ flex: 1 }} />
@@ -873,7 +874,7 @@ export default function StartupJobs() {
 
         {viewMode === 'Analytics' && (
           <TouchableOpacity 
-            style={styles.postNewJobBtn}
+            style={[styles.postNewJobBtn, { backgroundColor: colors.primary }]}
             onPress={() => router.push({ pathname: '/startup-add-job' as any, params: { companyName } })}
           >
             <Text style={styles.postNewJobBtnText}>Post New Job</Text>
@@ -882,7 +883,7 @@ export default function StartupJobs() {
       </View>
 
       {/* Bottom Navigation */}
-      <View style={styles.bottomNav}>
+      <View style={[styles.bottomNav, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
         {[
           { label: 'Dashboard', icon: LayoutGrid },
           { label: 'Jobs', icon: Briefcase },
@@ -898,10 +899,10 @@ export default function StartupJobs() {
               style={styles.navItem}
               onPress={() => handleNavPress(item.label)}
             >
-              <View style={[{ padding: 8, borderRadius: 20 }, isActive && { backgroundColor: PRIMARY + '20', transform: [{ scale: 1.1 }] }]}>
-                <Icon size={22} color={isActive ? PRIMARY : '#94a3b8'} />
+              <View style={[{ padding: 8, borderRadius: 20 }, isActive && { backgroundColor: isDark ? colors.primary + '30' : colors.primary + '20', transform: [{ scale: 1.1 }] }]}>
+                <Icon size={22} color={isActive ? colors.primary : colors.textSecondary} />
               </View>
-              <Text style={[styles.navText, isActive && styles.navTextActive]}>
+              <Text style={[styles.navText, { color: colors.textSecondary }, isActive && { color: colors.primary, fontWeight: '700' }]}>
                 {item.label}
               </Text>
             </TouchableOpacity>
@@ -913,180 +914,168 @@ export default function StartupJobs() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: WHITE },
+  safeArea: { flex: 1 },
   scroll: { flex: 1 },
-  scrollContent: { paddingBottom: 80, backgroundColor: BG },
+  scrollContent: { paddingBottom: 80 },
   
   headerCard: {
-    backgroundColor: WHITE,
     paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 80 : 70,
-    borderBottomWidth: 1, borderBottomColor: '#f1f5f9',
+    borderBottomWidth: 1,
     position: 'relative',
     zIndex: 100,
     elevation: 10
   },
-  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  adminInfo: { flexDirection: 'row', alignItems: 'center' },
-  logoBox: { width: 40, height: 40, borderRadius: 10, backgroundColor: '#336155', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  logoText: { color: WHITE, fontSize: 13, fontWeight: '700' },
-  companyTitle: { fontSize: 15, fontWeight: '800', color: TEXT_DARK },
-  companySubtitle: { fontSize: 9, color: TEXT_GRAY, letterSpacing: 0.5, fontWeight: '700', marginTop: 2 },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  actionIcon: { padding: 4 },
   
   searchBarContainer: { marginBottom: 64 },
-  searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f1f5f9', borderRadius: 12, paddingHorizontal: 12, height: 44 },
-  searchInput: { flex: 1, marginLeft: 8, fontSize: 13, color: TEXT_DARK },
-  addJobBtn: { position: 'absolute', right: 20, top: 16, zIndex: 10, width: 56, height: 56, borderRadius: 28, backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center', shadowColor: PRIMARY, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
+  searchBar: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, paddingHorizontal: 12, height: 44 },
+  searchInput: { flex: 1, marginLeft: 8, fontSize: 13 },
+  addJobBtn: { position: 'absolute', right: 20, top: 16, zIndex: 10, width: 56, height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
 
-  filterTabs: { flexDirection: 'row', alignItems: 'flex-end', borderBottomWidth: 1, borderBottomColor: '#e2e8f0', width: '100%' },
+  filterTabs: { flexDirection: 'row', alignItems: 'flex-end', borderBottomWidth: 1, width: '100%' },
   filterTab: { paddingVertical: 12, paddingHorizontal: 16, borderBottomWidth: 2, borderBottomColor: 'transparent' },
-  filterTabActive: { borderBottomColor: TEXT_DARK },
-  filterTabText: { fontSize: 13, color: TEXT_GRAY, fontWeight: '600' },
-  filterTabTextActive: { color: TEXT_DARK, fontWeight: '700' },
+  filterTabText: { fontSize: 13, fontWeight: '600' },
 
   subBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16 },
-  viewToggles: { flexDirection: 'row', backgroundColor: WHITE, borderRadius: 8, padding: 4, borderWidth: 1, borderColor: '#f1f5f9' },
+  viewToggles: { flexDirection: 'row', borderRadius: 8, padding: 4, borderWidth: 1 },
   viewBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6 },
-  viewBtnActive: { backgroundColor: '#f8fafc', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
-  viewBtnText: { fontSize: 11, fontWeight: '600', color: TEXT_GRAY },
-  viewBtnTextActive: { color: TEXT_DARK },
-  sortText: { fontSize: 11, color: TEXT_GRAY },
-  sortTextBold: { fontWeight: '700', color: TEXT_DARK },
+  viewBtnActive: { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
+  viewBtnText: { fontSize: 11, fontWeight: '600' },
+  viewBtnTextActive: {},
+  sortText: { fontSize: 11 },
+  sortTextBold: { fontWeight: '700' },
 
   jobList: { paddingHorizontal: 20, paddingBottom: 20 },
-  jobCard: { backgroundColor: WHITE, borderRadius: 16, padding: 20, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2 },
+  jobCard: { borderRadius: 16, padding: 20, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   badgeRow: { flexDirection: 'row', alignItems: 'center' },
   badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, marginRight: 8 },
   badgeText: { fontSize: 9, fontWeight: '800', letterSpacing: 0.5 },
-  postedText: { fontSize: 10, color: '#94a3b8', fontWeight: '500' },
+  postedText: { fontSize: 10, fontWeight: '500' },
   editBtn: { padding: 4 },
   
-  jobTitle: { fontSize: 16, fontWeight: '800', color: TEXT_DARK, marginBottom: 8 },
+  jobTitle: { fontSize: 16, fontWeight: '800', marginBottom: 8 },
   locationRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
-  locationText: { fontSize: 12, color: TEXT_GRAY, marginLeft: 6 },
+  locationText: { fontSize: 12, marginLeft: 6 },
 
   jobStatsRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
   applicantsCol: { marginRight: 16, width: 80 },
-  applicantsNumber: { fontSize: 24, fontWeight: '800', color: TEXT_DARK },
-  applicantsLabel: { fontSize: 9, fontWeight: '700', color: TEXT_GRAY, letterSpacing: 0.5 },
+  applicantsNumber: { fontSize: 24, fontWeight: '800' },
+  applicantsLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 0.5 },
   
   avatarsWrapper: { flexDirection: 'row', alignItems: 'center' },
-  avatar: { width: 28, height: 28, borderRadius: 14, borderWidth: 2, borderColor: WHITE },
-  avatarMore: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#0f172a', borderWidth: 2, borderColor: WHITE, justifyContent: 'center', alignItems: 'center' },
-  avatarMoreText: { color: WHITE, fontSize: 9, fontWeight: '700' },
+  avatar: { width: 28, height: 28, borderRadius: 14, borderWidth: 2 },
+  avatarMore: { width: 28, height: 28, borderRadius: 14, borderWidth: 2, justifyContent: 'center', alignItems: 'center' },
+  avatarMoreText: { color: '#ffffff', fontSize: 9, fontWeight: '700' },
   
   miniChart: { flexDirection: 'row', alignItems: 'flex-end', height: 32, gap: 4 },
   chartBar: { width: 6, borderRadius: 3 },
-  positionFilledText: { fontSize: 12, color: '#94a3b8', fontWeight: '500' },
+  positionFilledText: { fontSize: 12, fontWeight: '500' },
 
   cardActions: { flexDirection: 'row', alignItems: 'center', gap: 12, position: 'relative', zIndex: 50 },
   primaryActionBtn: { flex: 1, paddingVertical: 14, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   actionBtnText: { fontSize: 13, fontWeight: '700' },
-  outlineActionBtn: { flex: 1, paddingVertical: 14, borderRadius: 8, borderWidth: 1, borderColor: '#e2e8f0', alignItems: 'center', justifyContent: 'center', backgroundColor: WHITE },
-  outlineActionBtnText: { fontSize: 13, fontWeight: '700', color: TEXT_DARK },
-  moreBtn: { width: 44, height: 44, borderRadius: 8, borderWidth: 1, borderColor: '#e2e8f0', justifyContent: 'center', alignItems: 'center', backgroundColor: WHITE },
+  outlineActionBtn: { flex: 1, paddingVertical: 14, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  outlineActionBtnText: { fontSize: 13, fontWeight: '700' },
+  moreBtn: { width: 44, height: 44, borderRadius: 8, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
   
-  dropdownMenu: { position: 'absolute', top: 50, right: 0, width: 140, backgroundColor: WHITE, borderRadius: 12, paddingVertical: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 10, zIndex: 999 },
+  dropdownMenu: { position: 'absolute', top: 50, right: 0, width: 140, borderRadius: 12, paddingVertical: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 10, zIndex: 999 },
   dropdownItem: { paddingVertical: 10, paddingHorizontal: 16 },
-  dropdownItemText: { fontSize: 13, fontWeight: '600', color: TEXT_DARK },
+  dropdownItemText: { fontSize: 13, fontWeight: '600' },
 
-  jobCardLogo: { width: 40, height: 40, borderRadius: 8, backgroundColor: '#0f172a', justifyContent: 'center', alignItems: 'center' },
-  jobCardLogoText: { color: WHITE, fontSize: 16, fontWeight: '800' },
-  jobCardMetaText: { fontSize: 11, color: TEXT_GRAY },
-  daysLeftPill: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#ffedd5', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
+  jobCardLogo: { width: 40, height: 40, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
+  jobCardLogoText: { color: '#ffffff', fontSize: 16, fontWeight: '800' },
+  jobCardMetaText: { fontSize: 11 },
+  daysLeftPill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
   daysLeftText: { fontSize: 10, fontWeight: '700', color: '#ea580c' },
   
-  statLabel: { fontSize: 9, fontWeight: '700', color: TEXT_GRAY, letterSpacing: 0.5, marginBottom: 4 },
-  statValue: { fontSize: 22, fontWeight: '800', color: TEXT_DARK },
-  statValueSmall: { fontSize: 15, fontWeight: '700', color: TEXT_DARK },
-  statTrend: { fontSize: 11, fontWeight: '700', color: '#16a34a' },
+  statLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 0.5, marginBottom: 4 },
+  statValue: { fontSize: 22, fontWeight: '800' },
+  statValueSmall: { fontSize: 15, fontWeight: '700' },
+  statTrend: { fontSize: 11, fontWeight: '700' },
 
   floatingContainer: { position: 'absolute', bottom: Platform.OS === 'ios' ? 140 : 120, left: 20, right: 20, zIndex: 10, pointerEvents: 'box-none' },
   floatingTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  addJobFloatingBtn: { width: 44, height: 44, borderRadius: 12, backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center', shadowColor: PRIMARY, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
-  msgPill: { backgroundColor: PRIMARY, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderRadius: 24, shadowColor: PRIMARY, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
-  msgText: { color: WHITE, fontSize: 13, fontWeight: '600' },
-  postNewJobBtn: { backgroundColor: PRIMARY, borderRadius: 12, paddingVertical: 16, alignItems: 'center', shadowColor: PRIMARY, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
-  postNewJobBtnText: { color: WHITE, fontSize: 14, fontWeight: '700' },
+  addJobFloatingBtn: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
+  msgPill: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderRadius: 24, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
+  msgText: { color: '#ffffff', fontSize: 13, fontWeight: '600' },
+  postNewJobBtn: { borderRadius: 12, paddingVertical: 16, alignItems: 'center', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
+  postNewJobBtnText: { color: '#ffffff', fontSize: 14, fontWeight: '700' },
 
-  bottomNav: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 12, paddingHorizontal: 8, backgroundColor: WHITE, borderTopWidth: 1, borderColor: '#f1f5f9', paddingBottom: Platform.OS === 'ios' ? 24 : 12 },
+  bottomNav: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 12, paddingHorizontal: 8, borderTopWidth: 1, paddingBottom: Platform.OS === 'ios' ? 24 : 12 },
   navItem: { alignItems: 'center', justifyContent: 'center', gap: 4 },
-  navText: { fontSize: 10, color: '#94a3b8', fontWeight: '500' },
-  navTextActive: { color: PRIMARY, fontWeight: '700' },
-
+  navText: { fontSize: 10, fontWeight: '500' },
+  
   analyticsContainer: { paddingHorizontal: 20 },
   analyticsHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  analyticsTitle: { fontSize: 24, fontWeight: '800', color: TEXT_DARK },
-  segmentedControl: { flexDirection: 'row', backgroundColor: '#f1f5f9', borderRadius: 12, padding: 4, marginBottom: 20 },
+  analyticsTitle: { fontSize: 24, fontWeight: '800' },
+  segmentedControl: { flexDirection: 'row', borderRadius: 12, padding: 4, marginBottom: 20 },
   segmentBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 10, borderRadius: 10 },
-  segmentBtnActive: { backgroundColor: WHITE, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
-  segmentBtnText: { fontSize: 13, fontWeight: '600', color: TEXT_GRAY },
-  segmentBtnTextActive: { color: PRIMARY },
+  segmentBtnActive: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
+  segmentBtnText: { fontSize: 13, fontWeight: '600' },
+  segmentBtnTextActive: {},
 
   timeFilters: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 24 },
-  timeFilterBtn: { backgroundColor: '#f1f5f9', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
-  timeFilterBtnActive: { backgroundColor: PRIMARY },
-  timeFilterBtnText: { fontSize: 12, fontWeight: '600', color: TEXT_GRAY },
-  timeFilterBtnTextActive: { color: WHITE, fontSize: 12, fontWeight: '600' },
-  exportBtn: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: '#e2e8f0', justifyContent: 'center', alignItems: 'center', marginLeft: 4 },
+  timeFilterBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
+  timeFilterBtnActive: {},
+  timeFilterBtnText: { fontSize: 12, fontWeight: '600' },
+  timeFilterBtnTextActive: { color: '#ffffff', fontSize: 12, fontWeight: '600' },
+  exportBtn: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, justifyContent: 'center', alignItems: 'center', marginLeft: 4 },
   exportIconBox: { width: 20, height: 20, justifyContent: 'center', alignItems: 'center' },
 
-  tFilterPill: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: '#e2e8f0' },
-  tFilterText: { fontSize: 11, color: TEXT_DARK, fontWeight: '500' },
+  tFilterPill: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
+  tFilterText: { fontSize: 11, fontWeight: '500' },
 
   trackingGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 24, gap: 12 },
   trackingCard: { 
-    width: '48%', backgroundColor: WHITE, padding: 16, borderRadius: 12, 
+    width: '48%', padding: 16, borderRadius: 12, 
     borderWidth: 1,
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 8, elevation: 1 
   },
   trackingIconBox: { width: 36, height: 36, borderRadius: 8, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
-  trackingLabel: { fontSize: 10, fontWeight: '700', color: TEXT_GRAY, marginBottom: 4 },
-  trackingValue: { fontSize: 24, fontWeight: '800', color: TEXT_DARK, marginBottom: 8 },
+  trackingLabel: { fontSize: 10, fontWeight: '700', marginBottom: 4 },
+  trackingValue: { fontSize: 24, fontWeight: '800', marginBottom: 8 },
   trackingSubtext: { fontSize: 10, fontWeight: '700' },
 
-  aStatCard: { backgroundColor: WHITE, padding: 16, borderRadius: 16, flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2 },
-  aStatIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#fdf4ff', justifyContent: 'center', alignItems: 'center', marginRight: 16 },
+  aStatCard: { padding: 16, borderRadius: 16, flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2 },
+  aStatIcon: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 16 },
   aStatTextWrapper: { flex: 1 },
-  aStatLabel: { fontSize: 10, fontWeight: '700', color: TEXT_GRAY, marginBottom: 4 },
-  aStatValue: { fontSize: 20, fontWeight: '800', color: TEXT_DARK },
-  aBadgeGreen: { backgroundColor: '#dcfce7', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  aStatLabel: { fontSize: 10, fontWeight: '700', marginBottom: 4 },
+  aStatValue: { fontSize: 20, fontWeight: '800' },
+  aBadgeGreen: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
   aBadgeGreenText: { color: '#16a34a', fontSize: 10, fontWeight: '700' },
-  aBadgeRed: { backgroundColor: '#fee2e2', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  aBadgeRed: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
   aBadgeRedText: { color: '#ef4444', fontSize: 10, fontWeight: '700' },
 
-  aChartCard: { backgroundColor: WHITE, padding: 20, borderRadius: 16, marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2 },
+  aChartCard: { padding: 20, borderRadius: 16, marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2 },
   aCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 },
-  aCardTitle: { fontSize: 16, fontWeight: '800', color: TEXT_DARK },
+  aCardTitle: { fontSize: 16, fontWeight: '800' },
   aLegend: { flexDirection: 'row', gap: 12, marginTop: 4 },
   aLegendItem: { flexDirection: 'row', alignItems: 'center' },
   aLegendDot: { width: 8, height: 8, borderRadius: 4, marginRight: 6 },
-  aLegendText: { fontSize: 9, fontWeight: '700', color: TEXT_GRAY },
+  aLegendText: { fontSize: 9, fontWeight: '700' },
   aChartWrapper: { marginTop: 10 },
   chartXAxis: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 12, paddingHorizontal: 4 },
-  xAxisLabel: { fontSize: 10, color: '#94a3b8' },
+  xAxisLabel: { fontSize: 10 },
 
   sourceRow: { marginBottom: 16 },
   sourceTextRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  sourceName: { fontSize: 12, fontWeight: '600', color: TEXT_DARK },
-  sourcePct: { fontSize: 12, fontWeight: '700', color: PRIMARY },
-  sourceBarBg: { height: 8, backgroundColor: '#f1f5f9', borderRadius: 4 },
-  sourceBarFill: { height: '100%', backgroundColor: PRIMARY, borderRadius: 4 },
-  viewSourceBtn: { marginTop: 8, paddingVertical: 12, borderRadius: 8, borderWidth: 1, borderColor: '#f1f5f9', alignItems: 'center' },
-  viewSourceBtnText: { color: PRIMARY, fontSize: 12, fontWeight: '700' },
+  sourceName: { fontSize: 12, fontWeight: '600' },
+  sourcePct: { fontSize: 12, fontWeight: '700' },
+  sourceBarBg: { height: 8, borderRadius: 4 },
+  sourceBarFill: { height: '100%', borderRadius: 4 },
+  viewSourceBtn: { marginTop: 8, paddingVertical: 12, borderRadius: 8, borderWidth: 1, alignItems: 'center' },
+  viewSourceBtnText: { fontSize: 12, fontWeight: '700' },
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: WHITE, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, minHeight: '60%', maxHeight: '90%' },
+  modalContent: { borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, minHeight: '60%', maxHeight: '90%' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  modalTitle: { fontSize: 18, fontWeight: 'bold', color: TEXT_DARK },
+  modalTitle: { fontSize: 18, fontWeight: 'bold' },
   closeBtn: { padding: 8 },
   modalScroll: { flex: 1 },
-  applicantCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f8fafc', padding: 16, borderRadius: 12, marginBottom: 12 },
+  applicantCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderRadius: 12, marginBottom: 12 },
   applicantMeta: { flex: 1 },
-  applicantName: { fontSize: 15, fontWeight: '700', color: TEXT_DARK },
-  applicantContact: { fontSize: 12, color: TEXT_GRAY, marginTop: 4 },
-  resumeBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#fdf4ff', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
-  resumeBtnText: { color: PRIMARY, fontSize: 12, fontWeight: '700' }
+  applicantName: { fontSize: 15, fontWeight: '700' },
+  applicantContact: { fontSize: 12, marginTop: 4 },
+  resumeBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
+  resumeBtnText: { fontSize: 12, fontWeight: '700' }
 });

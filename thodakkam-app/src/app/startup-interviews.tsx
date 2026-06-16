@@ -8,17 +8,13 @@ import {
 } from 'lucide-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import StartupHeader from '../components/StartupHeader';
-
-const PRIMARY = '#662483';
-const BG = '#fdfcfc'; // Very light grey/white background from image
-const WHITE = '#ffffff';
-const TEXT_DARK = '#0f172a';
-const TEXT_GRAY = '#64748b';
+import { useAppTheme } from '../context/ThemeContext';
 
 export default function StartupInterviews() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const companyName = (params.companyName as string);
+  const { colors, isDark } = useAppTheme();
 
   const [activeTab, setActiveTab] = useState('Interviews');
   const [assessments, setAssessments] = useState<any[]>([]);
@@ -116,22 +112,22 @@ export default function StartupInterviews() {
   const isWide = width > 768;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StartupHeader companyName={companyName} />
       
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scroll} contentContainerStyle={[styles.scrollContent, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
         
         {/* Page Header */}
         <View style={styles.pageHeader}>
           <View style={{ flex: 1, marginRight: 16 }}>
-            <Text style={styles.pageTitle}>Assessments</Text>
-            <Text style={styles.pageSubtitle}>Create and manage assessments for candidates</Text>
+            <Text style={[styles.pageTitle, { color: colors.text }]}>Assessments</Text>
+            <Text style={[styles.pageSubtitle, { color: colors.textSecondary }]}>Create and manage assessments for candidates</Text>
           </View>
           <TouchableOpacity 
-            style={styles.createBtn}
+            style={[styles.createBtn, { backgroundColor: colors.primary }]}
             onPress={() => router.push({ pathname: '/startup-create-assessment' as any, params: { companyName } })}
           >
-            <Plus size={16} color={WHITE} />
+            <Plus size={16} color="#ffffff" />
             <Text style={styles.createBtnText}>Create Assessment</Text>
           </TouchableOpacity>
         </View>
@@ -139,63 +135,63 @@ export default function StartupInterviews() {
         {/* Assessments Grid / List */}
         {loading ? (
           <View style={{ padding: 40, alignItems: 'center' }}>
-            <Text style={{ color: TEXT_GRAY }}>Loading...</Text>
+            <Text style={{ color: colors.textSecondary }}>Loading...</Text>
           </View>
         ) : assessments.length === 0 ? (
-          <View style={styles.emptyState}>
-            <View style={styles.emptyIconBox}>
-              <FileText size={32} color="#cbd5e1" />
+          <View style={[styles.emptyState, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={[styles.emptyIconBox, { backgroundColor: colors.inputBg }]}>
+              <FileText size={32} color={colors.textSecondary} />
             </View>
-            <Text style={styles.emptyTitle}>No Assessments Yet</Text>
-            <Text style={styles.emptySubtitle}>You haven't created any assessments. Click "Create Assessment" to get started.</Text>
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>No Assessments Yet</Text>
+            <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>You haven't created any assessments. Click "Create Assessment" to get started.</Text>
           </View>
         ) : (
           <View style={[styles.grid, isWide && styles.gridWide]}>
             {assessments.map((item) => (
-              <View key={item.id} style={[styles.card, isWide && styles.cardWide]}>
+              <View key={item.id} style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }, isWide && styles.cardWide]}>
                 <View style={styles.cardHeader}>
                   <View style={styles.titleRow}>
-                    <Text style={styles.cardTitle}>{item.title}</Text>
-                    <View style={[styles.statusBadge, item.status === 'INACTIVE' && styles.statusBadgeInactive]}>
-                      <Text style={[styles.statusText, item.status === 'INACTIVE' && styles.statusTextInactive]}>{item.status}</Text>
+                    <Text style={[styles.cardTitle, { color: colors.text }]}>{item.title}</Text>
+                    <View style={[styles.statusBadge, { backgroundColor: item.status === 'INACTIVE' ? colors.inputBg : (isDark ? colors.success + '20' : '#dcfce7') }]}>
+                      <Text style={[styles.statusText, { color: item.status === 'INACTIVE' ? colors.textSecondary : (isDark ? colors.success : '#16a34a') }]}>{item.status}</Text>
                     </View>
                   </View>
                   <TouchableOpacity style={{ padding: 4 }}>
-                    <MoreVertical size={18} color={TEXT_GRAY} />
+                    <MoreVertical size={18} color={colors.textSecondary} />
                   </TouchableOpacity>
                 </View>
 
                 {item.description ? (
-                  <Text style={styles.cardDesc} numberOfLines={3}>{item.description}</Text>
+                  <Text style={[styles.cardDesc, { color: colors.textSecondary }]} numberOfLines={3}>{item.description}</Text>
                 ) : null}
 
                 <View style={styles.tagsRow}>
                   {item.tags.map((tag: any, idx: number) => {
                     const Icon = tag.icon;
                     return (
-                      <View key={idx} style={styles.tag}>
-                        <Icon size={12} color={PRIMARY} />
-                        <Text style={styles.tagText}>{tag.label}</Text>
+                      <View key={idx} style={[styles.tag, { backgroundColor: isDark ? colors.primary + '20' : '#f5effc' }]}>
+                        <Icon size={12} color={colors.primary} />
+                        <Text style={[styles.tagText, { color: colors.primary }]}>{tag.label}</Text>
                       </View>
                     )
                   })}
                 </View>
 
                 <View style={{ flex: 1 }} />
-                <View style={styles.divider} />
+                <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
                 <View style={styles.footerRow}>
                   <View style={styles.footerItem}>
-                    <HelpCircle size={14} color={TEXT_GRAY} />
-                    <Text style={styles.footerText}>{item.questions} questions</Text>
+                    <HelpCircle size={14} color={colors.textSecondary} />
+                    <Text style={[styles.footerText, { color: colors.textSecondary }]}>{item.questions} questions</Text>
                   </View>
                   <View style={styles.footerItem}>
-                    <Users size={14} color={TEXT_GRAY} />
-                    <Text style={styles.footerText}>{item.candidates} candidates</Text>
+                    <Users size={14} color={colors.textSecondary} />
+                    <Text style={[styles.footerText, { color: colors.textSecondary }]}>{item.candidates} candidates</Text>
                   </View>
                   <View style={styles.footerItem}>
-                    <Clock size={14} color={TEXT_GRAY} />
-                    <Text style={styles.footerText}>{item.date}</Text>
+                    <Clock size={14} color={colors.textSecondary} />
+                    <Text style={[styles.footerText, { color: colors.textSecondary }]}>{item.date}</Text>
                   </View>
                 </View>
               </View>
@@ -206,7 +202,7 @@ export default function StartupInterviews() {
 
       {/* Bottom Nav */}
       {!isWide && (
-        <View style={styles.bottomNav}>
+        <View style={[styles.bottomNav, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
           {[
             { label: 'Home', icon: LayoutGrid },
             { label: 'Jobs', icon: Briefcase },
@@ -216,18 +212,16 @@ export default function StartupInterviews() {
           ].map(item => {
             const isActive = activeTab === item.label;
             const Icon = item.icon;
-            // Original purple from original UI for active tab
-            const tabColor = '#662483'; 
             return (
               <TouchableOpacity
                 key={item.label}
                 style={styles.navItem}
                 onPress={() => handleNavPress(item.label)}
               >
-                <View style={[{ padding: 8, borderRadius: 20 }, isActive && { backgroundColor: tabColor + '20', transform: [{ scale: 1.1 }] }]}>
-                  <Icon size={22} color={isActive ? tabColor : '#94a3b8'} />
+                <View style={[{ padding: 8, borderRadius: 20 }, isActive && { backgroundColor: isDark ? colors.primary + '30' : colors.primary + '20', transform: [{ scale: 1.1 }] }]}>
+                  <Icon size={22} color={isActive ? colors.primary : colors.textSecondary} />
                 </View>
-                <Text style={[styles.navText, isActive && { color: tabColor, fontWeight: '700' }]}>
+                <Text style={[styles.navText, { color: colors.textSecondary }, isActive && { color: colors.primary, fontWeight: '700' }]}>
                   {item.label}
                 </Text>
               </TouchableOpacity>
@@ -240,28 +234,28 @@ export default function StartupInterviews() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: WHITE },
-  scroll: { flex: 1, backgroundColor: BG },
+  safeArea: { flex: 1 },
+  scroll: { flex: 1 },
   scrollContent: { padding: 20, paddingBottom: 60, maxWidth: 1200, alignSelf: 'center', width: '100%' },
 
   pageHeader: { 
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', 
     marginBottom: 24, flexWrap: 'wrap', gap: 16
   },
-  pageTitle: { fontSize: 24, fontWeight: '800', color: TEXT_DARK, marginBottom: 4 },
-  pageSubtitle: { fontSize: 14, color: TEXT_GRAY },
+  pageTitle: { fontSize: 24, fontWeight: '800', marginBottom: 4 },
+  pageSubtitle: { fontSize: 14 },
   createBtn: { 
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#662483', 
+    flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8, gap: 6 
   },
-  createBtnText: { color: WHITE, fontSize: 13, fontWeight: '600' },
+  createBtnText: { color: '#ffffff', fontSize: 13, fontWeight: '600' },
 
   grid: { gap: 20 },
   gridWide: { flexDirection: 'row', flexWrap: 'wrap' },
   
   card: { 
-    backgroundColor: WHITE, borderRadius: 12, padding: 20,
-    borderWidth: 1, borderColor: '#f1f5f9',
+    borderRadius: 12, padding: 20,
+    borderWidth: 1,
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2,
     minHeight: 180
   },
@@ -269,39 +263,37 @@ const styles = StyleSheet.create({
   
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
   titleRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, flex: 1, paddingRight: 8 },
-  cardTitle: { fontSize: 16, fontWeight: '700', color: TEXT_DARK },
-  statusBadge: { backgroundColor: '#dcfce7', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
-  statusText: { color: '#16a34a', fontSize: 10, fontWeight: '800' },
-  statusBadgeInactive: { backgroundColor: '#f1f5f9' },
-  statusTextInactive: { color: '#64748b' },
+  cardTitle: { fontSize: 16, fontWeight: '700' },
+  statusBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
+  statusText: { fontSize: 10, fontWeight: '800' },
 
-  cardDesc: { fontSize: 13, color: TEXT_GRAY, lineHeight: 20, marginBottom: 16 },
+  cardDesc: { fontSize: 13, lineHeight: 20, marginBottom: 16 },
 
   tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
   tag: { 
     flexDirection: 'row', alignItems: 'center', gap: 6, 
-    backgroundColor: '#f5effc', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6 
+    paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6 
   },
-  tagText: { color: '#8b4cb5', fontSize: 12, fontWeight: '600' },
+  tagText: { fontSize: 12, fontWeight: '600' },
 
-  divider: { height: 1, backgroundColor: '#f1f5f9', width: '100%', marginVertical: 16 },
+  divider: { height: 1, width: '100%', marginVertical: 16 },
   
   footerRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 16 },
   footerItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  footerText: { fontSize: 12, color: TEXT_GRAY, fontWeight: '500' },
+  footerText: { fontSize: 12, fontWeight: '500' },
 
   bottomNav: { 
     flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 12, paddingHorizontal: 8, 
-    backgroundColor: WHITE, borderTopWidth: 1, borderColor: '#f1f5f9', paddingBottom: Platform.OS === 'ios' ? 24 : 12 
+    borderTopWidth: 1, paddingBottom: Platform.OS === 'ios' ? 24 : 12 
   },
   navItem: { alignItems: 'center', justifyContent: 'center', gap: 4 },
-  navText: { fontSize: 10, color: '#94a3b8', fontWeight: '500' },
+  navText: { fontSize: 10, fontWeight: '500' },
 
   emptyState: { 
     alignItems: 'center', justifyContent: 'center', paddingVertical: 80, paddingHorizontal: 20,
-    backgroundColor: WHITE, borderRadius: 12, borderWidth: 1, borderColor: '#f1f5f9'
+    borderRadius: 12, borderWidth: 1
   },
-  emptyIconBox: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#f8fafc', justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: TEXT_DARK, marginBottom: 8 },
-  emptySubtitle: { fontSize: 14, color: TEXT_GRAY, textAlign: 'center', maxWidth: 300, lineHeight: 22 }
+  emptyIconBox: { width: 64, height: 64, borderRadius: 32, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
+  emptyTitle: { fontSize: 18, fontWeight: '700', marginBottom: 8 },
+  emptySubtitle: { fontSize: 14, textAlign: 'center', maxWidth: 300, lineHeight: 22 }
 });

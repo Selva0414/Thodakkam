@@ -1,11 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View, Modal, TouchableOpacity, Platform } from 'react-native';
 import { X, Check } from 'lucide-react-native';
-
-const PRIMARY = '#5A279B'; // Matches the branding
-const WHITE = '#ffffff';
-const DARK = '#0f172a';
-const LIGHT_PURPLE_BG = '#faf5ff';
+import { useAppTheme } from '../context/ThemeContext';
 
 interface EmailNotificationModalProps {
   visible: boolean;
@@ -13,6 +9,8 @@ interface EmailNotificationModalProps {
 }
 
 export default function EmailNotificationModal({ visible, onClose }: EmailNotificationModalProps) {
+  const { colors, isDark } = useAppTheme();
+
   return (
     <Modal
       visible={visible}
@@ -21,29 +19,29 @@ export default function EmailNotificationModal({ visible, onClose }: EmailNotifi
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
-        <View style={styles.modalCard}>
+        <View style={[styles.modalCard, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}>
           
           {/* Header */}
           <View style={styles.headerRow}>
-            <Text style={styles.headerTitle}>Email Notification</Text>
-            <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-              <X size={16} color={PRIMARY} />
+            <Text style={[styles.headerTitle, { color: colors.primary }]}>Email Notification</Text>
+            <TouchableOpacity style={[styles.closeBtn, { backgroundColor: isDark ? colors.primary + '20' : '#faf5ff' }]} onPress={onClose}>
+              <X size={16} color={colors.primary} />
             </TouchableOpacity>
           </View>
 
           {/* Content Box */}
-          <View style={styles.contentBox}>
-            <View style={styles.iconCircle}>
-              <Check size={16} color={WHITE} />
+          <View style={[styles.contentBox, { backgroundColor: isDark ? colors.primary + '10' : '#faf5ff' }]}>
+            <View style={[styles.iconCircle, { backgroundColor: colors.primary }]}>
+              <Check size={16} color="#ffffff" />
             </View>
-            <Text style={styles.messageText}>
+            <Text style={[styles.messageText, { color: colors.text }]}>
               You received new message on email so verify it quickly
             </Text>
           </View>
 
           {/* Verify Button */}
           <TouchableOpacity style={styles.verifyBtn} onPress={onClose}>
-            <Text style={styles.verifyBtnText}>Verify Now</Text>
+            <Text style={[styles.verifyBtnText, { color: colors.primary }]}>Verify Now</Text>
           </TouchableOpacity>
 
         </View>
@@ -55,13 +53,12 @@ export default function EmailNotificationModal({ visible, onClose }: EmailNotifi
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
   modalCard: {
-    backgroundColor: WHITE,
     width: '100%',
     maxWidth: 360,
     borderRadius: 20,
@@ -81,20 +78,17 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: PRIMARY,
   },
   closeBtn: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: LIGHT_PURPLE_BG,
     justifyContent: 'center',
     alignItems: 'center',
   },
   contentBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: LIGHT_PURPLE_BG,
     borderRadius: 12,
     padding: 16,
     marginBottom: 24,
@@ -103,7 +97,6 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#8b5cf6', // A brighter purple for the checkmark circle as seen in the screenshot
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -111,7 +104,6 @@ const styles = StyleSheet.create({
   messageText: {
     flex: 1,
     fontSize: 14,
-    color: '#334155',
     lineHeight: 20,
     fontWeight: '500',
   },
@@ -121,7 +113,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   verifyBtnText: {
-    color: PRIMARY,
     fontSize: 14,
     fontWeight: '700',
   }

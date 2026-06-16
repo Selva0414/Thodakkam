@@ -4,11 +4,12 @@ import { useColorScheme } from 'react-native';
 import { Stack } from 'expo-router';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
+import { AppThemeProvider, useAppTheme } from '../context/ThemeContext';
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
+function RootNavigation() {
+  const { isDark } = useAppTheme();
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
       <AnimatedSplashOverlay />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
@@ -18,7 +19,15 @@ export default function RootLayout() {
         <Stack.Screen name="startup-register" />
         <Stack.Screen name="startup-login" />
         <Stack.Screen name="admin-login" options={{ headerShown: false }} />
-    </Stack>
+      </Stack>
     </ThemeProvider>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <AppThemeProvider>
+      <RootNavigation />
+    </AppThemeProvider>
   );
 }

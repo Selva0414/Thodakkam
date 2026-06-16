@@ -9,16 +9,11 @@ import {
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { userStore } from '../utils/userStore';
-
-const PRIMARY = '#1e1b4b'; // Very dark purple
-const BUTTON_PRIMARY = '#662483';
-const BG = '#f4f5f7';
-const WHITE = '#ffffff';
-const TEXT_DARK = '#0f172a';
-const TEXT_GRAY = '#64748b';
+import { useAppTheme } from '../context/ThemeContext';
 
 export default function StudentAddPost() {
   const router = useRouter();
+  const { colors, isDark } = useAppTheme();
   const [text, setText] = useState('');
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [category, setCategory] = useState('Project');
@@ -75,33 +70,33 @@ export default function StudentAddPost() {
   const isSubmitDisabled = !text.trim() || loading;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         
         {/* Header Titles */}
         <View style={styles.headerTitles}>
-          <Text style={styles.title}>Share Your Achievement</Text>
-          <Text style={styles.subtitle}>Showcase your hard work to the community and potential recruiters.</Text>
+          <Text style={[styles.title, { color: colors.primary }]}>Share Your Achievement</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Showcase your hard work to the community and potential recruiters.</Text>
         </View>
 
         {/* Main Input Card */}
-        <View style={[styles.card, { zIndex: 10, elevation: 10 }]}>
+        <View style={[styles.card, { backgroundColor: colors.card, zIndex: 10, elevation: 10, borderColor: colors.border, borderWidth: 1 }]}>
           <View style={styles.inputSectionRow}>
             {userStore.profilePhoto ? (
               <Image source={{ uri: userStore.profilePhoto }} style={styles.avatar} />
             ) : (
-              <View style={[styles.avatar, { backgroundColor: '#475569', justifyContent: 'center', alignItems: 'center' }]}>
-                <Text style={{ color: WHITE, fontWeight: 'bold', fontSize: 18 }}>
+              <View style={[styles.avatar, { backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center' }]}>
+                <Text style={{ color: '#ffffff', fontWeight: 'bold', fontSize: 18 }}>
                   {userStore.name ? userStore.name.charAt(0).toUpperCase() : 'S'}
                 </Text>
               </View>
             )}
             
-            <View style={styles.textInputWrapper}>
+            <View style={[styles.textInputWrapper, { backgroundColor: colors.inputBg, borderColor: colors.border, borderWidth: 1 }]}>
               <TextInput
-                style={styles.textInput}
+                style={[styles.textInput, { color: colors.text }]}
                 placeholder="What did you achieve? Describe your project, certification, or award..."
-                placeholderTextColor="#94a3b8"
+                placeholderTextColor={colors.textSecondary}
                 multiline
                 value={text}
                 onChangeText={setText}
@@ -115,44 +110,44 @@ export default function StudentAddPost() {
                   </TouchableOpacity>
                 </View>
               )}
-              <View style={styles.purpleDot} />
+              <View style={[styles.purpleDot, { backgroundColor: colors.primary }]} />
             </View>
           </View>
 
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
           {/* Tools Row */}
           <View style={styles.toolsRow}>
             <View style={styles.leftTools}>
-              <TouchableOpacity style={styles.iconButton} onPress={pickImage}>
-                <ImageIcon size={20} color="#475569" />
+              <TouchableOpacity style={[styles.iconButton, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={pickImage}>
+                <ImageIcon size={20} color={colors.textSecondary} />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.iconButton}>
-                <Paperclip size={20} color="#475569" />
+              <TouchableOpacity style={[styles.iconButton, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <Paperclip size={20} color={colors.textSecondary} />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.iconButton}>
-                <MapPin size={20} color="#475569" />
+              <TouchableOpacity style={[styles.iconButton, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <MapPin size={20} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
             
             <View style={styles.rightTools}>
-              <Text style={styles.tagLabel}>TAG:</Text>
+              <Text style={[styles.tagLabel, { color: colors.textSecondary }]}>TAG:</Text>
               <TouchableOpacity 
-                style={styles.tagDropdown}
+                style={[styles.tagDropdown, { backgroundColor: colors.inputBg, borderColor: colors.border, borderWidth: 1 }]}
                 onPress={() => setShowDropdown(!showDropdown)}
               >
-                <Text style={styles.tagText}>{category}</Text>
-                <ChevronDown size={16} color="#475569" />
+                <Text style={[styles.tagText, { color: colors.text }]}>{category}</Text>
+                <ChevronDown size={16} color={colors.textSecondary} />
               </TouchableOpacity>
 
               {showDropdown && (
-                <View style={styles.dropdownMenu}>
+                <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
                   {['Project', 'Certificate', 'Award', 'Experience'].map((cat, index) => (
                     <TouchableOpacity
                       key={cat}
                       style={[
                         styles.dropdownItem,
-                        index !== 3 && { borderBottomWidth: 1, borderBottomColor: '#f1f5f9' }
+                        index !== 3 && { borderBottomWidth: 1, borderBottomColor: colors.border }
                       ]}
                       onPress={() => {
                         setCategory(cat);
@@ -160,8 +155,8 @@ export default function StudentAddPost() {
                       }}
                     >
                       <Text style={[
-                        styles.dropdownItemText,
-                        category === cat && { color: BUTTON_PRIMARY, fontWeight: '700' }
+                        styles.dropdownItemText, { color: colors.text },
+                        category === cat && { color: colors.primary, fontWeight: '700' }
                       ]}>
                         {cat}
                       </Text>
@@ -174,28 +169,28 @@ export default function StudentAddPost() {
         </View>
 
         {/* Second Card: Visibility & Actions */}
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}>
           <View style={styles.actionRow}>
             <View style={styles.visibilityInfo}>
-              <View style={styles.eyeIconBox}>
-                <Eye size={20} color="#475569" />
+              <View style={[styles.eyeIconBox, { backgroundColor: colors.inputBg, borderColor: colors.border, borderWidth: 1 }]}>
+                <Eye size={20} color={colors.textSecondary} />
               </View>
               <View>
-                <Text style={styles.visibilityLabel}>VISIBILITY SETTINGS</Text>
-                <Text style={styles.visibilityValue}>Public (Community)</Text>
+                <Text style={[styles.visibilityLabel, { color: colors.textSecondary }]}>VISIBILITY SETTINGS</Text>
+                <Text style={[styles.visibilityValue, { color: colors.text }]}>Public (Community)</Text>
               </View>
             </View>
 
             <View style={styles.actionButtons}>
               <TouchableOpacity onPress={() => router.back()}>
-                <Text style={styles.cancelText}>Cancel</Text>
+                <Text style={[styles.cancelText, { color: colors.textSecondary }]}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity 
-                style={[styles.postButton, isSubmitDisabled && styles.postButtonDisabled]} 
+                style={[styles.postButton, { backgroundColor: colors.primary }, isSubmitDisabled && { backgroundColor: isDark ? colors.border : '#e2e8f0' }]} 
                 onPress={handleSubmit} 
                 disabled={isSubmitDisabled}
               >
-                <Text style={[styles.postButtonText, isSubmitDisabled && styles.postButtonTextDisabled]}>
+                <Text style={[styles.postButtonText, isSubmitDisabled && { color: isDark ? colors.textSecondary : '#94a3b8' }]}>
                   {loading ? 'Posting...' : 'Post Achievement'}
                 </Text>
               </TouchableOpacity>
@@ -209,15 +204,14 @@ export default function StudentAddPost() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: BG },
+  safeArea: { flex: 1 },
   scrollContent: { padding: 24, paddingBottom: 40, maxWidth: 650, width: '100%', alignSelf: 'center' },
   
   headerTitles: { alignItems: 'center', marginTop: 40, marginBottom: 24 },
-  title: { fontSize: 24, fontWeight: '900', color: PRIMARY, marginBottom: 8 },
-  subtitle: { fontSize: 14, color: TEXT_GRAY },
+  title: { fontSize: 24, fontWeight: '900', marginBottom: 8 },
+  subtitle: { fontSize: 14, textAlign: 'center' },
 
   card: {
-    backgroundColor: WHITE,
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
@@ -232,7 +226,6 @@ const styles = StyleSheet.create({
   avatar: { width: 40, height: 40, borderRadius: 20, marginRight: 12 },
   textInputWrapper: {
     flex: 1,
-    backgroundColor: '#f8fafc',
     borderRadius: 12,
     minHeight: 140,
     padding: 16,
@@ -241,7 +234,6 @@ const styles = StyleSheet.create({
   },
   textInput: {
     fontSize: 15,
-    color: TEXT_DARK,
     lineHeight: 22,
     ...(Platform.OS === 'web' ? { outlineStyle: 'none' } as any : {})
   },
@@ -252,32 +244,31 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#7c3aed' // Bright purple dot
   },
   previewImageContainer: { marginTop: 12, position: 'relative', alignSelf: 'flex-start' },
   previewImage: { width: 120, height: 120, borderRadius: 8 },
   removeImageBtn: { position: 'absolute', top: -6, right: -6, backgroundColor: '#ef4444', width: 20, height: 20, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
-  removeImageText: { color: WHITE, fontSize: 12, fontWeight: 'bold' },
+  removeImageText: { color: '#ffffff', fontSize: 12, fontWeight: 'bold' },
 
-  divider: { height: 1, backgroundColor: '#f1f5f9', marginBottom: 20 },
+  divider: { height: 1, marginBottom: 20 },
 
   toolsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   leftTools: { flexDirection: 'row', gap: 12 },
   iconButton: {
-    width: 40, height: 40, borderRadius: 10, borderWidth: 1, borderColor: '#e2e8f0',
-    justifyContent: 'center', alignItems: 'center', backgroundColor: WHITE
+    width: 40, height: 40, borderRadius: 10, borderWidth: 1,
+    justifyContent: 'center', alignItems: 'center'
   },
   rightTools: { flexDirection: 'row', alignItems: 'center', gap: 8, position: 'relative' },
-  tagLabel: { fontSize: 12, fontWeight: '700', color: '#94a3b8' },
+  tagLabel: { fontSize: 12, fontWeight: '700' },
   tagDropdown: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#f1f5f9',
+    flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, gap: 6
   },
-  tagText: { fontSize: 13, fontWeight: '600', color: '#334155' },
+  tagText: { fontSize: 13, fontWeight: '600' },
 
   dropdownMenu: {
     position: 'absolute', top: 50, right: 0,
-    backgroundColor: WHITE, borderRadius: 12, borderWidth: 1, borderColor: '#e2e8f0',
+    borderRadius: 12, borderWidth: 1,
     width: 150, zIndex: 10,
     ...Platform.select({
       ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10 },
@@ -286,18 +277,16 @@ const styles = StyleSheet.create({
     }),
   },
   dropdownItem: { padding: 12 },
-  dropdownItemText: { fontSize: 13, color: TEXT_DARK },
+  dropdownItemText: { fontSize: 13 },
 
   actionRow: { flexDirection: 'column', alignItems: 'stretch', gap: 16 },
   visibilityInfo: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  eyeIconBox: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#f1f5f9', justifyContent: 'center', alignItems: 'center' },
-  visibilityLabel: { fontSize: 9, fontWeight: '800', color: '#94a3b8', letterSpacing: 0.5, marginBottom: 2 },
-  visibilityValue: { fontSize: 13, fontWeight: '800', color: TEXT_DARK },
+  eyeIconBox: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  visibilityLabel: { fontSize: 9, fontWeight: '800', letterSpacing: 0.5, marginBottom: 2 },
+  visibilityValue: { fontSize: 13, fontWeight: '800' },
 
   actionButtons: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 12 },
-  cancelText: { fontSize: 15, fontWeight: '600', color: '#475569' },
-  postButton: { backgroundColor: '#cbd5e1', paddingHorizontal: 24, paddingVertical: 14, borderRadius: 12 },
-  postButtonDisabled: { backgroundColor: '#e2e8f0' },
-  postButtonText: { color: '#64748b', fontSize: 14, fontWeight: '700' },
-  postButtonTextDisabled: { color: '#94a3b8' },
+  cancelText: { fontSize: 15, fontWeight: '600' },
+  postButton: { paddingHorizontal: 24, paddingVertical: 14, borderRadius: 12 },
+  postButtonText: { color: '#ffffff', fontSize: 14, fontWeight: '700' },
 });

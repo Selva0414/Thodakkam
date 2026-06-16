@@ -8,15 +8,11 @@ import EmailNotificationModal from './EmailNotificationModal';
 import StartupProfileModal from './StartupProfileModal';
 import StartupSettingsModal from './StartupSettingsModal';
 import StartupNetworkModal from './StartupNetworkModal';
-
-const PRIMARY = '#662483';
-const BG = '#f8fafc';
-const WHITE = '#ffffff';
-const TEXT_DARK = '#0f172a';
-const TEXT_GRAY = '#64748b';
+import { useAppTheme } from '../context/ThemeContext';
 
 export default function StartupHeader({ companyName = 'Echo Digital' }: { companyName?: string }) {
   const router = useRouter();
+  const { colors, isDark } = useAppTheme();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -62,7 +58,6 @@ export default function StartupHeader({ companyName = 'Echo Digital' }: { compan
     }
   }, [companyName]);
 
-  // Extract initials (max 2 characters) for the logo placeholder
   const getInitials = (name: string) => {
     const words = name.split(' ').filter(w => w.length > 0);
     if (words.length >= 2) return (words[0][0] + words[1][0]).toLowerCase();
@@ -73,28 +68,28 @@ export default function StartupHeader({ companyName = 'Echo Digital' }: { compan
   const companyInitials = getInitials(companyName);
 
   return (
-    <View style={styles.headerCard}>
+    <View style={[styles.headerCard, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
       <View style={styles.headerTop}>
         <View style={styles.adminInfo}>
           <Image source={require('../../assets/images/Thodakkam logo.png')} style={{ width: 44, height: 44, marginRight: 12 }} resizeMode="contain" />
           <View>
-            <Text style={styles.companyTitle}>{companyName}</Text>
-            <Text style={styles.companySubtitle}>PREMIUM PLAN</Text>
+            <Text style={[styles.companyTitle, { color: colors.text }]}>{companyName}</Text>
+            <Text style={[styles.companySubtitle, { color: colors.primary }]}>PREMIUM PLAN</Text>
           </View>
         </View>
         <View style={styles.headerActions}>
           <TouchableOpacity style={styles.actionIcon} onPress={() => setShowEmailModal(true)}>
-            <Mail size={20} color={TEXT_GRAY} />
+            <Mail size={20} color={colors.textSecondary} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionIcon} onPress={() => setShowNotifications(true)}>
-            <Bell size={20} color={TEXT_GRAY} />
+            <Bell size={20} color={colors.textSecondary} />
           </TouchableOpacity>
           <TouchableOpacity style={[styles.actionIcon, { padding: 0 }]} onPress={openMenu}>
-            <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#f1f5f9', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', borderWidth: 1, borderColor: '#e2e8f0' }}>
+            <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: colors.inputBg, justifyContent: 'center', alignItems: 'center', overflow: 'hidden', borderWidth: 1, borderColor: colors.border }}>
               {companyLogo ? (
                 <Image source={{ uri: companyLogo }} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
               ) : (
-                <Text style={{ fontSize: 12, fontWeight: '700', color: TEXT_GRAY }}>{companyInitials}</Text>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textSecondary }}>{companyInitials}</Text>
               )}
             </View>
           </TouchableOpacity>
@@ -102,19 +97,19 @@ export default function StartupHeader({ companyName = 'Echo Digital' }: { compan
       </View>
 
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <View style={[styles.searchBar, { flex: 1 }]}>
-          <Search size={16} color={TEXT_GRAY} />
+        <View style={[styles.searchBar, { flex: 1, backgroundColor: colors.inputBg, borderColor: colors.border, borderWidth: 1 }]}>
+          <Search size={16} color={colors.textSecondary} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: colors.text }]}
             placeholder="Search analytics, candidates..."
-            placeholderTextColor={TEXT_GRAY}
+            placeholderTextColor={colors.textSecondary}
           />
         </View>
         <TouchableOpacity 
-          style={{ marginLeft: 12, padding: 10, backgroundColor: PRIMARY, borderRadius: 12 }} 
+          style={{ marginLeft: 12, padding: 10, backgroundColor: colors.primary, borderRadius: 12 }} 
           onPress={() => router.push({ pathname: '/startup-messages' as any, params: { companyName } })}
         >
-          <MessageSquare size={20} color={WHITE} />
+          <MessageSquare size={20} color="#ffffff" />
         </TouchableOpacity>
       </View>
       
@@ -124,50 +119,50 @@ export default function StartupHeader({ companyName = 'Echo Digital' }: { compan
       <Modal transparent visible={showMenu} animationType="none" onRequestClose={closeMenu}>
         <View style={styles.drawerOverlay}>
           <TouchableOpacity style={styles.drawerOverlayBg} onPress={closeMenu} activeOpacity={1} />
-          <Animated.View style={[styles.drawerContent, { transform: [{ translateX: slideAnim }] }]}>
+          <Animated.View style={[styles.drawerContent, { backgroundColor: colors.card, transform: [{ translateX: slideAnim }] }]}>
             <View>
-              <View style={{ height: 100, backgroundColor: PRIMARY, width: '100%', borderTopLeftRadius: 24 }} />
+              <View style={{ height: 100, backgroundColor: colors.primary, width: '100%', borderTopLeftRadius: 24 }} />
               <View style={{ paddingHorizontal: 20, paddingBottom: 20, marginTop: -36 }}>
-                <TouchableOpacity onPress={() => { closeMenu(); setShowProfileModal(true); }}>
-                  <View style={{ backgroundColor: WHITE, padding: 4, borderRadius: 20, alignSelf: 'flex-start', marginBottom: 12 }}>
+                <TouchableOpacity onPress={() => { closeMenu(); router.push({ pathname: '/startup-profile' as any, params: { companyName } }); }}>
+                  <View style={{ backgroundColor: colors.card, padding: 4, borderRadius: 20, alignSelf: 'flex-start', marginBottom: 12 }}>
                     {companyLogo ? (
                       <Image source={{ uri: companyLogo }} style={{ width: 72, height: 72, borderRadius: 16 }} />
                     ) : (
-                      <View style={[styles.drawerAvatarFallback, { borderRadius: 16, marginBottom: 0 }]}>
+                      <View style={[styles.drawerAvatarFallback, { backgroundColor: colors.primary, borderRadius: 16, marginBottom: 0 }]}>
                         <Text style={styles.drawerAvatarText}>{companyInitials}</Text>
                       </View>
                     )}
                   </View>
-                  <Text style={styles.drawerName}>{founderName || companyName}</Text>
-                  {founderEmail ? <Text style={styles.drawerEmail}>{founderEmail}</Text> : null}
-                  {founderName ? <Text style={styles.drawerCompanyText}>{companyName}</Text> : null}
+                  <Text style={[styles.drawerName, { color: colors.text }]}>{founderName || companyName}</Text>
+                  {founderEmail ? <Text style={[styles.drawerEmail, { color: colors.text }]}>{founderEmail}</Text> : null}
+                  {founderName ? <Text style={[styles.drawerCompanyText, { color: colors.textSecondary }]}>{companyName}</Text> : null}
                 </TouchableOpacity>
               </View>
             </View>
 
-            <View style={styles.drawerDivider} />
+            <View style={[styles.drawerDivider, { backgroundColor: colors.border }]} />
 
             <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12 }}>
-              <TouchableOpacity style={styles.drawerMenuItem} onPress={() => { closeMenu(); setShowProfileModal(true); }}>
-                <Text style={styles.drawerMenuText}>My profile</Text>
+              <TouchableOpacity style={styles.drawerMenuItem} onPress={() => { closeMenu(); router.push({ pathname: '/startup-profile' as any, params: { companyName } }); }}>
+                <Text style={[styles.drawerMenuText, { color: colors.text }]}>My profile</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.drawerMenuItem} onPress={() => { closeMenu(); router.push({ pathname: '/saved-posts' as any, params: { role: 'startup', identifier: companyName } }); }}>
-                <Text style={styles.drawerMenuText}>Saved posts</Text>
+                <Text style={[styles.drawerMenuText, { color: colors.text }]}>Saved posts</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.drawerMenuItem} onPress={() => { closeMenu(); setShowNetworkModal(true); }}>
-                <Text style={styles.drawerMenuText}>My Network</Text>
+                <Text style={[styles.drawerMenuText, { color: colors.text }]}>My Network</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.drawerMenuItem} onPress={() => { closeMenu(); }}>
-                <Text style={styles.drawerMenuText}>Reschedule</Text>
+              <TouchableOpacity style={styles.drawerMenuItem} onPress={() => { closeMenu(); router.push('/startup-reschedule'); }}>
+                <Text style={[styles.drawerMenuText, { color: colors.text }]}>Reschedule</Text>
               </TouchableOpacity>
             </ScrollView>
 
-            <View style={styles.drawerDivider} />
+            <View style={[styles.drawerDivider, { backgroundColor: colors.border }]} />
 
             <View style={{ paddingHorizontal: 20, paddingVertical: 20, paddingBottom: Platform.OS === 'ios' ? 40 : 20 }}>
               <TouchableOpacity style={styles.drawerFooterItem} onPress={() => { closeMenu(); setShowSettingsModal(true); }}>
-                <Settings size={22} color={TEXT_DARK} />
-                <Text style={styles.drawerFooterText}>Settings</Text>
+                <Settings size={22} color={colors.text} />
+                <Text style={[styles.drawerFooterText, { color: colors.text }]}>Settings</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.drawerFooterItem, { marginTop: 24 }]} onPress={async () => { 
                 closeMenu();
@@ -176,19 +171,15 @@ export default function StartupHeader({ companyName = 'Echo Digital' }: { compan
                   router.replace('/startup-login');
                 }, 300);
               }}>
-                <LogOut size={22} color="#ef4444" />
-                <Text style={[styles.drawerFooterText, { color: '#ef4444' }]}>Log out</Text>
+                <LogOut size={22} color={isDark ? colors.danger : "#ef4444"} />
+                <Text style={[styles.drawerFooterText, { color: isDark ? colors.danger : '#ef4444' }]}>Log out</Text>
               </TouchableOpacity>
             </View>
           </Animated.View>
         </View>
       </Modal>
 
-      <StartupProfileModal 
-        visible={showProfileModal} 
-        onClose={() => setShowProfileModal(false)} 
-        companyName={companyName} 
-      />
+
       <StartupSettingsModal 
         visible={showSettingsModal} 
         onClose={() => setShowSettingsModal(false)} 
@@ -204,37 +195,29 @@ export default function StartupHeader({ companyName = 'Echo Digital' }: { compan
 
 const styles = StyleSheet.create({
   headerCard: {
-    backgroundColor: WHITE,
     paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 44 : 32, paddingBottom: 12,
-    marginBottom: 16, borderBottomWidth: 1, borderBottomColor: '#f1f5f9',
+    marginBottom: 16, borderBottomWidth: 1,
     zIndex: 50, elevation: 50
   },
   headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   adminInfo: { flexDirection: 'row', alignItems: 'center' },
-  logoBox: { width: 40, height: 40, borderRadius: 10, backgroundColor: '#336155', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  logoText: { color: WHITE, fontSize: 13, fontWeight: '700' },
-  companyTitle: { fontSize: 15, fontWeight: '800', color: TEXT_DARK },
-  companySubtitle: { fontSize: 9, color: TEXT_GRAY, letterSpacing: 0.5, fontWeight: '700', marginTop: 2 },
+  companyTitle: { fontSize: 15, fontWeight: '800' },
+  companySubtitle: { fontSize: 9, letterSpacing: 0.5, fontWeight: '700', marginTop: 2 },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   actionIcon: { padding: 4 },
-  searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f1f5f9', borderRadius: 12, paddingHorizontal: 12, height: 44 },
-  searchInput: { flex: 1, marginLeft: 8, fontSize: 13, color: TEXT_DARK },
-  menuDropdown: { position: 'absolute', top: Platform.OS === 'ios' ? 100 : 80, right: 20, backgroundColor: WHITE, borderRadius: 12, padding: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 5, minWidth: 160, zIndex: 100 },
-  menuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 12, borderRadius: 8 },
-  menuIcon: { marginRight: 10 },
-  menuText: { fontSize: 14, fontWeight: '600', color: TEXT_DARK },
+  searchBar: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, paddingHorizontal: 12, height: 44 },
+  searchInput: { flex: 1, marginLeft: 8, fontSize: 13, ...(Platform.OS === 'web' ? { outlineStyle: 'none' } as any : {}) },
   drawerOverlay: { flex: 1, flexDirection: 'row-reverse' },
-  drawerOverlayBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' },
-  drawerContent: { width: '80%', maxWidth: 320, backgroundColor: WHITE, height: '100%', position: 'absolute', right: 0, top: 0, bottom: 0, elevation: 10, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 10, shadowOffset: { width: -2, height: 0 }, borderTopLeftRadius: 24, borderBottomLeftRadius: 24, overflow: 'hidden' },
-  drawerAvatar: { width: 72, height: 72, borderRadius: 36, marginBottom: 16 },
-  drawerAvatarFallback: { width: 72, height: 72, borderRadius: 36, backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
-  drawerAvatarText: { color: WHITE, fontSize: 24, fontWeight: '700' },
-  drawerName: { fontSize: 20, fontWeight: '700', color: TEXT_DARK, marginBottom: 4 },
-  drawerEmail: { fontSize: 14, color: TEXT_DARK, fontWeight: '500', marginBottom: 4 },
-  drawerCompanyText: { fontSize: 13, color: TEXT_GRAY, fontWeight: '600', marginBottom: 8 },
-  drawerDivider: { height: 1, backgroundColor: '#e2e8f0' },
+  drawerOverlayBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' },
+  drawerContent: { width: '80%', maxWidth: 320, height: '100%', position: 'absolute', right: 0, top: 0, bottom: 0, elevation: 10, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 10, shadowOffset: { width: -2, height: 0 }, borderTopLeftRadius: 24, borderBottomLeftRadius: 24, overflow: 'hidden' },
+  drawerAvatarFallback: { width: 72, height: 72, borderRadius: 36, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
+  drawerAvatarText: { color: '#ffffff', fontSize: 24, fontWeight: '700' },
+  drawerName: { fontSize: 20, fontWeight: '700', marginBottom: 4 },
+  drawerEmail: { fontSize: 14, fontWeight: '500', marginBottom: 4 },
+  drawerCompanyText: { fontSize: 13, fontWeight: '600', marginBottom: 8 },
+  drawerDivider: { height: 1 },
   drawerMenuItem: { paddingHorizontal: 20, paddingVertical: 14 },
-  drawerMenuText: { fontSize: 16, fontWeight: '700', color: TEXT_DARK },
+  drawerMenuText: { fontSize: 16, fontWeight: '700' },
   drawerFooterItem: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  drawerFooterText: { fontSize: 16, fontWeight: '700', color: TEXT_DARK },
+  drawerFooterText: { fontSize: 16, fontWeight: '700' },
 });

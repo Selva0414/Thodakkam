@@ -14,54 +14,50 @@ import { useCallback } from 'react';
 import StudentHeader from '../components/StudentHeader';
 import { userStore, updateGlobalUser } from '../utils/userStore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const PRIMARY = '#5A279B';
-const BG = '#f4f5f7';
-const WHITE = '#ffffff';
-const DARK = '#0f172a';
-const GRAY = '#6b7280';
-
-// ─── Sub-components ────────────────────────────────────────────────────────────
+import { useAppTheme } from '../context/ThemeContext';
 
 // ─── Sub-components ────────────────────────────────────────────────────────────
 
 function WelcomeSection({ user }: { user?: { name: string } }) {
+  const { colors } = useAppTheme();
   const defaultUser = user || { name: 'Shabari' };
   return (
     <View style={welcomeStyles.container}>
-      <Text style={welcomeStyles.title}>Welcome back, {defaultUser.name}! 👋</Text>
-      <Text style={welcomeStyles.subtitle}>Here's what's happening with your applications today.</Text>
+      <Text style={[welcomeStyles.title, { color: colors.text }]}>Welcome back, {defaultUser.name}! 👋</Text>
+      <Text style={[welcomeStyles.subtitle, { color: colors.textSecondary }]}>Here's what's happening with your applications today.</Text>
     </View>
   );
 }
 
 function StatCard({ icon: Icon, iconBg, label, value }: any) {
+  const { colors } = useAppTheme();
   return (
-    <View style={statStyles.card}>
+    <View style={[statStyles.card, { backgroundColor: colors.background }]}>
       <View style={[statStyles.iconWrap, { backgroundColor: iconBg + '20' }]}>
         <Icon size={18} color={iconBg} />
       </View>
-      <Text style={statStyles.value}>{value}</Text>
-      <Text style={statStyles.label}>{label}</Text>
+      <Text style={[statStyles.value, { color: colors.text }]}>{value}</Text>
+      <Text style={[statStyles.label, { color: colors.textSecondary }]}>{label}</Text>
     </View>
   );
 }
 
 function ApplicationOverview({ applications = [] }: { applications?: any[] }) {
+  const { colors } = useAppTheme();
   const appliedCount = applications.length;
   const interviewingCount = applications.filter(a => a.status === 'INTERVIEW SCHEDULED').length;
   const offeredCount = applications.filter(a => a.status === 'OFFERED').length;
 
   return (
-    <View style={sectionCard.container}>
+    <View style={[sectionCard.container, { backgroundColor: colors.card }]}>
       <View style={sectionCard.header}>
-        <Text style={sectionCard.title}>Application Overview</Text>
+        <Text style={[sectionCard.title, { color: colors.text }]}>Application Overview</Text>
         <TouchableOpacity>
-          <Text style={sectionCard.link}>View Details</Text>
+          <Text style={[sectionCard.link, { color: colors.primary }]}>View Details</Text>
         </TouchableOpacity>
       </View>
       <View style={overviewStyles.row}>
-        <StatCard icon={Upload} iconBg="#5A279B" label="Applied" value={appliedCount} />
+        <StatCard icon={Upload} iconBg={colors.primary} label="Applied" value={appliedCount} />
         <StatCard icon={Clock} iconBg="#f59e0b" label="Interviewing" value={interviewingCount} />
         <StatCard icon={CheckCircle} iconBg="#10b981" label="Offered" value={offeredCount} />
       </View>
@@ -70,15 +66,16 @@ function ApplicationOverview({ applications = [] }: { applications?: any[] }) {
 }
 
 function InterviewCard({ day, month, title, company, time, mode, modeColor }: any) {
+  const { colors } = useAppTheme();
   return (
-    <View style={interviewStyles.card}>
-      <View style={interviewStyles.dateBox}>
-        <Text style={interviewStyles.month}>{month}</Text>
-        <Text style={interviewStyles.day}>{day}</Text>
+    <View style={[interviewStyles.card, { borderBottomColor: colors.border }]}>
+      <View style={[interviewStyles.dateBox, { backgroundColor: colors.primary + '10' }]}>
+        <Text style={[interviewStyles.month, { color: colors.primary }]}>{month}</Text>
+        <Text style={[interviewStyles.day, { color: colors.primary }]}>{day}</Text>
       </View>
       <View style={interviewStyles.info}>
-        <Text style={interviewStyles.title}>{title}</Text>
-        <Text style={interviewStyles.meta}>{company} • {time}</Text>
+        <Text style={[interviewStyles.title, { color: colors.text }]}>{title}</Text>
+        <Text style={[interviewStyles.meta, { color: colors.textSecondary }]}>{company} • {time}</Text>
         <View style={[interviewStyles.badge, { backgroundColor: modeColor + '20' }]}>
           <Video size={11} color={modeColor} />
           <Text style={[interviewStyles.badgeText, { color: modeColor }]}>{mode}</Text>
@@ -89,25 +86,26 @@ function InterviewCard({ day, month, title, company, time, mode, modeColor }: an
 }
 
 function UpcomingInterviews({ applications = [] }: { applications?: any[] }) {
+  const { colors } = useAppTheme();
   const upcomingApps = applications.filter(a => a.status === 'INTERVIEW SCHEDULED');
   
   if (upcomingApps.length === 0) {
     return (
-      <View style={sectionCard.container}>
+      <View style={[sectionCard.container, { backgroundColor: colors.card }]}>
         <View style={sectionCard.header}>
-          <Text style={sectionCard.title}>Upcoming Interviews</Text>
+          <Text style={[sectionCard.title, { color: colors.text }]}>Upcoming Interviews</Text>
         </View>
-        <Text style={{ color: GRAY, textAlign: 'center', marginVertical: 10 }}>No upcoming interviews scheduled yet.</Text>
+        <Text style={{ color: colors.textSecondary, textAlign: 'center', marginVertical: 10 }}>No upcoming interviews scheduled yet.</Text>
       </View>
     );
   }
 
   return (
-    <View style={sectionCard.container}>
+    <View style={[sectionCard.container, { backgroundColor: colors.card }]}>
       <View style={sectionCard.header}>
-        <Text style={sectionCard.title}>Upcoming Interviews</Text>
+        <Text style={[sectionCard.title, { color: colors.text }]}>Upcoming Interviews</Text>
         <TouchableOpacity>
-          <MoreHorizontal size={20} color={GRAY} />
+          <MoreHorizontal size={20} color={colors.textSecondary} />
         </TouchableOpacity>
       </View>
       {upcomingApps.map((app, i) => {
@@ -140,13 +138,14 @@ function UpcomingInterviews({ applications = [] }: { applications?: any[] }) {
 }
 
 function SkillBar({ label, pct, color }: any) {
+  const { colors } = useAppTheme();
   return (
     <View style={skillStyles.row}>
       <View style={skillStyles.labelRow}>
-        <Text style={skillStyles.label}>{label}</Text>
+        <Text style={[skillStyles.label, { color: colors.text }]}>{label}</Text>
         <Text style={[skillStyles.pct, { color }]}>{pct}%</Text>
       </View>
-      <View style={skillStyles.track}>
+      <View style={[skillStyles.track, { backgroundColor: colors.background }]}>
         <View style={[skillStyles.fill, { width: `${pct}%` as any, backgroundColor: color }]} />
       </View>
     </View>
@@ -154,44 +153,46 @@ function SkillBar({ label, pct, color }: any) {
 }
 
 function SkillsInDemand() {
+  const { colors } = useAppTheme();
   const skills = [
-    { label: 'React & Next.js', pct: 90, color: PRIMARY },
-    { label: 'TypeScript', pct: 85, color: PRIMARY },
+    { label: 'React & Next.js', pct: 90, color: colors.primary },
+    { label: 'TypeScript', pct: 85, color: colors.primary },
     { label: 'Rust (Still Gap)', pct: 64, color: '#f59e0b' },
-    { label: 'Kubernetes', pct: 48, color: GRAY },
+    { label: 'Kubernetes', pct: 48, color: colors.textSecondary },
   ];
   return (
-    <View style={sectionCard.container}>
-      <Text style={sectionCard.title}>Skills in Demand</Text>
-      <Text style={skillStyles.subtitle}>Based on your matches and industry trends</Text>
+    <View style={[sectionCard.container, { backgroundColor: colors.card }]}>
+      <Text style={[sectionCard.title, { color: colors.text }]}>Skills in Demand</Text>
+      <Text style={[skillStyles.subtitle, { color: colors.textSecondary }]}>Based on your matches and industry trends</Text>
       {skills.map((s, i) => <SkillBar key={i} {...s} />)}
-      <TouchableOpacity style={skillStyles.addBtn}>
-        <Plus size={14} color={PRIMARY} />
-        <Text style={skillStyles.addBtnText}>Add New Skill</Text>
+      <TouchableOpacity style={[skillStyles.addBtn, { borderColor: colors.primary + '40' }]}>
+        <Plus size={14} color={colors.primary} />
+        <Text style={[skillStyles.addBtnText, { color: colors.primary }]}>Add New Skill</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
 function FeedItem({ icon: Icon, iconBg, text, time }: any) {
+  const { colors } = useAppTheme();
   return (
-    <View style={feedStyles.item}>
+    <View style={[feedStyles.item, { borderBottomColor: colors.border }]}>
       <View style={[feedStyles.iconWrap, { backgroundColor: iconBg + '15' }]}>
         <Icon size={16} color={iconBg} />
       </View>
       <View style={feedStyles.content}>
-        <Text style={feedStyles.text}>{text}</Text>
-        <Text style={feedStyles.time}>{time}</Text>
+        <Text style={[feedStyles.text, { color: colors.text }]}>{text}</Text>
+        <Text style={[feedStyles.time, { color: colors.textSecondary }]}>{time}</Text>
       </View>
     </View>
   );
 }
 
 function ActivityFeed({ applications = [] }: { applications?: any[] }) {
+  const { colors } = useAppTheme();
   const [tab, setTab] = useState('All');
   const tabs = ['All', 'Applied', 'Offers'];
   
-  // Generate feed from applications
   const feed = applications.map(app => {
     const company = app.job?.startup?.companyName || 'A company';
     const role = app.job?.title || 'a role';
@@ -207,7 +208,7 @@ function ActivityFeed({ applications = [] }: { applications?: any[] }) {
       icon = TrendingUp;
       iconBg = '#0ea5e9';
       text = `${company} advanced your application to the interview phase.`;
-      type = 'All'; // Or Interview, but we only have All, Applied, Offers
+      type = 'All';
     } else if (app.status === 'OFFERED') {
       icon = FileText;
       iconBg = '#f59e0b';
@@ -228,10 +229,8 @@ function ActivityFeed({ applications = [] }: { applications?: any[] }) {
     return { icon, iconBg, text, time: timeString, type, timestamp: date.getTime() };
   });
 
-  // Sort feed descending by time
   feed.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
-  // Filter based on tab
   const filteredFeed = feed.filter(f => {
     if (tab === 'All') return true;
     if (tab === 'Applied' && f.type === 'Applied') return true;
@@ -240,28 +239,36 @@ function ActivityFeed({ applications = [] }: { applications?: any[] }) {
   });
 
   return (
-    <View style={sectionCard.container}>
-      <Text style={sectionCard.title}>Activity Feed</Text>
+    <View style={[sectionCard.container, { backgroundColor: colors.card }]}>
+      <Text style={[sectionCard.title, { color: colors.text }]}>Activity Feed</Text>
       <View style={feedStyles.tabs}>
         {tabs.map(t => (
-          <TouchableOpacity key={t} style={[feedStyles.tab, tab === t && feedStyles.tabActive]} onPress={() => setTab(t)}>
-            <Text style={[feedStyles.tabText, tab === t && feedStyles.tabTextActive]}>{t}</Text>
+          <TouchableOpacity 
+            key={t} 
+            style={[feedStyles.tab, { backgroundColor: colors.background }, tab === t && { backgroundColor: colors.primary }]} 
+            onPress={() => setTab(t)}
+          >
+            <Text style={[feedStyles.tabText, { color: colors.textSecondary }, tab === t && { color: '#ffffff' }]}>{t}</Text>
           </TouchableOpacity>
         ))}
       </View>
       {filteredFeed.length > 0 ? (
         filteredFeed.map((f, i) => <FeedItem key={i} {...f} />)
       ) : (
-        <Text style={{ color: GRAY, textAlign: 'center', marginVertical: 10 }}>No activity to show in this category.</Text>
+        <Text style={{ color: colors.textSecondary, textAlign: 'center', marginVertical: 10 }}>No activity to show in this category.</Text>
       )}
     </View>
   );
 }
 
 function AssessmentBanner({ router }: { router: any }) {
+  const { colors } = useAppTheme();
   return (
-    <TouchableOpacity style={bannerStyles.assessmentBanner} onPress={() => router.push('/student-assessments')}>
-      <Zap size={20} color={WHITE} />
+    <TouchableOpacity 
+      style={[bannerStyles.assessmentBanner, { backgroundColor: colors.primary, ...Platform.select({ web: { boxShadow: `0 4px 20px ${colors.primary}60` } as any, default: { shadowColor: colors.primary } }) }]} 
+      onPress={() => router.push('/student-assessments')}
+    >
+      <Zap size={20} color={'#ffffff'} />
       <View>
         <Text style={bannerStyles.bannerTitle}>Assessment is Live</Text>
         <Text style={bannerStyles.bannerSub}>Click here to start</Text>
@@ -271,20 +278,22 @@ function AssessmentBanner({ router }: { router: any }) {
 }
 
 function OfferBanner() {
+  const { colors } = useAppTheme();
   return (
-    <TouchableOpacity style={bannerStyles.offerBanner}>
-      <FileText size={20} color={PRIMARY} />
+    <TouchableOpacity style={[bannerStyles.offerBanner, { backgroundColor: colors.card, borderColor: colors.primary + '25' }]}>
+      <FileText size={20} color={colors.primary} />
       <View>
-        <Text style={bannerStyles.offerTitle}>View Offer Letter !</Text>
-        <Text style={bannerStyles.offerSub}>click here</Text>
+        <Text style={[bannerStyles.offerTitle, { color: colors.text }]}>View Offer Letter !</Text>
+        <Text style={[bannerStyles.offerSub, { color: colors.textSecondary }]}>click here</Text>
       </View>
-      <ChevronRight size={18} color={PRIMARY} style={{ marginLeft: 'auto' }} />
+      <ChevronRight size={18} color={colors.primary} style={{ marginLeft: 'auto' }} />
     </TouchableOpacity>
   );
 }
 
 function BottomTabBar() {
   const router = useRouter();
+  const { colors } = useAppTheme();
   const [active, setActive] = useState('Home');
   const tabs = [
     { label: 'Home', icon: LayoutDashboard },
@@ -294,7 +303,7 @@ function BottomTabBar() {
     { label: 'Feed', icon: Users, path: '/student-community' },
   ];
   return (
-    <View style={tabBarStyles.container}>
+    <View style={[tabBarStyles.container, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
       {tabs.map(({ label, icon: Icon, path }) => {
         const isActive = active === label;
         return (
@@ -302,10 +311,10 @@ function BottomTabBar() {
             setActive(label);
             if (path) router.push(path);
           }}>
-            <View style={[{ padding: 8, borderRadius: 20 }, isActive && { backgroundColor: PRIMARY + '20', transform: [{ scale: 1.1 }] }]}>
-                  <Icon size={22} color={isActive ? PRIMARY : GRAY} />
+            <View style={[{ padding: 8, borderRadius: 20 }, isActive && { backgroundColor: colors.primary + '20', transform: [{ scale: 1.1 }] }]}>
+                  <Icon size={22} color={isActive ? colors.primary : colors.textSecondary} />
                 </View>
-            <Text style={[tabBarStyles.label, isActive && tabBarStyles.labelActive]}>{label}</Text>
+            <Text style={[tabBarStyles.label, { color: colors.textSecondary }, isActive && { color: colors.primary, fontWeight: '700' }]}>{label}</Text>
           </TouchableOpacity>
         );
       })}
@@ -318,6 +327,7 @@ function BottomTabBar() {
 export default function StudentDashboard() {
   const params = useLocalSearchParams();
   const router = useRouter();
+  const { colors } = useAppTheme();
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState(userStore);
   const [applications, setApplications] = useState<any[]>([]);
@@ -364,7 +374,6 @@ export default function StudentDashboard() {
         }
 
         if (!userId) {
-          // If no ID is passed and not found in storage, fallback to defaults
           if (params.userName) {
             const newUserData = {
               id: params.userId as string || '',
@@ -387,7 +396,6 @@ export default function StudentDashboard() {
         if (resJson.success && resJson.user) {
           let photoUrl = resJson.user.profilePhoto;
           if (photoUrl && !photoUrl.startsWith('http') && !photoUrl.startsWith('data:')) {
-            // Handle both absolute and relative file paths saved in the DB
             const filename = photoUrl.split(/[/\\]/).pop();
             photoUrl = `${baseUrl}/uploads/${filename}`;
           }
@@ -431,17 +439,16 @@ export default function StudentDashboard() {
     fetchUser();
   }, [params.userId, params.userName, params.profilePhoto]);
 
-
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StudentHeader user={userData} />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {loading ? (
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 40 }}>
-            <ActivityIndicator size="large" color={PRIMARY} />
+            <ActivityIndicator size="large" color={colors.primary} />
           </View>
         ) : (
-          <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+          <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }], gap: 16 }}>
             <WelcomeSection user={userData} />
           <ApplicationOverview applications={applications} />
           <UpcomingInterviews applications={applications} />
@@ -453,7 +460,7 @@ export default function StudentDashboard() {
           {applications.some((a: any) => a.status === 'OFFERED') && (
             <OfferBanner />
           )}
-            <View style={{ height: 24 }} />
+            <View style={{ height: 8 }} />
           </Animated.View>
         )}
       </ScrollView>
@@ -465,30 +472,28 @@ export default function StudentDashboard() {
 // ─── Styles ────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: BG },
+  safeArea: { flex: 1 },
   scroll: { flex: 1 },
   scrollContent: { padding: 16, gap: 16, paddingBottom: 32 },
 });
 
-
-
 const welcomeStyles = StyleSheet.create({
   container: { paddingVertical: 4 },
-  title: { fontSize: 20, fontWeight: '800', color: DARK, marginBottom: 4 },
-  subtitle: { fontSize: 13, color: GRAY, lineHeight: 18 },
+  title: { fontSize: 20, fontWeight: '800', marginBottom: 4 },
+  subtitle: { fontSize: 13, lineHeight: 18 },
 });
 
 const sectionCard = StyleSheet.create({
   container: {
-    backgroundColor: WHITE, borderRadius: 16, padding: 16,
+    borderRadius: 16, padding: 16,
     ...Platform.select({
       web: { boxShadow: '0 1px 4px rgba(0,0,0,0.06)' },
       default: { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 },
     }),
   },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  title: { fontSize: 15, fontWeight: '700', color: DARK },
-  link: { fontSize: 13, fontWeight: '600', color: PRIMARY },
+  title: { fontSize: 15, fontWeight: '700' },
+  link: { fontSize: 13, fontWeight: '600' },
 });
 
 const overviewStyles = StyleSheet.create({
@@ -497,28 +502,28 @@ const overviewStyles = StyleSheet.create({
 
 const statStyles = StyleSheet.create({
   card: {
-    flex: 1, backgroundColor: BG, borderRadius: 12, padding: 12,
+    flex: 1, borderRadius: 12, padding: 12,
     alignItems: 'center', gap: 6,
   },
   iconWrap: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
-  value: { fontSize: 22, fontWeight: '800', color: DARK },
-  label: { fontSize: 11, color: GRAY, fontWeight: '500' },
+  value: { fontSize: 22, fontWeight: '800' },
+  label: { fontSize: 11, fontWeight: '500' },
 });
 
 const interviewStyles = StyleSheet.create({
   card: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 12,
-    paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f3f4f6',
+    paddingVertical: 12, borderBottomWidth: 1,
   },
   dateBox: {
-    width: 44, height: 50, borderRadius: 10, backgroundColor: PRIMARY + '10',
+    width: 44, height: 50, borderRadius: 10,
     alignItems: 'center', justifyContent: 'center',
   },
-  month: { fontSize: 9, fontWeight: '700', color: PRIMARY, letterSpacing: 0.5 },
-  day: { fontSize: 18, fontWeight: '800', color: PRIMARY },
+  month: { fontSize: 9, fontWeight: '700', letterSpacing: 0.5 },
+  day: { fontSize: 18, fontWeight: '800' },
   info: { flex: 1, gap: 3 },
-  title: { fontSize: 13, fontWeight: '700', color: DARK },
-  meta: { fontSize: 11, color: GRAY },
+  title: { fontSize: 13, fontWeight: '700' },
+  meta: { fontSize: 11 },
   badge: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6,
@@ -527,69 +532,64 @@ const interviewStyles = StyleSheet.create({
 });
 
 const skillStyles = StyleSheet.create({
-  subtitle: { fontSize: 12, color: GRAY, marginBottom: 14, marginTop: 2 },
+  subtitle: { fontSize: 12, marginBottom: 14, marginTop: 2 },
   row: { marginBottom: 14 },
   labelRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  label: { fontSize: 12, fontWeight: '600', color: DARK },
+  label: { fontSize: 12, fontWeight: '600' },
   pct: { fontSize: 12, fontWeight: '700' },
-  track: { height: 6, backgroundColor: BG, borderRadius: 4, overflow: 'hidden' },
+  track: { height: 6, borderRadius: 4, overflow: 'hidden' },
   fill: { height: '100%', borderRadius: 4 },
   addBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6, justifyContent: 'center',
-    borderWidth: 1.5, borderColor: PRIMARY + '40', borderRadius: 10, borderStyle: 'dashed',
+    borderWidth: 1.5, borderRadius: 10, borderStyle: 'dashed',
     paddingVertical: 10, marginTop: 4,
   },
-  addBtnText: { fontSize: 13, fontWeight: '600', color: PRIMARY },
+  addBtnText: { fontSize: 13, fontWeight: '600' },
 });
 
 const feedStyles = StyleSheet.create({
   tabs: { flexDirection: 'row', gap: 8, marginVertical: 12 },
   tab: {
     paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20,
-    backgroundColor: BG,
   },
-  tabActive: { backgroundColor: PRIMARY },
-  tabText: { fontSize: 12, fontWeight: '600', color: GRAY },
-  tabTextActive: { color: WHITE },
-  item: { flexDirection: 'row', gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
+  tabText: { fontSize: 12, fontWeight: '600' },
+  item: { flexDirection: 'row', gap: 12, paddingVertical: 10, borderBottomWidth: 1 },
   iconWrap: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center', flexShrink: 0 },
   content: { flex: 1, gap: 2 },
-  text: { fontSize: 12, color: DARK, lineHeight: 17 },
-  time: { fontSize: 11, color: GRAY },
+  text: { fontSize: 12, lineHeight: 17 },
+  time: { fontSize: 11 },
 });
 
 const bannerStyles = StyleSheet.create({
   assessmentBanner: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
-    backgroundColor: PRIMARY, borderRadius: 16, padding: 20,
+    borderRadius: 16, padding: 20,
     ...Platform.select({
-      web: { boxShadow: `0 4px 20px ${PRIMARY}60` },
-      default: { shadowColor: PRIMARY, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 12, elevation: 6 },
+      default: { shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 12, elevation: 6 },
     }),
   },
-  bannerTitle: { fontSize: 16, fontWeight: '800', color: WHITE },
-  bannerSub: { fontSize: 12, color: WHITE + 'cc', marginTop: 2 },
+  bannerTitle: { fontSize: 16, fontWeight: '800', color: '#ffffff' },
+  bannerSub: { fontSize: 12, color: '#ffffffcc', marginTop: 2 },
   offerBanner: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
-    backgroundColor: WHITE, borderRadius: 16, padding: 20,
-    borderWidth: 1.5, borderColor: PRIMARY + '25',
+    borderRadius: 16, padding: 20,
+    borderWidth: 1.5,
     ...Platform.select({
       web: { boxShadow: '0 1px 4px rgba(0,0,0,0.06)' },
       default: { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 },
     }),
   },
-  offerTitle: { fontSize: 15, fontWeight: '800', color: DARK },
-  offerSub: { fontSize: 12, color: GRAY, marginTop: 2 },
+  offerTitle: { fontSize: 15, fontWeight: '800' },
+  offerSub: { fontSize: 12, marginTop: 2 },
 });
 
 const tabBarStyles = StyleSheet.create({
   container: {
-    flexDirection: 'row', backgroundColor: WHITE,
-    borderTopWidth: 1, borderTopColor: '#f0f0f0',
+    flexDirection: 'row',
+    borderTopWidth: 1,
     paddingBottom: Platform.OS === 'ios' ? 30 : 24,
     paddingTop: 10,
   },
   tab: { flex: 1, alignItems: 'center', gap: 4 },
-  label: { fontSize: 10, color: GRAY, fontWeight: '500' },
-  labelActive: { color: PRIMARY, fontWeight: '700' },
+  label: { fontSize: 10, fontWeight: '500' },
 });

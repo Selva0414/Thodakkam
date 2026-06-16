@@ -111,10 +111,35 @@ export default function StudentExam() {
 
   const handleSubmit = async () => {
     setSubmitted(true);
-    alert('Assessment submitted successfully!');
-    // Store locally to simulate completion
+    
+    let score = 0;
+    let totalScore = 0;
+    
+    questions.forEach((q: any, index: number) => {
+      const pts = Number(q.points) || 1;
+      totalScore += pts;
+      if (answers[index] === q.correctOption) {
+        score += pts;
+      }
+    });
+
+    const percent = totalScore > 0 ? Math.round((score / totalScore) * 100) : 0;
+    alert(`Assessment submitted successfully! You scored ${percent}%`);
+    
     if (assessmentId) {
       await AsyncStorage.setItem(`assessment_completed_${assessmentId}`, 'true');
+      
+      const userStr = await AsyncStorage.getItem('userData');
+      if (userStr && assessment.jobId) {
+         const user = JSON.parse(userStr);
+         const resultObj = {
+           roundType: 'MCQ_ROUND',
+           score: percent,
+           status: percent >= (assessment.mcqConfig?.passPercentage || 60) ? 'PASSED' : 'FAILED',
+           completedAt: new Date().toISOString()
+         };
+         await AsyncStorage.setItem(`mock_assessment_result_${user.id}_${assessment.jobId}`, JSON.stringify([resultObj]));
+      }
     }
   };
 

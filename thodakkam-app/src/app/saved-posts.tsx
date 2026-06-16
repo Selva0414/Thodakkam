@@ -9,19 +9,22 @@ import {
   Heart, MessageCircle, Share2, Plus, ClipboardList, ThumbsUp, Repeat, Bookmark, Smile, ArrowLeft
 } from 'lucide-react-native';
 import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useAppTheme } from '../context/ThemeContext';
 import { useCallback } from 'react';
 import StudentHeader from '../components/StudentHeader';
 import StartupHeader from '../components/StartupHeader';
 import { userStore } from '../utils/userStore';
 
-const PRIMARY = '#6a1b9a';
-const BG = '#f8f9fa';
-const WHITE = '#ffffff';
-const DARK = '#0f172a';
-const GRAY = '#6b7280';
-const BORDER = '#e2e8f0';
+
+
+
+
+
+
 
 function BottomTabBar() {
+  const { colors, isDark } = useAppTheme();
+  const tabBarStyles = getTabBarStyles(colors, isDark);
   const router = useRouter();
   const active = 'Feed';
   const tabs = [
@@ -43,8 +46,8 @@ function BottomTabBar() {
               if (path) router.push(path as any);
             }}
           >
-            <View style={[{ padding: 8, borderRadius: 20 }, isActive && { backgroundColor: PRIMARY + '20', transform: [{ scale: 1.1 }] }]}>
-                  <Icon size={22} color={isActive ? PRIMARY : GRAY} />
+            <View style={[{ padding: 8, borderRadius: 20 }, isActive && { backgroundColor: colors.primary + '20', transform: [{ scale: 1.1 }] }]}>
+                  <Icon size={22} color={isActive ? colors.primary : colors.textSecondary} />
                 </View>
             <Text style={[tabBarStyles.label, isActive && tabBarStyles.labelActive]}>{label}</Text>
           </TouchableOpacity>
@@ -55,6 +58,8 @@ function BottomTabBar() {
 }
 
 export default function SavedPosts() {
+  const { colors, isDark } = useAppTheme();
+  const styles = getStyles(colors, isDark);
   const router = useRouter();
   const params = useLocalSearchParams();
   const role = (params.role as string) || (userStore.email ? 'student' : 'startup');
@@ -126,17 +131,17 @@ export default function SavedPosts() {
         <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
           <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 12, padding: 4 }}>
-            <ArrowLeft size={24} color={DARK} />
+            <ArrowLeft size={24} color={colors.text} />
           </TouchableOpacity>
-          <Text style={{ fontSize: 24, fontWeight: '800', color: DARK }}>Saved Posts</Text>
+          <Text style={{ fontSize: 24, fontWeight: '800', color: colors.text }}>Saved Posts</Text>
         </View>
 
 
         {/* Feed */}
         {loading ? (
-          <Text style={{ textAlign: 'center', marginTop: 20, color: GRAY }}>Loading saved posts...</Text>
+          <Text style={{ textAlign: 'center', marginTop: 20, color: colors.textSecondary }}>Loading saved posts...</Text>
         ) : posts.length === 0 ? (
-          <Text style={{ textAlign: 'center', marginTop: 20, color: GRAY }}>You haven't saved any posts yet.</Text>
+          <Text style={{ textAlign: 'center', marginTop: 20, color: colors.textSecondary }}>You haven't saved any posts yet.</Text>
         ) : (
           posts.map(post => <PostItem key={post.id} post={post} role={role} identifier={identifier} />)
         )}
@@ -149,6 +154,8 @@ export default function SavedPosts() {
 }
 
 function PostItem({ post, role, identifier }: { post: any, role: string, identifier: string }) {
+  const { colors, isDark } = useAppTheme();
+  const styles = getStyles(colors, isDark);
   const initialLikes = post.likes ? post.likes.length : 0;
   const initiallyLiked = post.likes ? post.likes.some((l: any) => role === 'startup' ? l.startup?.companyName === identifier : l.user?.email === identifier) : false;
   
@@ -290,8 +297,8 @@ function PostItem({ post, role, identifier }: { post: any, role: string, identif
         {profilePhoto ? (
           <Image source={{ uri: profilePhoto }} style={styles.postAvatar} />
         ) : (
-          <View style={[styles.postAvatar, { backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center' }]}>
-            <Text style={{ color: WHITE, fontWeight: 'bold', fontSize: 16 }}>{authorInitial}</Text>
+          <View style={[styles.postAvatar, { backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center' }]}>
+            <Text style={{ color: colors.card, fontWeight: 'bold', fontSize: 16 }}>{authorInitial}</Text>
           </View>
         )}
         <View style={styles.postMeta}>
@@ -300,11 +307,11 @@ function PostItem({ post, role, identifier }: { post: any, role: string, identif
         </View>
         {post.category && (
           <View style={[styles.badgeWrap, { backgroundColor: '#f3e8ff' }]}>
-            <Text style={[styles.badgeText, { color: PRIMARY }]}>{post.category.toUpperCase()}</Text>
+            <Text style={[styles.badgeText, { color: colors.primary }]}>{post.category.toUpperCase()}</Text>
           </View>
         )}
         <TouchableOpacity style={{ marginLeft: 8 }}>
-          <Text style={{ color: GRAY, fontSize: 18, fontWeight: 'bold' }}>···</Text>
+          <Text style={{ color: colors.textSecondary, fontSize: 18, fontWeight: 'bold' }}>···</Text>
         </TouchableOpacity>
       </View>
 
@@ -316,25 +323,25 @@ function PostItem({ post, role, identifier }: { post: any, role: string, identif
 
       <View style={[styles.postFooter, showComments && { borderBottomWidth: 1, borderBottomColor: '#f1f5f9', paddingBottom: 16, marginBottom: 16 }]}>
         <TouchableOpacity style={styles.footerAction} onPress={handleLike}>
-          <ThumbsUp size={20} color={liked ? PRIMARY : GRAY} fill={liked ? PRIMARY : 'transparent'} />
-          <Text style={[styles.footerActionText, liked && { color: PRIMARY }]}>{likesCount}</Text>
+          <ThumbsUp size={20} color={liked ? colors.primary : colors.textSecondary} fill={liked ? colors.primary : 'transparent'} />
+          <Text style={[styles.footerActionText, liked && { color: colors.primary }]}>{likesCount}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity 
           style={[styles.footerAction, showComments && styles.activeFooterBtn]} 
           onPress={() => setShowComments(!showComments)}
         >
-          <MessageSquare size={20} color={showComments ? PRIMARY : GRAY} />
-          <Text style={[styles.footerActionText, showComments && { color: PRIMARY }]}>{comments.length}</Text>
+          <MessageSquare size={20} color={showComments ? colors.primary : colors.textSecondary} />
+          <Text style={[styles.footerActionText, showComments && { color: colors.primary }]}>{comments.length}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.footerAction} onPress={handleRepost} disabled={isReposting}>
-          <Repeat size={20} color={hasReposted ? PRIMARY : GRAY} />
-          <Text style={[styles.footerActionText, hasReposted && { color: PRIMARY }]}>{repostCount}</Text>
+          <Repeat size={20} color={hasReposted ? colors.primary : colors.textSecondary} />
+          <Text style={[styles.footerActionText, hasReposted && { color: colors.primary }]}>{repostCount}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={[styles.footerAction, styles.shareAction]} onPress={handleSave} disabled={isSaving}>
-          <Bookmark size={18} color={hasSaved ? PRIMARY : GRAY} fill={hasSaved ? PRIMARY : 'transparent'} />
+          <Bookmark size={18} color={hasSaved ? colors.primary : colors.textSecondary} fill={hasSaved ? colors.primary : 'transparent'} />
         </TouchableOpacity>
       </View>
 
@@ -350,8 +357,8 @@ function PostItem({ post, role, identifier }: { post: any, role: string, identif
               {avatar ? (
                 <Image source={{ uri: avatar }} style={styles.commentAvatar} />
               ) : (
-                <View style={[styles.commentAvatar, { backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center' }]}>
-                  <Text style={{ color: WHITE, fontSize: 10, fontWeight: 'bold' }}>{author.charAt(0).toUpperCase()}</Text>
+                <View style={[styles.commentAvatar, { backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center' }]}>
+                  <Text style={{ color: colors.card, fontSize: 10, fontWeight: 'bold' }}>{author.charAt(0).toUpperCase()}</Text>
                 </View>
               )}
               <View style={styles.commentBubble}>
@@ -372,15 +379,15 @@ function PostItem({ post, role, identifier }: { post: any, role: string, identif
             {userStore.profilePhoto ? (
               <Image source={{ uri: userStore.profilePhoto }} style={styles.commentAvatar} />
             ) : (
-              <View style={[styles.commentAvatar, { backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center' }]}>
-                <Text style={{ color: WHITE, fontSize: 10, fontWeight: 'bold' }}>{userStore.name ? userStore.name.charAt(0).toUpperCase() : 'S'}</Text>
+              <View style={[styles.commentAvatar, { backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center' }]}>
+                <Text style={{ color: colors.card, fontSize: 10, fontWeight: 'bold' }}>{userStore.name ? userStore.name.charAt(0).toUpperCase() : 'S'}</Text>
               </View>
             )}
             <View style={styles.commentInputWrap}>
               <TextInput 
                 style={styles.commentInput}
                 placeholder="Add a comment..."
-                placeholderTextColor={GRAY}
+                placeholderTextColor={colors.textSecondary}
                 value={commentText}
                 onChangeText={setCommentText}
                 onSubmitEditing={submitComment}
@@ -407,7 +414,7 @@ function PostItem({ post, role, identifier }: { post: any, role: string, identif
               </View>
             )}
             <TouchableOpacity style={[styles.commentSendBtn, !commentText.trim() && { opacity: 0.5 }]} onPress={submitComment} disabled={!commentText.trim()}>
-              <Send size={16} color={WHITE} />
+              <Send size={16} color={colors.card} />
             </TouchableOpacity>
           </View>
         </View>
@@ -418,13 +425,13 @@ function PostItem({ post, role, identifier }: { post: any, role: string, identif
 
 // ─── Main Screen ────────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: BG },
+const getStyles = (colors: any, isDark: boolean) => StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: colors.background },
   scroll: { flex: 1 },
   scrollContent: { padding: 16, paddingBottom: 40 },
 
   topSearchCard: {
-    backgroundColor: WHITE,
+    backgroundColor: colors.card,
     borderRadius: 12,
     padding: 12,
     marginBottom: 12,
@@ -443,20 +450,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e2e8f0',
   },
-  addBtn: { width: 40, height: 40, borderRadius: 10, backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center' },
+  addBtn: { width: 40, height: 40, borderRadius: 10, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center' },
   searchIcon: { marginRight: 8 },
-  mainSearchInput: { flex: 1, fontSize: 14, color: DARK, ...(Platform.OS === 'web' ? { outlineStyle: 'none' } as any : {}) },
-  sortByText: { fontSize: 13, color: GRAY, marginBottom: 8, fontWeight: '500' },
+  mainSearchInput: { flex: 1, fontSize: 14, color: colors.text, ...(Platform.OS === 'web' ? { outlineStyle: 'none' } as any : {}) },
+  sortByText: { fontSize: 13, color: colors.textSecondary, marginBottom: 8, fontWeight: '500' },
   
-  newFilterChip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: WHITE, borderWidth: 1, borderColor: '#e2e8f0', marginRight: 8 },
-  newFilterChipActive: { backgroundColor: PRIMARY, borderColor: PRIMARY },
-  newFilterText: { fontSize: 13, fontWeight: '600', color: GRAY },
-  newFilterTextActive: { color: WHITE },
+  newFilterChip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: colors.card, borderWidth: 1, borderColor: '#e2e8f0', marginRight: 8 },
+  newFilterChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  newFilterText: { fontSize: 13, fontWeight: '600', color: colors.textSecondary },
+  newFilterTextActive: { color: colors.card },
   filterScroll: { flexGrow: 0 },
   filterContent: { paddingRight: 16 },
 
   createPostCard: {
-    backgroundColor: WHITE,
+    backgroundColor: colors.card,
     borderRadius: 16,
     padding: 16,
     marginBottom: 24,
@@ -466,24 +473,24 @@ const styles = StyleSheet.create({
   createPostTopRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
   createPostAvatar: { width: 40, height: 40, borderRadius: 20, marginRight: 12 },
   createPostInputWrap: { flex: 1, backgroundColor: '#f8fafc', borderRadius: 20, paddingHorizontal: 16, height: 44, justifyContent: 'center', borderWidth: 1, borderColor: '#e2e8f0' },
-  createPostInput: { fontSize: 13, color: DARK, ...(Platform.OS === 'web' ? { outlineStyle: 'none' } as any : {}) },
+  createPostInput: { fontSize: 13, color: colors.text, ...(Platform.OS === 'web' ? { outlineStyle: 'none' } as any : {}) },
   
   createPostTagsScroll: { marginBottom: 16, flexGrow: 0 },
   createPostTags: { gap: 8, paddingRight: 16 },
-  createTagChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: WHITE, borderWidth: 1, borderColor: '#e2e8f0' },
-  createTagChipActive: { backgroundColor: '#f3e8ff', borderColor: PRIMARY },
-  createTagText: { fontSize: 11, fontWeight: '600', color: GRAY },
-  createTagTextActive: { color: PRIMARY },
+  createTagChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: colors.card, borderWidth: 1, borderColor: '#e2e8f0' },
+  createTagChipActive: { backgroundColor: '#f3e8ff', borderColor: colors.primary },
+  createTagText: { fontSize: 11, fontWeight: '600', color: colors.textSecondary },
+  createTagTextActive: { color: colors.primary },
 
   createPostFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   createPostActions: { flexDirection: 'row', gap: 12 },
-  createPostActionBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, backgroundColor: WHITE, borderWidth: 1, borderColor: '#e2e8f0' },
-  createPostActionText: { fontSize: 12, fontWeight: '600', color: DARK },
-  postSubmitBtn: { backgroundColor: PRIMARY, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 8 },
-  postSubmitBtnText: { color: WHITE, fontWeight: '700', fontSize: 13 },
+  createPostActionBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, backgroundColor: colors.card, borderWidth: 1, borderColor: '#e2e8f0' },
+  createPostActionText: { fontSize: 12, fontWeight: '600', color: colors.text },
+  postSubmitBtn: { backgroundColor: colors.primary, paddingHorizontal: 24, paddingVertical: 10, borderRadius: 8 },
+  postSubmitBtnText: { color: colors.card, fontWeight: '700', fontSize: 13 },
 
   repostCardWrapper: {
-    backgroundColor: WHITE,
+    backgroundColor: colors.card,
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
@@ -491,7 +498,7 @@ const styles = StyleSheet.create({
     borderColor: '#f1f5f9',
   },
   repostHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  repostText: { fontSize: 13, color: GRAY, fontWeight: '500' },
+  repostText: { fontSize: 13, color: colors.textSecondary, fontWeight: '500' },
   
   nestedCard: {
     backgroundColor: '#f8fafc',
@@ -503,10 +510,10 @@ const styles = StyleSheet.create({
   },
   nestedHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
   nestedAvatar: { width: 32, height: 32, borderRadius: 16, marginRight: 10 },
-  avatarBadge: { position: 'absolute', bottom: -2, right: -2, backgroundColor: '#10b981', borderRadius: 10, width: 14, height: 14, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: WHITE },
+  avatarBadge: { position: 'absolute', bottom: -2, right: -2, backgroundColor: '#10b981', borderRadius: 10, width: 14, height: 14, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: colors.card },
 
   postCard: {
-    backgroundColor: WHITE, borderRadius: 16, padding: 16, marginBottom: 16,
+    backgroundColor: colors.card, borderRadius: 16, padding: 16, marginBottom: 16,
     ...Platform.select({
       web: { boxShadow: '0 4px 12px rgba(0,0,0,0.03)' },
       default: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
@@ -515,39 +522,39 @@ const styles = StyleSheet.create({
   postHeader: { flexDirection: 'row', gap: 10, alignItems: 'center', marginBottom: 12 },
   postAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#e2e8f0' },
   postMeta: { flex: 1, marginRight: 8 },
-  postAuthor: { fontSize: 14, fontWeight: '800', color: DARK, flexShrink: 1 },
-  postTime: { fontSize: 11, color: GRAY, marginTop: 2 },
+  postAuthor: { fontSize: 14, fontWeight: '800', color: colors.text, flexShrink: 1 },
+  postTime: { fontSize: 11, color: colors.textSecondary, marginTop: 2 },
   badgeWrap: { backgroundColor: '#f1f5f9', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4 },
-  badgeText: { fontSize: 9, fontWeight: '800', color: DARK, letterSpacing: 0.5 },
+  badgeText: { fontSize: 9, fontWeight: '800', color: colors.text, letterSpacing: 0.5 },
 
-  postText: { fontSize: 13, color: DARK, lineHeight: 20, marginBottom: 12 },
+  postText: { fontSize: 13, color: colors.text, lineHeight: 20, marginBottom: 12 },
   postImage: { width: '100%', height: 220, backgroundColor: '#f8fafc', borderRadius: 12, marginBottom: 12 },
 
   postFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12 },
   footerAction: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 8, paddingVertical: 8, borderRadius: 20 },
-  activeFooterBtn: { backgroundColor: '#f3e8ff', borderWidth: 1, borderColor: PRIMARY },
-  footerActionText: { fontSize: 13, fontWeight: '600', color: GRAY },
+  activeFooterBtn: { backgroundColor: '#f3e8ff', borderWidth: 1, borderColor: colors.primary },
+  footerActionText: { fontSize: 13, fontWeight: '600', color: colors.textSecondary },
   shareAction: { paddingHorizontal: 0 },
 
   commentsSection: { marginTop: 4 },
   commentItem: { flexDirection: 'row', gap: 10, marginBottom: 16 },
   commentAvatar: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#e2e8f0' },
   commentBubble: { flex: 1, backgroundColor: '#f8fafc', padding: 12, borderRadius: 16, borderWidth: 1, borderColor: '#f1f5f9' },
-  commentAuthor: { fontSize: 13, fontWeight: '700', color: DARK },
+  commentAuthor: { fontSize: 13, fontWeight: '700', color: colors.text },
   commentRoleBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#ecfdf5', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 10 },
   commentRoleText: { fontSize: 9, fontWeight: '700', color: '#10b981', marginLeft: 4 },
-  commentText: { fontSize: 13, color: DARK, lineHeight: 18 },
+  commentText: { fontSize: 13, color: colors.text, lineHeight: 18 },
 
   commentInputRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 8, position: 'relative' },
   commentInputWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#f8fafc', borderRadius: 20, borderWidth: 1, borderColor: '#e2e8f0', paddingHorizontal: 12, height: 40 },
-  commentInput: { flex: 1, fontSize: 13, color: DARK, ...(Platform.OS === 'web' ? { outlineStyle: 'none' } as any : {}) },
+  commentInput: { flex: 1, fontSize: 13, color: colors.text, ...(Platform.OS === 'web' ? { outlineStyle: 'none' } as any : {}) },
   commentSendBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#c084fc', justifyContent: 'center', alignItems: 'center' },
 
   emojiPicker: {
     position: 'absolute',
     bottom: 50,
     right: 40,
-    backgroundColor: WHITE,
+    backgroundColor: colors.card,
     borderRadius: 24,
     padding: 8,
     flexDirection: 'row',
@@ -564,36 +571,36 @@ const styles = StyleSheet.create({
   emojiText: { fontSize: 18 },
 });
 
-const navStyles = StyleSheet.create({
+const getNavStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   headerContainer: {
-    backgroundColor: WHITE,
+    backgroundColor: colors.card,
     paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 50 : 40, paddingBottom: 16,
   },
   headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   logoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  logoBox: { width: 24, height: 24, borderRadius: 6, backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center' },
-  logoText: { fontSize: 13, fontWeight: '800', color: DARK },
+  logoBox: { width: 24, height: 24, borderRadius: 6, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center' },
+  logoText: { fontSize: 13, fontWeight: '800', color: colors.text },
   headerIcons: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   bellWrapper: { position: 'relative' },
-  bellDot: { position: 'absolute', top: 0, right: 2, width: 6, height: 6, borderRadius: 3, backgroundColor: '#ef4444', borderWidth: 1, borderColor: WHITE },
-  avatar: { width: 28, height: 28, borderRadius: 14, backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
-  avatarText: { color: WHITE, fontSize: 12, fontWeight: '700' },
+  bellDot: { position: 'absolute', top: 0, right: 2, width: 6, height: 6, borderRadius: 3, backgroundColor: '#ef4444', borderWidth: 1, borderColor: colors.card },
+  avatar: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
+  avatarText: { color: colors.card, fontSize: 12, fontWeight: '700' },
   avatarImage: { width: '100%', height: '100%' },
 
   searchRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  searchBar: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: BG, borderRadius: 8, paddingHorizontal: 10, height: 36 },
-  searchInput: { flex: 1, marginLeft: 6, fontSize: 12, color: DARK },
+  searchBar: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: colors.background, borderRadius: 8, paddingHorizontal: 10, height: 36 },
+  searchInput: { flex: 1, marginLeft: 6, fontSize: 12, color: colors.text },
   iconBtn: { padding: 4 },
 });
 
-const tabBarStyles = StyleSheet.create({
+const getTabBarStyles = (colors: any, isDark: boolean) => StyleSheet.create({
   container: {
-    flexDirection: 'row', backgroundColor: WHITE,
+    flexDirection: 'row', backgroundColor: colors.card,
     borderTopWidth: 1, borderTopColor: '#f0f0f0',
     paddingBottom: Platform.OS === 'ios' ? 30 : 24,
     paddingTop: 10,
   },
   tab: { flex: 1, alignItems: 'center', gap: 4 },
-  label: { fontSize: 10, color: GRAY, fontWeight: '500' },
-  labelActive: { color: PRIMARY, fontWeight: '700' },
+  label: { fontSize: 10, color: colors.textSecondary, fontWeight: '500' },
+  labelActive: { color: colors.primary, fontWeight: '700' },
 });

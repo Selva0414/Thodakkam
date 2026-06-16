@@ -7,16 +7,11 @@ import { userStore, updateGlobalUser } from '../utils/userStore';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const PRIMARY = '#5A279B';
-const BG = '#f8f9fa';
-const WHITE = '#ffffff';
-const DARK = '#0f172a';
-const GRAY = '#64748b';
-const LIGHT_BG = '#f1f5f9';
+import { useAppTheme } from '../context/ThemeContext';
 
 export default function StudentProfile() {
   const router = useRouter();
+  const { colors, isDark } = useAppTheme();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -69,7 +64,6 @@ export default function StudentProfile() {
         const stored = await AsyncStorage.getItem('studentUserId');
         if (stored) id = stored;
       }
-      // Fallback
       if (!id) id = '8bbe6fc3-2716-4821-b967-35b0689cbf11';
 
       setUserId(id);
@@ -232,106 +226,106 @@ export default function StudentProfile() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
         <StudentHeader />
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator size="large" color={PRIMARY} /></View>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator size="large" color={colors.primary} /></View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StudentHeader />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
         <View style={styles.headerRow}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <TouchableOpacity onPress={() => { if (router.canGoBack()) { router.back(); } else { router.navigate('/student-dashboard'); } }} style={styles.backBtn}>
-              <ArrowLeft size={24} color={DARK} />
+              <ArrowLeft size={24} color={colors.text} />
             </TouchableOpacity>
-            <Text style={styles.pageTitle}>My Profile</Text>
+            <Text style={[styles.pageTitle, { color: colors.text }]}>My Profile</Text>
           </View>
           {isEditing ? (
             <View style={{ flexDirection: 'row', gap: 10 }}>
-              <TouchableOpacity style={[styles.saveBtn, { backgroundColor: '#e2e8f0' }]} onPress={() => { setIsEditing(false); fetchProfile(); }}>
-                <Text style={[styles.saveBtnText, { color: DARK }]}>Cancel</Text>
+              <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.border }]} onPress={() => { setIsEditing(false); fetchProfile(); }}>
+                <Text style={[styles.saveBtnText, { color: colors.text }]}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={saving}>
-                <Text style={styles.saveBtnText}>{saving ? 'Saving...' : 'Save Changes'}</Text>
+              <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.primary }]} onPress={handleSave} disabled={saving}>
+                <Text style={[styles.saveBtnText, { color: '#ffffff' }]}>{saving ? 'Saving...' : 'Save Changes'}</Text>
               </TouchableOpacity>
             </View>
           ) : (
-            <TouchableOpacity style={styles.saveBtn} onPress={() => setIsEditing(true)}>
-              <Text style={styles.saveBtnText}>Edit Profile</Text>
+            <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.primary }]} onPress={() => setIsEditing(true)}>
+              <Text style={[styles.saveBtnText, { color: '#ffffff' }]}>Edit Profile</Text>
             </TouchableOpacity>
           )}
         </View>
 
         {/* Profile Photo Section */}
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: colors.card }]}>
           <View style={styles.photoRow}>
             <View style={styles.photoContainer}>
               {profile.profilePhoto ? (
                 <Image source={{ uri: profile.profilePhoto }} style={styles.photoImg} />
               ) : (
-                <View style={styles.photoPlaceholder}>
+                <View style={[styles.photoPlaceholder, { backgroundColor: colors.primary }]}>
                   <Text style={styles.photoPlaceholderText}>{profile.fullName ? profile.fullName.charAt(0).toUpperCase() : 'U'}</Text>
                 </View>
               )}
               {isEditing && (
-                <TouchableOpacity style={styles.cameraBtn} onPress={pickImage}>
-                  <Camera size={14} color={WHITE} />
+                <TouchableOpacity style={[styles.cameraBtn, { backgroundColor: colors.primary, borderColor: colors.card }]} onPress={pickImage}>
+                  <Camera size={14} color={'#ffffff'} />
                 </TouchableOpacity>
               )}
             </View>
             <View style={styles.photoTextWrap}>
-              <Text style={styles.photoTitle}>Profile Photo</Text>
-              <Text style={styles.photoSubtitle}>Update your photo to help employers recognize you</Text>
+              <Text style={[styles.photoTitle, { color: colors.text }]}>Profile Photo</Text>
+              <Text style={[styles.photoSubtitle, { color: colors.textSecondary }]}>Update your photo to help employers recognize you</Text>
             </View>
           </View>
         </View>
 
         {/* Personal Info */}
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Personal Information</Text>
+        <View style={[styles.card, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Personal Information</Text>
           <View style={styles.row}>
             <View style={styles.col}>
-              <Text style={styles.label}>Full Name</Text>
-              <TextInput style={[styles.input, !isEditing && styles.readOnlyInput]} value={profile.fullName} onChangeText={t => setProfile({...profile, fullName: t})} editable={isEditing} />
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Full Name</Text>
+              <TextInput style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.border, color: colors.text }, !isEditing && styles.readOnlyInput, !isEditing && { backgroundColor: isDark ? colors.background : '#f8fafc', color: colors.textSecondary }]} value={profile.fullName} onChangeText={t => setProfile({...profile, fullName: t})} editable={isEditing} />
             </View>
             <View style={styles.col}>
-              <Text style={styles.label}>Username</Text>
-              <TextInput style={[styles.input, !isEditing && styles.readOnlyInput]} value={profile.username} onChangeText={t => setProfile({...profile, username: t})} editable={isEditing} />
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Username</Text>
+              <TextInput style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.border, color: colors.text }, !isEditing && styles.readOnlyInput, !isEditing && { backgroundColor: isDark ? colors.background : '#f8fafc', color: colors.textSecondary }]} value={profile.username} onChangeText={t => setProfile({...profile, username: t})} editable={isEditing} />
             </View>
           </View>
           <View style={styles.row}>
             <View style={styles.col}>
-              <Text style={styles.label}>Email Address</Text>
-              <TextInput style={[styles.input, { backgroundColor: '#f1f5f9', color: GRAY }]} value={profile.email} editable={false} />
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Email Address</Text>
+              <TextInput style={[styles.input, { backgroundColor: isDark ? colors.background : '#f1f5f9', color: colors.textSecondary, borderColor: colors.border }]} value={profile.email} editable={false} />
             </View>
             <View style={styles.col}>
-              <Text style={styles.label}>Phone Number</Text>
-              <TextInput style={[styles.input, !isEditing && styles.readOnlyInput]} value={profile.phone} onChangeText={t => setProfile({...profile, phone: t})} keyboardType="phone-pad" editable={isEditing} />
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Phone Number</Text>
+              <TextInput style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.border, color: colors.text }, !isEditing && styles.readOnlyInput, !isEditing && { backgroundColor: isDark ? colors.background : '#f8fafc', color: colors.textSecondary }]} value={profile.phone} onChangeText={t => setProfile({...profile, phone: t})} keyboardType="phone-pad" editable={isEditing} />
             </View>
           </View>
           <View style={styles.row}>
             <View style={styles.col}>
-              <Text style={styles.label}>Location</Text>
-              <TextInput style={[styles.input, !isEditing && styles.readOnlyInput]} value={profile.location} onChangeText={t => setProfile({...profile, location: t})} placeholder={isEditing ? "e.g. Salem, India" : ""} editable={isEditing} />
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Location</Text>
+              <TextInput style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.border, color: colors.text }, !isEditing && styles.readOnlyInput, !isEditing && { backgroundColor: isDark ? colors.background : '#f8fafc', color: colors.textSecondary }]} value={profile.location} onChangeText={t => setProfile({...profile, location: t})} placeholder={isEditing ? "e.g. Salem, India" : ""} placeholderTextColor={colors.textSecondary} editable={isEditing} />
             </View>
           </View>
         </View>
 
         {/* Skills */}
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Skills & Expertise</Text>
+        <View style={[styles.card, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Skills & Expertise</Text>
           <View style={styles.skillsList}>
             {profile.skills.map((skill, idx) => (
-              <View key={idx} style={styles.skillTag}>
-                <Text style={styles.skillText}>{skill}</Text>
+              <View key={idx} style={[styles.skillTag, { backgroundColor: isDark ? colors.primary + '20' : '#eff6ff' }]}>
+                <Text style={[styles.skillText, { color: isDark ? colors.primary : '#1e40af' }]}>{skill}</Text>
                 {isEditing && (
                   <TouchableOpacity onPress={() => removeSkill(skill)}>
-                    <X size={14} color="#3b82f6" />
+                    <X size={14} color={isDark ? colors.primary : "#3b82f6"} />
                   </TouchableOpacity>
                 )}
               </View>
@@ -340,132 +334,133 @@ export default function StudentProfile() {
           {isEditing && (
             <View style={styles.addSkillRow}>
               <TextInput 
-                style={[styles.input, { flex: 1, marginBottom: 0 }]} 
+                style={[styles.input, { flex: 1, marginBottom: 0, backgroundColor: colors.inputBg, borderColor: colors.border, color: colors.text }]} 
                 placeholder="Add a new skill..." 
+                placeholderTextColor={colors.textSecondary}
                 value={profile.newSkill}
                 onChangeText={t => setProfile({...profile, newSkill: t})}
                 onSubmitEditing={addSkill}
               />
-              <TouchableOpacity style={styles.addSkillBtn} onPress={addSkill}>
-                <Plus size={20} color={WHITE} />
+              <TouchableOpacity style={[styles.addSkillBtn, { backgroundColor: colors.primary }]} onPress={addSkill}>
+                <Plus size={20} color={'#ffffff'} />
               </TouchableOpacity>
             </View>
           )}
         </View>
 
         {/* Education */}
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: colors.card }]}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Education Details</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Education Details</Text>
             {isEditing && (
-              <TouchableOpacity style={styles.addBtn} onPress={addEducation}>
-                <Plus size={14} color={WHITE} />
+              <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.primary }]} onPress={addEducation}>
+                <Plus size={14} color={'#ffffff'} />
                 <Text style={styles.addBtnText}>Add Education</Text>
               </TouchableOpacity>
             )}
           </View>
           
           {profile.education.map((ed, idx) => (
-            <View key={idx} style={styles.itemBox}>
+            <View key={idx} style={[styles.itemBox, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
               <View style={styles.row}>
                 <View style={[styles.col, { flex: 2 }]}>
-                  <Text style={styles.label}>Institution</Text>
-                  <TextInput style={[styles.input, !isEditing && styles.readOnlyInput]} value={ed.institution} onChangeText={t => updateEducation(idx, 'institution', t)} editable={isEditing} />
+                  <Text style={[styles.label, { color: colors.textSecondary }]}>Institution</Text>
+                  <TextInput style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }, !isEditing && styles.readOnlyInput, !isEditing && { backgroundColor: isDark ? colors.background : '#f8fafc', color: colors.textSecondary }]} value={ed.institution} onChangeText={t => updateEducation(idx, 'institution', t)} editable={isEditing} />
                 </View>
                 <View style={styles.col}>
-                  <Text style={styles.label}>Degree</Text>
-                  <TextInput style={[styles.input, !isEditing && styles.readOnlyInput]} value={ed.degree} onChangeText={t => updateEducation(idx, 'degree', t)} editable={isEditing} />
+                  <Text style={[styles.label, { color: colors.textSecondary }]}>Degree</Text>
+                  <TextInput style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }, !isEditing && styles.readOnlyInput, !isEditing && { backgroundColor: isDark ? colors.background : '#f8fafc', color: colors.textSecondary }]} value={ed.degree} onChangeText={t => updateEducation(idx, 'degree', t)} editable={isEditing} />
                 </View>
               </View>
               <View style={styles.row}>
                 <View style={styles.col}>
-                  <Text style={styles.label}>Start Year</Text>
-                  <TextInput style={[styles.input, !isEditing && styles.readOnlyInput]} value={ed.startYear} onChangeText={t => updateEducation(idx, 'startYear', t)} keyboardType="numeric" editable={isEditing} />
+                  <Text style={[styles.label, { color: colors.textSecondary }]}>Start Year</Text>
+                  <TextInput style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }, !isEditing && styles.readOnlyInput, !isEditing && { backgroundColor: isDark ? colors.background : '#f8fafc', color: colors.textSecondary }]} value={ed.startYear} onChangeText={t => updateEducation(idx, 'startYear', t)} keyboardType="numeric" editable={isEditing} />
                 </View>
                 <View style={styles.col}>
-                  <Text style={styles.label}>End Year</Text>
-                  <TextInput style={[styles.input, !isEditing && styles.readOnlyInput]} value={ed.endYear} onChangeText={t => updateEducation(idx, 'endYear', t)} keyboardType="numeric" editable={isEditing} />
+                  <Text style={[styles.label, { color: colors.textSecondary }]}>End Year</Text>
+                  <TextInput style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }, !isEditing && styles.readOnlyInput, !isEditing && { backgroundColor: isDark ? colors.background : '#f8fafc', color: colors.textSecondary }]} value={ed.endYear} onChangeText={t => updateEducation(idx, 'endYear', t)} keyboardType="numeric" editable={isEditing} />
                 </View>
                 <View style={styles.col}>
-                  <Text style={styles.label}>CGPA</Text>
-                  <TextInput style={[styles.input, !isEditing && styles.readOnlyInput]} value={ed.cgpa} onChangeText={t => updateEducation(idx, 'cgpa', t)} editable={isEditing} />
+                  <Text style={[styles.label, { color: colors.textSecondary }]}>CGPA</Text>
+                  <TextInput style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }, !isEditing && styles.readOnlyInput, !isEditing && { backgroundColor: isDark ? colors.background : '#f8fafc', color: colors.textSecondary }]} value={ed.cgpa} onChangeText={t => updateEducation(idx, 'cgpa', t)} editable={isEditing} />
                 </View>
               </View>
             </View>
           ))}
-          {profile.education.length === 0 && <Text style={{ color: GRAY, fontSize: 13 }}>No education added yet.</Text>}
+          {profile.education.length === 0 && <Text style={{ color: colors.textSecondary, fontSize: 13 }}>No education added yet.</Text>}
         </View>
 
         {/* Internships */}
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: colors.card }]}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Internship Experience</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Internship Experience</Text>
             {isEditing && (
-              <TouchableOpacity style={styles.addBtn} onPress={addExperience}>
-                <Plus size={14} color={WHITE} />
+              <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.primary }]} onPress={addExperience}>
+                <Plus size={14} color={'#ffffff'} />
                 <Text style={styles.addBtnText}>Add Internship</Text>
               </TouchableOpacity>
             )}
           </View>
           
           {profile.experience.map((exp, idx) => (
-            <View key={idx} style={styles.itemBox}>
+            <View key={idx} style={[styles.itemBox, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
               <View style={styles.row}>
                 <View style={styles.col}>
-                  <Text style={styles.label}>Company Name</Text>
-                  <TextInput style={[styles.input, !isEditing && styles.readOnlyInput]} value={exp.company} onChangeText={t => updateExperience(idx, 'company', t)} placeholder={isEditing ? "e.g. Google, Inc." : ""} editable={isEditing} />
+                  <Text style={[styles.label, { color: colors.textSecondary }]}>Company Name</Text>
+                  <TextInput style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }, !isEditing && styles.readOnlyInput, !isEditing && { backgroundColor: isDark ? colors.background : '#f8fafc', color: colors.textSecondary }]} value={exp.company} onChangeText={t => updateExperience(idx, 'company', t)} placeholder={isEditing ? "e.g. Google, Inc." : ""} placeholderTextColor={colors.textSecondary} editable={isEditing} />
                 </View>
                 <View style={styles.col}>
-                  <Text style={styles.label}>Role / Title</Text>
-                  <TextInput style={[styles.input, !isEditing && styles.readOnlyInput]} value={exp.role} onChangeText={t => updateExperience(idx, 'role', t)} placeholder={isEditing ? "e.g. Software Engineer Intern" : ""} editable={isEditing} />
+                  <Text style={[styles.label, { color: colors.textSecondary }]}>Role / Title</Text>
+                  <TextInput style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }, !isEditing && styles.readOnlyInput, !isEditing && { backgroundColor: isDark ? colors.background : '#f8fafc', color: colors.textSecondary }]} value={exp.role} onChangeText={t => updateExperience(idx, 'role', t)} placeholder={isEditing ? "e.g. Software Engineer Intern" : ""} placeholderTextColor={colors.textSecondary} editable={isEditing} />
                 </View>
               </View>
               <View style={styles.row}>
                 <View style={styles.col}>
-                  <Text style={styles.label}>Start Date</Text>
-                  <TextInput style={[styles.input, !isEditing && styles.readOnlyInput]} value={exp.startDate} onChangeText={t => updateExperience(idx, 'startDate', t)} placeholder={isEditing ? "mm/dd/yyyy" : ""} editable={isEditing} />
+                  <Text style={[styles.label, { color: colors.textSecondary }]}>Start Date</Text>
+                  <TextInput style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }, !isEditing && styles.readOnlyInput, !isEditing && { backgroundColor: isDark ? colors.background : '#f8fafc', color: colors.textSecondary }]} value={exp.startDate} onChangeText={t => updateExperience(idx, 'startDate', t)} placeholder={isEditing ? "mm/dd/yyyy" : ""} placeholderTextColor={colors.textSecondary} editable={isEditing} />
                 </View>
                 <View style={styles.col}>
-                  <Text style={styles.label}>End Date</Text>
-                  <TextInput style={[styles.input, !isEditing && styles.readOnlyInput]} value={exp.endDate} onChangeText={t => updateExperience(idx, 'endDate', t)} placeholder={isEditing ? "mm/dd/yyyy" : ""} editable={isEditing} />
+                  <Text style={[styles.label, { color: colors.textSecondary }]}>End Date</Text>
+                  <TextInput style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }, !isEditing && styles.readOnlyInput, !isEditing && { backgroundColor: isDark ? colors.background : '#f8fafc', color: colors.textSecondary }]} value={exp.endDate} onChangeText={t => updateExperience(idx, 'endDate', t)} placeholder={isEditing ? "mm/dd/yyyy" : ""} placeholderTextColor={colors.textSecondary} editable={isEditing} />
                 </View>
               </View>
-              <Text style={styles.label}>Description</Text>
-              <TextInput style={[styles.input, { height: 80 }, !isEditing && styles.readOnlyInput]} value={exp.description} onChangeText={t => updateExperience(idx, 'description', t)} multiline placeholder={isEditing ? "Describe your key responsibilities..." : ""} editable={isEditing} />
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Description</Text>
+              <TextInput style={[styles.input, { height: 80, backgroundColor: colors.card, borderColor: colors.border, color: colors.text }, !isEditing && styles.readOnlyInput, !isEditing && { backgroundColor: isDark ? colors.background : '#f8fafc', color: colors.textSecondary }]} value={exp.description} onChangeText={t => updateExperience(idx, 'description', t)} multiline placeholder={isEditing ? "Describe your key responsibilities..." : ""} placeholderTextColor={colors.textSecondary} editable={isEditing} />
             </View>
           ))}
-          {profile.experience.length === 0 && <Text style={{ color: GRAY, fontSize: 13 }}>No experience added yet.</Text>}
+          {profile.experience.length === 0 && <Text style={{ color: colors.textSecondary, fontSize: 13 }}>No experience added yet.</Text>}
         </View>
 
         {/* Resume */}
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Professional Resume</Text>
-          <TouchableOpacity style={[styles.resumeBox, !isEditing && { borderColor: 'transparent', backgroundColor: '#f1f5f9' }]} onPress={handleResumeClick}>
-            <FileText size={20} color={PRIMARY} />
+        <View style={[styles.card, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Professional Resume</Text>
+          <TouchableOpacity style={[styles.resumeBox, { borderColor: colors.border, backgroundColor: colors.inputBg }, !isEditing && { borderColor: 'transparent', backgroundColor: isDark ? colors.background : '#f1f5f9' }]} onPress={handleResumeClick}>
+            <FileText size={20} color={colors.primary} />
             <View style={{ marginLeft: 12 }}>
-              <Text style={styles.resumeTitle}>{profile.resumeName || (profile.resumeFile ? 'View Resume' : (isEditing ? 'Upload Resume' : 'No Resume Uploaded'))}</Text>
-              {isEditing && <Text style={styles.resumeSub}>Click to replace</Text>}
+              <Text style={[styles.resumeTitle, { color: colors.text }]}>{profile.resumeName || (profile.resumeFile ? 'View Resume' : (isEditing ? 'Upload Resume' : 'No Resume Uploaded'))}</Text>
+              {isEditing && <Text style={[styles.resumeSub, { color: colors.textSecondary }]}>Click to replace</Text>}
             </View>
           </TouchableOpacity>
         </View>
 
         {/* Online Presence */}
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Online Presence</Text>
+        <View style={[styles.card, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Online Presence</Text>
           <View style={styles.row}>
             <View style={styles.col}>
-              <Text style={styles.label}>Personal Website</Text>
-              <TextInput style={[styles.input, !isEditing && styles.readOnlyInput]} value={profile.portfolioUrl} onChangeText={t => setProfile({...profile, portfolioUrl: t})} placeholder={isEditing ? "https://yourportfolio.com" : ""} editable={isEditing} />
+              <Text style={[styles.label, { color: colors.textSecondary }]}>Personal Website</Text>
+              <TextInput style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.border, color: colors.text }, !isEditing && styles.readOnlyInput, !isEditing && { backgroundColor: isDark ? colors.background : '#f8fafc', color: colors.textSecondary }]} value={profile.portfolioUrl} onChangeText={t => setProfile({...profile, portfolioUrl: t})} placeholder={isEditing ? "https://yourportfolio.com" : ""} placeholderTextColor={colors.textSecondary} editable={isEditing} />
             </View>
             <View style={styles.col}>
-              <Text style={styles.label}>LinkedIn URL</Text>
-              <TextInput style={[styles.input, !isEditing && styles.readOnlyInput]} value={profile.linkedinUrl} onChangeText={t => setProfile({...profile, linkedinUrl: t})} placeholder={isEditing ? "https://linkedin.com/in/..." : ""} editable={isEditing} />
+              <Text style={[styles.label, { color: colors.textSecondary }]}>LinkedIn URL</Text>
+              <TextInput style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.border, color: colors.text }, !isEditing && styles.readOnlyInput, !isEditing && { backgroundColor: isDark ? colors.background : '#f8fafc', color: colors.textSecondary }]} value={profile.linkedinUrl} onChangeText={t => setProfile({...profile, linkedinUrl: t})} placeholder={isEditing ? "https://linkedin.com/in/..." : ""} placeholderTextColor={colors.textSecondary} editable={isEditing} />
             </View>
           </View>
           <View style={styles.row}>
             <View style={styles.col}>
-              <Text style={styles.label}>GitHub URL</Text>
-              <TextInput style={[styles.input, !isEditing && styles.readOnlyInput]} value={profile.githubUrl} onChangeText={t => setProfile({...profile, githubUrl: t})} placeholder={isEditing ? "https://github.com/..." : ""} editable={isEditing} />
+              <Text style={[styles.label, { color: colors.textSecondary }]}>GitHub URL</Text>
+              <TextInput style={[styles.input, { backgroundColor: colors.inputBg, borderColor: colors.border, color: colors.text }, !isEditing && styles.readOnlyInput, !isEditing && { backgroundColor: isDark ? colors.background : '#f8fafc', color: colors.textSecondary }]} value={profile.githubUrl} onChangeText={t => setProfile({...profile, githubUrl: t})} placeholder={isEditing ? "https://github.com/..." : ""} placeholderTextColor={colors.textSecondary} editable={isEditing} />
             </View>
           </View>
         </View>
@@ -476,46 +471,46 @@ export default function StudentProfile() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: BG },
+  safeArea: { flex: 1 },
   scroll: { flex: 1 },
   scrollContent: { padding: 16, paddingBottom: 60 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   backBtn: { padding: 4, marginLeft: -4 },
-  pageTitle: { fontSize: 24, fontWeight: '800', color: DARK },
-  saveBtn: { backgroundColor: PRIMARY, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },
-  saveBtnText: { color: WHITE, fontWeight: '700', fontSize: 13 },
+  pageTitle: { fontSize: 24, fontWeight: '800' },
+  saveBtn: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },
+  saveBtnText: { fontWeight: '700', fontSize: 13 },
   card: {
-    backgroundColor: WHITE, borderRadius: 16, padding: 24, marginBottom: 16,
+    borderRadius: 16, padding: 24, marginBottom: 16,
     ...Platform.select({
       web: { boxShadow: '0 4px 12px rgba(0,0,0,0.03)' },
       default: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 3 }
     })
   },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  sectionTitle: { fontSize: 16, fontWeight: '800', color: DARK, marginBottom: 16 },
+  sectionTitle: { fontSize: 16, fontWeight: '800', marginBottom: 16 },
   photoRow: { flexDirection: 'row', alignItems: 'center' },
   photoContainer: { width: 80, height: 80, borderRadius: 16, position: 'relative', marginRight: 16 },
   photoImg: { width: '100%', height: '100%', borderRadius: 16 },
-  photoPlaceholder: { width: '100%', height: '100%', borderRadius: 16, backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center' },
-  photoPlaceholderText: { color: WHITE, fontSize: 32, fontWeight: '700' },
-  cameraBtn: { position: 'absolute', bottom: -6, right: -6, width: 28, height: 28, borderRadius: 14, backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: WHITE },
+  photoPlaceholder: { width: '100%', height: '100%', borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
+  photoPlaceholderText: { color: '#ffffff', fontSize: 32, fontWeight: '700' },
+  cameraBtn: { position: 'absolute', bottom: -6, right: -6, width: 28, height: 28, borderRadius: 14, justifyContent: 'center', alignItems: 'center', borderWidth: 2 },
   photoTextWrap: { flex: 1 },
-  photoTitle: { fontSize: 15, fontWeight: '700', color: DARK, marginBottom: 4 },
-  photoSubtitle: { fontSize: 12, color: GRAY },
+  photoTitle: { fontSize: 15, fontWeight: '700', marginBottom: 4 },
+  photoSubtitle: { fontSize: 12 },
   row: { flexDirection: 'row', gap: 16, marginBottom: 16 },
   col: { flex: 1 },
-  label: { fontSize: 12, fontWeight: '600', color: GRAY, marginBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 4 },
-  input: { backgroundColor: WHITE, borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 12, fontSize: 14, color: DARK },
+  label: { fontSize: 12, fontWeight: '600', marginBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 4 },
+  input: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 12, fontSize: 14 },
   skillsList: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
-  skillTag: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#eff6ff', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, gap: 6 },
-  skillText: { color: '#1e40af', fontSize: 13, fontWeight: '600' },
+  skillTag: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, gap: 6 },
+  skillText: { fontSize: 13, fontWeight: '600' },
   addSkillRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  addSkillBtn: { width: 44, height: 44, borderRadius: 8, backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center' },
-  addBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: PRIMARY, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 6, gap: 6 },
-  addBtnText: { color: WHITE, fontSize: 12, fontWeight: '600' },
-  itemBox: { backgroundColor: '#f8fafc', padding: 16, borderRadius: 12, marginBottom: 16, borderWidth: 1, borderColor: '#e2e8f0' },
-  resumeBox: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#e2e8f0', borderStyle: 'dashed', borderRadius: 12, padding: 20, backgroundColor: '#f8fafc' },
-  resumeTitle: { fontSize: 14, fontWeight: '700', color: DARK, marginBottom: 2 },
-  resumeSub: { fontSize: 12, color: GRAY },
-  readOnlyInput: { backgroundColor: '#f8fafc', borderColor: 'transparent', color: DARK, fontWeight: '500' }
+  addSkillBtn: { width: 44, height: 44, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
+  addBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 6, gap: 6 },
+  addBtnText: { color: '#ffffff', fontSize: 12, fontWeight: '600' },
+  itemBox: { padding: 16, borderRadius: 12, marginBottom: 16, borderWidth: 1 },
+  resumeBox: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderStyle: 'dashed', borderRadius: 12, padding: 20 },
+  resumeTitle: { fontSize: 14, fontWeight: '700', marginBottom: 2 },
+  resumeSub: { fontSize: 12 },
+  readOnlyInput: { borderColor: 'transparent', fontWeight: '500' }
 });

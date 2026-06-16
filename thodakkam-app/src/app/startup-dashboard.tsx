@@ -11,21 +11,19 @@ import Svg, { Path, Circle } from 'react-native-svg';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
 import StartupHeader from '../components/StartupHeader';
-
-const PRIMARY = '#662483';
-const BG = '#f8fafc';
-const WHITE = '#ffffff';
-const TEXT_DARK = '#0f172a';
-const TEXT_GRAY = '#64748b';
+import { useAppTheme } from '../context/ThemeContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function StartupDashboard() {
   const router = useRouter();
+  const { colors, isDark } = useAppTheme();
   const params = useLocalSearchParams();
   const [activeTab, setActiveTab] = useState('Home');
   const companyName = (params.companyName as string) || 'Echo Digital';
   
   const [applications, setApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [profileCompletion, setProfileCompletion] = useState(0);
   
   const [chartDuration, setChartDuration] = useState(30);
   const [isChartDropdownOpen, setIsChartDropdownOpen] = useState(false);
@@ -43,7 +41,7 @@ export default function StartupDashboard() {
   );
 
   useEffect(() => {
-    async function fetchApps() {
+    async function fetchData() {
       try {
         const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend.onrender.com' : 'https://thodakkam-backend.onrender.com';
         const res = await fetch(`${baseUrl}/api/applications/startup/${encodeURIComponent(companyName)}`);
@@ -51,13 +49,41 @@ export default function StartupDashboard() {
         if (data.success && data.applications) {
           setApplications(data.applications);
         }
+
+        // Fetch profile data to calculate completion
+        const profileRes = await fetch(`${baseUrl}/api/startup/profile/${encodeURIComponent(companyName)}`);
+        const profileData = await profileRes.json();
+        let filledCount = 0;
+        let totalFields = 10;
+        
+        if (profileData.success && profileData.startup) {
+          const dbData = profileData.startup;
+          if (dbData.founderName) filledCount++;
+          if (dbData.email) filledCount++;
+          if (dbData.bio) filledCount++;
+          if (dbData.founderImage || dbData.profilePhoto) filledCount++;
+        }
+        
+        const localDataStr = await AsyncStorage.getItem(`startup_extra_${companyName}`);
+        if (localDataStr) {
+          const localData = JSON.parse(localDataStr);
+          if (localData.industry) filledCount++;
+          if (localData.companySize) filledCount++;
+          if (localData.foundedYear) filledCount++;
+          if (localData.location) filledCount++;
+          if (localData.website) filledCount++;
+          if (localData.workMode) filledCount++;
+        }
+        
+        setProfileCompletion(Math.round((filledCount / totalFields) * 100));
+
       } catch (err) {
         console.error(err);
       } finally {
         setLoading(false);
       }
     }
-    fetchApps();
+    fetchData();
   }, [companyName]);
 
   const totalHires = applications.filter(a => a.status === 'HIRED' || a.status === 'OFFERED').length;
@@ -101,63 +127,63 @@ export default function StartupDashboard() {
   }, [applications, chartDuration]);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StartupHeader companyName={companyName} />
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scroll} contentContainerStyle={[styles.scrollContent, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
         
         {/* Stats Row */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.statsScroll}>
           {/* Stat 1 */}
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Total Applications</Text>
+          <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Total Applications</Text>
             <View style={styles.statValRow}>
-              <Text style={styles.statValue}>{loading ? '-' : totalApps}</Text>
+              <Text style={[styles.statValue, { color: colors.text }]}>{loading ? '-' : totalApps}</Text>
             </View>
-            <Text style={styles.statSub}>all time</Text>
+            <Text style={[styles.statSub, { color: colors.textSecondary }]}>all time</Text>
           </View>
           
           {/* Stat 2 */}
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Interviewing</Text>
+          <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Interviewing</Text>
             <View style={styles.statValRow}>
-              <Text style={styles.statValue}>{loading ? '-' : interviewing}</Text>
+              <Text style={[styles.statValue, { color: colors.text }]}>{loading ? '-' : interviewing}</Text>
             </View>
-            <Text style={styles.statSub}>active pipeline</Text>
+            <Text style={[styles.statSub, { color: colors.textSecondary }]}>active pipeline</Text>
           </View>
 
           {/* Stat 3 */}
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Total Hires/Offers</Text>
+          <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Total Hires/Offers</Text>
             <View style={styles.statValRow}>
-              <Text style={styles.statValue}>{loading ? '-' : totalHires}</Text>
+              <Text style={[styles.statValue, { color: colors.text }]}>{loading ? '-' : totalHires}</Text>
             </View>
-            <Text style={styles.statSub}>successful candidates</Text>
+            <Text style={[styles.statSub, { color: colors.textSecondary }]}>successful candidates</Text>
           </View>
         </ScrollView>
 
         {/* Candidate Growth Chart */}
-        <View style={[styles.chartCard, { zIndex: 50, elevation: 5 }]}>
+        <View style={[styles.chartCard, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, zIndex: 50, elevation: 5 }]}>
           <View style={[styles.cardHeader, { zIndex: 50, elevation: 5 }]}>
-            <Text style={styles.cardTitle}>Candidate Growth</Text>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>Candidate Growth</Text>
             <View style={{ zIndex: 50, elevation: 5 }}>
               <TouchableOpacity 
-                style={styles.dropdownBtn}
+                style={[styles.dropdownBtn, { borderColor: colors.border }]}
                 onPress={() => setIsChartDropdownOpen(!isChartDropdownOpen)}
               >
-                <Text style={styles.dropdownText}>
+                <Text style={[styles.dropdownText, { color: colors.textSecondary }]}>
                   {chartDuration === 7 ? 'Last 1 Week' : chartDuration === 30 ? 'Last 1 Month' : chartDuration === 90 ? 'Last 3 Months' : `Last ${chartDuration} Days`} v
                 </Text>
               </TouchableOpacity>
               {isChartDropdownOpen && (
-                <View style={[styles.dropdownMenu, { position: 'absolute', top: 35, right: 0, width: 140, zIndex: 20 }]}>
-                  <TouchableOpacity style={styles.dropdownItem} onPress={() => { setChartDuration(7); setIsChartDropdownOpen(false); }}>
-                    <Text style={styles.dropdownItemText}>Last 1 Week</Text>
+                <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border, position: 'absolute', top: 35, right: 0, width: 140, zIndex: 20 }]}>
+                  <TouchableOpacity style={[styles.dropdownItem, { borderBottomColor: colors.border }]} onPress={() => { setChartDuration(7); setIsChartDropdownOpen(false); }}>
+                    <Text style={[styles.dropdownItemText, { color: colors.text }]}>Last 1 Week</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.dropdownItem} onPress={() => { setChartDuration(30); setIsChartDropdownOpen(false); }}>
-                    <Text style={styles.dropdownItemText}>Last 1 Month</Text>
+                  <TouchableOpacity style={[styles.dropdownItem, { borderBottomColor: colors.border }]} onPress={() => { setChartDuration(30); setIsChartDropdownOpen(false); }}>
+                    <Text style={[styles.dropdownItemText, { color: colors.text }]}>Last 1 Month</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.dropdownItem} onPress={() => { setChartDuration(90); setIsChartDropdownOpen(false); }}>
-                    <Text style={styles.dropdownItemText}>Last 3 Months</Text>
+                  <TouchableOpacity style={[styles.dropdownItem, { borderBottomWidth: 0 }]} onPress={() => { setChartDuration(90); setIsChartDropdownOpen(false); }}>
+                    <Text style={[styles.dropdownItemText, { color: colors.text }]}>Last 3 Months</Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -167,42 +193,49 @@ export default function StartupDashboard() {
             <View collapsable={false}><Svg height="120" width="100%" viewBox="0 0 300 120">
               <Path 
                 d={chartData.fillD} 
-                fill="#fdf4ff" 
+                fill={isDark ? colors.primary + '20' : "#fdf4ff"} 
               />
               <Path 
                 d={chartData.d} 
                 fill="none" 
-                stroke="#0f172a" 
+                stroke={isDark ? colors.text : "#0f172a"} 
                 strokeWidth="2.5" 
               />
             </Svg></View>
             <View style={styles.chartXAxis}>
               {chartData.labels.map((lbl, idx) => (
-                 <Text key={idx} style={styles.xAxisLabel}>{lbl}</Text>
+                 <Text key={idx} style={[styles.xAxisLabel, { color: colors.textSecondary }]}>{lbl}</Text>
               ))}
             </View>
           </View>
         </View>
 
         {/* Profile Completion */}
-        <View style={styles.profileCard}>
+        <View style={[styles.profileCard, { backgroundColor: colors.primary }]}>
           <View style={styles.profileTopRow}>
             <View>
               <Text style={styles.profileTitle}>Profile Completion</Text>
-              <Text style={styles.profileSub}>completed</Text>
+              <Text style={styles.profileSub}>{profileCompletion === 100 ? 'completed' : 'action required'}</Text>
             </View>
             <View style={styles.progressCircle}>
-              <Text style={styles.progressText}>100%</Text>
+              <Text style={styles.progressText}>{profileCompletion}%</Text>
             </View>
           </View>
-          <TouchableOpacity style={styles.completedBtn}>
-            <Text style={styles.completedBtnText}>Completed</Text>
+          <TouchableOpacity 
+            style={[styles.completedBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : '#8b4cb5' }]}
+            onPress={() => {
+              if (profileCompletion < 100) {
+                router.push({ pathname: '/startup-profile' as any, params: { companyName } });
+              }
+            }}
+          >
+            <Text style={styles.completedBtnText}>{profileCompletion === 100 ? 'Completed' : 'Complete Profile'}</Text>
           </TouchableOpacity>
         </View>
 
         {/* Department Distribution */}
-        <View style={styles.deptCard}>
-          <Text style={styles.cardTitle}>Department Distribution</Text>
+        <View style={[styles.deptCard, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}>
+          <Text style={[styles.cardTitle, { color: colors.text }]}>Department Distribution</Text>
           <View style={styles.deptList}>
             {[
               { label: 'ENG', val: 42, flex: 0.8 },
@@ -212,45 +245,45 @@ export default function StartupDashboard() {
               { label: 'OPS', val: 10, flex: 0.25 },
             ].map(item => (
               <View key={item.label} style={styles.deptRow}>
-                <Text style={styles.deptLabel}>{item.label}</Text>
-                <View style={styles.barTrack}>
-                  <View style={[styles.barFill, { flex: item.flex }]} />
+                <Text style={[styles.deptLabel, { color: colors.textSecondary }]}>{item.label}</Text>
+                <View style={[styles.barTrack, { backgroundColor: colors.inputBg }]}>
+                  <View style={[styles.barFill, { flex: item.flex, backgroundColor: isDark ? colors.primary : '#1e293b' }]} />
                   <View style={{ flex: 1 - item.flex }} />
                 </View>
-                <Text style={styles.deptVal}>{item.val}</Text>
+                <Text style={[styles.deptVal, { color: colors.text }]}>{item.val}</Text>
               </View>
             ))}
           </View>
         </View>
 
         {/* Recent Activity */}
-        <View style={styles.activityCard}>
+        <View style={[styles.activityCard, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}>
           <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Recent Activity</Text>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>Recent Activity</Text>
             <TouchableOpacity>
-              <Text style={styles.viewAllText}>View All</Text>
+              <Text style={[styles.viewAllText, { color: colors.text }]}>View All</Text>
             </TouchableOpacity>
           </View>
           
           <View style={styles.activityList}>
             {loading ? (
-               <ActivityIndicator color={PRIMARY} style={{ marginVertical: 20 }} />
+               <ActivityIndicator color={colors.primary} style={{ marginVertical: 20 }} />
             ) : applications.length === 0 ? (
-               <Text style={{ textAlign: 'center', color: TEXT_GRAY, marginVertical: 20 }}>No recent activity.</Text>
+               <Text style={{ textAlign: 'center', color: colors.textSecondary, marginVertical: 20 }}>No recent activity.</Text>
             ) : (
                applications.slice(0, 5).map((app, i) => {
                  const dateStr = new Date(app.updatedAt || app.appliedAt).toLocaleDateString();
                  const isScheduled = app.status === 'INTERVIEW SCHEDULED';
                  return (
                    <View key={app.id || i} style={styles.activityItem}>
-                     <View style={[styles.activityDot, { backgroundColor: isScheduled ? '#10b981' : '#0f172a' }]} />
+                     <View style={[styles.activityDot, { backgroundColor: isScheduled ? (isDark ? colors.success : '#10b981') : (isDark ? colors.text : '#0f172a') }]} />
                      <View>
                        {isScheduled ? (
-                         <Text style={styles.activityText}>Interview scheduled with <Text style={styles.bold}>{app.fullName}</Text></Text>
+                         <Text style={[styles.activityText, { color: colors.text }]}>Interview scheduled with <Text style={styles.bold}>{app.fullName}</Text></Text>
                        ) : (
-                         <Text style={styles.activityText}>New application for <Text style={styles.bold}>{app.jobTitle}</Text></Text>
+                         <Text style={[styles.activityText, { color: colors.text }]}>New application for <Text style={styles.bold}>{app.jobTitle}</Text></Text>
                        )}
-                       <Text style={styles.activityTime}>{dateStr}</Text>
+                       <Text style={[styles.activityTime, { color: colors.textSecondary }]}>{dateStr}</Text>
                      </View>
                    </View>
                  );
@@ -261,10 +294,8 @@ export default function StartupDashboard() {
 
       </ScrollView>
 
-
-
       {/* Bottom Navigation */}
-      <View style={styles.bottomNav}>
+      <View style={[styles.bottomNav, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
         {[
           { label: 'Home', icon: LayoutGrid },
           { label: 'Jobs', icon: Briefcase },
@@ -292,10 +323,10 @@ export default function StartupDashboard() {
                 }
               }}
             >
-              <View style={[{ padding: 8, borderRadius: 20 }, isActive && { backgroundColor: PRIMARY + '20', transform: [{ scale: 1.1 }] }]}>
-                  <Icon size={22} color={isActive ? PRIMARY : '#94a3b8'} />
+              <View style={[{ padding: 8, borderRadius: 20 }, isActive && { backgroundColor: isDark ? colors.primary + '30' : colors.primary + '20', transform: [{ scale: 1.1 }] }]}>
+                  <Icon size={22} color={isActive ? colors.primary : colors.textSecondary} />
                 </View>
-              <Text style={[styles.navText, isActive && styles.navTextActive]}>
+              <Text style={[styles.navText, { color: colors.textSecondary }, isActive && { color: colors.primary, fontWeight: '700' }]}>
                 {item.label}
               </Text>
             </TouchableOpacity>
@@ -307,80 +338,56 @@ export default function StartupDashboard() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: WHITE },
+  safeArea: { flex: 1 },
   scroll: { flex: 1 },
-  scrollContent: { paddingBottom: 80, backgroundColor: BG },
-  
-  headerCard: {
-    backgroundColor: WHITE,
-    paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 20,
-    marginBottom: 16, borderBottomWidth: 1, borderBottomColor: '#f1f5f9'
-  },
-  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  adminInfo: { flexDirection: 'row', alignItems: 'center' },
-  logoBox: { width: 40, height: 40, borderRadius: 10, backgroundColor: '#336155', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  logoText: { color: WHITE, fontSize: 13, fontWeight: '700' },
-  companyTitle: { fontSize: 15, fontWeight: '800', color: TEXT_DARK },
-  companySubtitle: { fontSize: 9, color: TEXT_GRAY, letterSpacing: 0.5, fontWeight: '700', marginTop: 2 },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  actionIcon: { padding: 4 },
-  searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f1f5f9', borderRadius: 12, paddingHorizontal: 12, height: 44 },
-  searchInput: { flex: 1, marginLeft: 8, fontSize: 13, color: TEXT_DARK },
+  scrollContent: { paddingBottom: 80 },
   
   statsScroll: { paddingHorizontal: 20, gap: 12, marginBottom: 20 },
-  statCard: { backgroundColor: WHITE, padding: 16, borderRadius: 12, minWidth: 130, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 1 },
-  statLabel: { fontSize: 11, color: TEXT_GRAY, marginBottom: 8 },
+  statCard: { padding: 16, borderRadius: 12, minWidth: 130, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 1 },
+  statLabel: { fontSize: 11, marginBottom: 8 },
   statValRow: { flexDirection: 'row', alignItems: 'baseline', marginBottom: 4 },
-  statValue: { fontSize: 22, fontWeight: '800', color: TEXT_DARK, marginRight: 6 },
-  statGrowthGreen: { fontSize: 10, fontWeight: '700', color: '#16a34a' },
-  statGrowthGray: { fontSize: 10, fontWeight: '700', color: '#94a3b8' },
-  statSub: { fontSize: 10, color: '#94a3b8' },
+  statValue: { fontSize: 22, fontWeight: '800', marginRight: 6 },
+  statSub: { fontSize: 10 },
 
-  chartCard: { backgroundColor: WHITE, marginHorizontal: 20, padding: 20, borderRadius: 16, marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2 },
+  chartCard: { marginHorizontal: 20, padding: 20, borderRadius: 16, marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  cardTitle: { fontSize: 14, fontWeight: '800', color: TEXT_DARK },
-  dropdownBtn: { borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 },
-  dropdownText: { fontSize: 10, color: TEXT_GRAY, fontWeight: '500' },
-  dropdownMenu: { backgroundColor: WHITE, borderRadius: 8, borderWidth: 1, borderColor: '#e2e8f0', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 4 },
-  dropdownItem: { paddingVertical: 8, paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
-  dropdownItemText: { fontSize: 11, color: TEXT_DARK },
+  cardTitle: { fontSize: 14, fontWeight: '800' },
+  dropdownBtn: { borderWidth: 1, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 },
+  dropdownText: { fontSize: 10, fontWeight: '500' },
+  dropdownMenu: { borderRadius: 8, borderWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 4 },
+  dropdownItem: { paddingVertical: 8, paddingHorizontal: 12, borderBottomWidth: 1 },
+  dropdownItemText: { fontSize: 11 },
   lineChartContainer: { marginTop: 10 },
   chartXAxis: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 12, paddingHorizontal: 4 },
-  xAxisLabel: { fontSize: 10, color: '#94a3b8' },
+  xAxisLabel: { fontSize: 10 },
 
-  profileCard: { backgroundColor: PRIMARY, marginHorizontal: 20, padding: 20, borderRadius: 16, marginBottom: 20, shadowColor: PRIMARY, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4 },
+  profileCard: { marginHorizontal: 20, padding: 20, borderRadius: 16, marginBottom: 20, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4 },
   profileTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  profileTitle: { fontSize: 15, fontWeight: '700', color: WHITE, marginBottom: 4 },
+  profileTitle: { fontSize: 15, fontWeight: '700', color: '#ffffff', marginBottom: 4 },
   profileSub: { fontSize: 12, color: '#d8b4e2' },
-  progressCircle: { width: 44, height: 44, borderRadius: 22, borderWidth: 2, borderColor: WHITE, justifyContent: 'center', alignItems: 'center' },
-  progressText: { color: WHITE, fontSize: 12, fontWeight: '700' },
-  completedBtn: { backgroundColor: '#8b4cb5', paddingVertical: 12, borderRadius: 8, alignItems: 'center' },
-  completedBtnText: { color: WHITE, fontSize: 13, fontWeight: '600' },
+  progressCircle: { width: 44, height: 44, borderRadius: 22, borderWidth: 2, borderColor: '#ffffff', justifyContent: 'center', alignItems: 'center' },
+  progressText: { color: '#ffffff', fontSize: 12, fontWeight: '700' },
+  completedBtn: { paddingVertical: 12, borderRadius: 8, alignItems: 'center' },
+  completedBtnText: { color: '#ffffff', fontSize: 13, fontWeight: '600' },
 
-  deptCard: { backgroundColor: WHITE, marginHorizontal: 20, padding: 20, borderRadius: 16, marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2 },
+  deptCard: { marginHorizontal: 20, padding: 20, borderRadius: 16, marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2 },
   deptList: { marginTop: 12 },
   deptRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  deptLabel: { width: 32, fontSize: 10, fontWeight: '700', color: TEXT_GRAY },
-  barTrack: { flex: 1, height: 6, backgroundColor: '#f1f5f9', borderRadius: 3, flexDirection: 'row', marginHorizontal: 12 },
-  barFill: { backgroundColor: '#1e293b', borderRadius: 3 },
-  deptVal: { width: 24, fontSize: 11, fontWeight: '700', color: TEXT_DARK, textAlign: 'right' },
+  deptLabel: { width: 32, fontSize: 10, fontWeight: '700' },
+  barTrack: { flex: 1, height: 6, borderRadius: 3, flexDirection: 'row', marginHorizontal: 12 },
+  barFill: { borderRadius: 3 },
+  deptVal: { width: 24, fontSize: 11, fontWeight: '700', textAlign: 'right' },
 
-  activityCard: { backgroundColor: WHITE, marginHorizontal: 20, padding: 20, borderRadius: 16, marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2 },
-  viewAllText: { fontSize: 11, fontWeight: '700', color: TEXT_DARK },
+  activityCard: { marginHorizontal: 20, padding: 20, borderRadius: 16, marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2 },
+  viewAllText: { fontSize: 11, fontWeight: '700' },
   activityList: { marginTop: 8 },
   activityItem: { flexDirection: 'row', marginBottom: 16, paddingRight: 20 },
   activityDot: { width: 6, height: 6, borderRadius: 3, marginTop: 6, marginRight: 12 },
-  activityText: { fontSize: 12, color: TEXT_DARK, lineHeight: 18 },
+  activityText: { fontSize: 12, lineHeight: 18 },
   bold: { fontWeight: '700' },
-  activityTime: { fontSize: 10, color: '#94a3b8', marginTop: 2 },
+  activityTime: { fontSize: 10, marginTop: 2 },
 
-  floatingContainer: { position: 'absolute', bottom: Platform.OS === 'ios' ? 90 : 70, left: 20, right: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', zIndex: 10, pointerEvents: 'box-none' },
-  msgPill: { backgroundColor: PRIMARY, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, shadowColor: PRIMARY, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 4, elevation: 4 },
-  msgText: { color: WHITE, fontSize: 13, fontWeight: '600' },
-  botBtn: { backgroundColor: PRIMARY, width: 48, height: 48, borderRadius: 12, justifyContent: 'center', alignItems: 'center', shadowColor: PRIMARY, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
-
-  bottomNav: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 12, paddingHorizontal: 8, backgroundColor: WHITE, borderTopWidth: 1, borderColor: '#f1f5f9', paddingBottom: Platform.OS === 'ios' ? 24 : 12 },
+  bottomNav: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 12, paddingHorizontal: 8, borderTopWidth: 1, paddingBottom: Platform.OS === 'ios' ? 24 : 12 },
   navItem: { alignItems: 'center', justifyContent: 'center', gap: 4 },
-  navText: { fontSize: 10, color: '#94a3b8', fontWeight: '500' },
-  navTextActive: { color: PRIMARY, fontWeight: '700' },
+  navText: { fontSize: 10, fontWeight: '500' },
 });

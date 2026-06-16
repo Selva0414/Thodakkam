@@ -2,12 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { StyleSheet, View, Text, Modal, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { X, Volume2, CheckCircle2, ArrowRight, AlertTriangle } from 'lucide-react-native';
 import { globalNotificationStore, Notification } from '../utils/notificationStore';
-
-const PRIMARY = '#6a1b9a';
-const WHITE = '#ffffff';
-const DARK = '#0f172a';
-const GRAY = '#6b7280';
-const BORDER = '#e2e8f0';
+import { useAppTheme } from '../context/ThemeContext';
 
 interface NotificationModalProps {
   visible: boolean;
@@ -16,6 +11,7 @@ interface NotificationModalProps {
 }
 
 export default function NotificationModal({ visible, onClose, role }: NotificationModalProps) {
+  const { colors, isDark } = useAppTheme();
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   useEffect(() => {
@@ -28,21 +24,19 @@ export default function NotificationModal({ visible, onClose, role }: Notificati
       }
     };
 
-    // Initial fetch
     fetchNotifs();
     
-    // Subscribe to changes
     const unsubscribe = globalNotificationStore.subscribe(() => {
       fetchNotifs();
     });
     
     return () => unsubscribe();
-  }, []);
+  }, [role]);
 
   const getIcon = (type: string) => {
     switch(type) {
       case 'success':
-        return <CheckCircle2 size={16} color="#10b981" />;
+        return <CheckCircle2 size={16} color={isDark ? colors.success : "#10b981"} />;
       case 'alert':
         return <AlertTriangle size={16} color="#f59e0b" />;
       default:
@@ -53,11 +47,11 @@ export default function NotificationModal({ visible, onClose, role }: Notificati
   const getIconBg = (type: string) => {
     switch(type) {
       case 'success':
-        return '#dcfce7';
+        return isDark ? colors.success + '20' : '#dcfce7';
       case 'alert':
-        return '#fef3c7';
+        return isDark ? '#f59e0b20' : '#fef3c7';
       default:
-        return '#e0f2fe';
+        return isDark ? '#3b82f620' : '#e0f2fe';
     }
   };
 
@@ -71,19 +65,19 @@ export default function NotificationModal({ visible, onClose, role }: Notificati
       <View style={styles.overlay}>
         <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
         
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}>
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.headerTitle}>Notifications</Text>
-            <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-              <X size={16} color={PRIMARY} />
+            <Text style={[styles.headerTitle, { color: colors.primary }]}>Notifications</Text>
+            <TouchableOpacity style={[styles.closeBtn, { backgroundColor: isDark ? colors.primary + '20' : '#f3e8ff' }]} onPress={onClose}>
+              <X size={16} color={colors.primary} />
             </TouchableOpacity>
           </View>
 
           {/* List */}
           <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
             {notifications.length === 0 ? (
-              <Text style={{ textAlign: 'center', color: GRAY, marginVertical: 20 }}>No new notifications.</Text>
+              <Text style={{ textAlign: 'center', color: colors.textSecondary, marginVertical: 20 }}>No new notifications.</Text>
             ) : (
               notifications.map((notif) => (
                 <View style={styles.item} key={notif.id}>
@@ -92,10 +86,10 @@ export default function NotificationModal({ visible, onClose, role }: Notificati
                   </View>
                   <View style={styles.content}>
                     <View style={styles.titleRow}>
-                      <Text style={styles.itemTitle}>{notif.title}</Text>
-                      <Text style={styles.itemTime}>{notif.time}</Text>
+                      <Text style={[styles.itemTitle, { color: colors.text }]}>{notif.title}</Text>
+                      <Text style={[styles.itemTime, { color: colors.textSecondary }]}>{notif.time}</Text>
                     </View>
-                    <Text style={styles.itemDesc}>{notif.description}</Text>
+                    <Text style={[styles.itemDesc, { color: colors.textSecondary }]}>{notif.description}</Text>
                   </View>
                 </View>
               ))
@@ -104,8 +98,8 @@ export default function NotificationModal({ visible, onClose, role }: Notificati
 
           {/* Footer */}
           <TouchableOpacity style={styles.footer} onPress={onClose}>
-            <Text style={styles.footerText}>View all notifications</Text>
-            <ArrowRight size={14} color={PRIMARY} style={{ marginLeft: 4 }} />
+            <Text style={[styles.footerText, { color: colors.primary }]}>View all notifications</Text>
+            <ArrowRight size={14} color={colors.primary} style={{ marginLeft: 4 }} />
           </TouchableOpacity>
         </View>
       </View>
@@ -116,7 +110,7 @@ export default function NotificationModal({ visible, onClose, role }: Notificati
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
@@ -127,7 +121,6 @@ const styles = StyleSheet.create({
   card: {
     width: '100%',
     maxWidth: 360,
-    backgroundColor: WHITE,
     borderRadius: 20,
     padding: 20,
     ...Platform.select({
@@ -144,13 +137,11 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: PRIMARY,
   },
   closeBtn: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#f3e8ff',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -182,25 +173,17 @@ const styles = StyleSheet.create({
   itemTitle: {
     fontSize: 13,
     fontWeight: '700',
-    color: DARK,
     flex: 1,
     marginRight: 8,
     lineHeight: 18,
   },
   itemTime: {
     fontSize: 10,
-    color: GRAY,
     marginTop: 2,
   },
   itemDesc: {
     fontSize: 11,
-    color: GRAY,
     lineHeight: 16,
-  },
-  itemTimeBottom: {
-    fontSize: 10,
-    color: GRAY,
-    marginTop: 8,
   },
   footer: {
     flexDirection: 'row',
@@ -212,6 +195,5 @@ const styles = StyleSheet.create({
   footerText: {
     fontSize: 12,
     fontWeight: '700',
-    color: PRIMARY,
   },
 });

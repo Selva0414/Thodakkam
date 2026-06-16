@@ -6,19 +6,13 @@ import {
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { ArrowLeft, Briefcase, Layers, Settings, FileText, ChevronDown, Calendar, X } from 'lucide-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-
-const PRIMARY = '#662483';
-const BG = '#f4f5f7';
-const WHITE = '#ffffff';
-const TEXT_DARK = '#0f172a';
-const TEXT_GRAY = '#64748b';
-const BORDER = '#e2e8f0';
-const ERROR = '#ef4444';
+import { useAppTheme } from '../context/ThemeContext';
 
 export default function StartupAddJob() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const companyName = (params.companyName as string) || 'Echo Digital';
+  const { colors, isDark } = useAppTheme();
 
   // 1. Basic Info
   const [title, setTitle] = useState('');
@@ -39,7 +33,6 @@ export default function StartupAddJob() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [applicationMethod, setApplicationMethod] = useState('Apply on platform');
 
-  // 4. Description
   // 4. Description
   const [description, setDescription] = useState('');
 
@@ -146,93 +139,93 @@ export default function StartupAddJob() {
     const Icon = icon;
     return (
       <View style={styles.sectionHeader}>
-        <View style={styles.iconBox}>
-          <Icon size={16} color={TEXT_DARK} />
+        <View style={[styles.iconBox, { backgroundColor: colors.inputBg }]}>
+          <Icon size={16} color={colors.text} />
         </View>
         <View>
-          <Text style={styles.sectionTitle}>{num}. {title}</Text>
-          <Text style={styles.sectionSubtitle}>{subtitle}</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>{num}. {title}</Text>
+          <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>{subtitle}</Text>
         </View>
       </View>
     );
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <ArrowLeft size={24} color={TEXT_DARK} />
+          <ArrowLeft size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Post a New Job</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Post a New Job</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-        <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollView style={styles.scroll} contentContainerStyle={[styles.scrollContent, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
           
           {/* Section 1: Basic Info */}
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             {renderSectionHeader(Briefcase, '1', 'Basic Info', 'Define the role and where it will be performed.')}
             
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Job Title <Text style={styles.asterisk}>*</Text></Text>
+              <Text style={[styles.label, { color: colors.text }]}>Job Title <Text style={[styles.asterisk, { color: isDark ? colors.danger : '#ef4444' }]}>*</Text></Text>
               <TextInput 
-                style={[styles.input, errors.title && styles.inputError]} 
+                style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }, errors.title && { borderColor: isDark ? colors.danger : '#ef4444' }]} 
                 placeholder="e.g. Senior Full Stack Engineer"
-                placeholderTextColor={TEXT_GRAY}
+                placeholderTextColor={colors.textSecondary}
                 value={title}
                 onChangeText={(val) => { setTitle(val); setErrors(prev => ({...prev, title: false})); }}
               />
-              {errors.title && <Text style={styles.errorText}>Job title is required</Text>}
+              {errors.title && <Text style={[styles.errorText, { color: isDark ? colors.danger : '#ef4444' }]}>Job title is required</Text>}
             </View>
 
             <View style={styles.row}>
               <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
-                <Text style={styles.label}>Department <Text style={styles.asterisk}>*</Text></Text>
+                <Text style={[styles.label, { color: colors.text }]}>Department <Text style={[styles.asterisk, { color: isDark ? colors.danger : '#ef4444' }]}>*</Text></Text>
                 <TouchableOpacity 
-                  style={[styles.input, styles.dropdown, errors.department && styles.inputError]}
+                  style={[styles.input, styles.dropdown, { backgroundColor: colors.card, borderColor: colors.border }, errors.department && { borderColor: isDark ? colors.danger : '#ef4444' }]}
                   onPress={() => openPicker('department', departmentOptions)}
                 >
-                  <Text style={[styles.inputText, !department && { color: TEXT_GRAY }]}>{department || 'Select department'}</Text>
-                  <ChevronDown size={16} color={TEXT_GRAY} />
+                  <Text style={[styles.inputText, { color: colors.text }, !department && { color: colors.textSecondary }]}>{department || 'Select department'}</Text>
+                  <ChevronDown size={16} color={colors.textSecondary} />
                 </TouchableOpacity>
-                {errors.department && <Text style={styles.errorText}>Department is required</Text>}
+                {errors.department && <Text style={[styles.errorText, { color: isDark ? colors.danger : '#ef4444' }]}>Department is required</Text>}
               </View>
 
               <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
-                <Text style={styles.label}>Employment Type <Text style={styles.asterisk}>*</Text></Text>
+                <Text style={[styles.label, { color: colors.text }]}>Employment Type <Text style={[styles.asterisk, { color: isDark ? colors.danger : '#ef4444' }]}>*</Text></Text>
                 <TouchableOpacity 
-                  style={[styles.input, styles.dropdown]}
+                  style={[styles.input, styles.dropdown, { backgroundColor: colors.card, borderColor: colors.border }]}
                   onPress={() => openPicker('employmentType', employmentTypeOptions)}
                 >
-                  <Text style={styles.inputText}>{employmentType}</Text>
-                  <ChevronDown size={16} color={TEXT_GRAY} />
+                  <Text style={[styles.inputText, { color: colors.text }]}>{employmentType}</Text>
+                  <ChevronDown size={16} color={colors.textSecondary} />
                 </TouchableOpacity>
               </View>
             </View>
 
             <View style={styles.row}>
               <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
-                <Text style={styles.label}>Work Mode <Text style={styles.asterisk}>*</Text></Text>
+                <Text style={[styles.label, { color: colors.text }]}>Work Mode <Text style={[styles.asterisk, { color: isDark ? colors.danger : '#ef4444' }]}>*</Text></Text>
                 <View style={styles.chipsRow}>
                   {['Onsite', 'Remote', 'Hybrid'].map(mode => (
                     <TouchableOpacity 
                       key={mode} 
-                      style={[styles.chip, workMode === mode && styles.chipActive]}
+                      style={[styles.chip, { backgroundColor: colors.card, borderColor: colors.border }, workMode === mode && { borderColor: colors.primary, backgroundColor: isDark ? colors.primary + '20' : '#faf5ff' }]}
                       onPress={() => setWorkMode(mode)}
                     >
-                      <Text style={[styles.chipText, workMode === mode && styles.chipTextActive]}>{mode}</Text>
+                      <Text style={[styles.chipText, { color: colors.text }, workMode === mode && { color: colors.primary }]}>{mode}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
               </View>
 
               <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
-                <Text style={styles.label}>Location <Text style={styles.asterisk}>*</Text></Text>
+                <Text style={[styles.label, { color: colors.text }]}>Location <Text style={[styles.asterisk, { color: isDark ? colors.danger : '#ef4444' }]}>*</Text></Text>
                 <TextInput 
-                  style={[styles.input, errors.location && styles.inputError]} 
+                  style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }, errors.location && { borderColor: isDark ? colors.danger : '#ef4444' }]} 
                   placeholder="e.g. Bangalore, India"
-                  placeholderTextColor={TEXT_GRAY}
+                  placeholderTextColor={colors.textSecondary}
                   value={location}
                   onChangeText={(val) => { setLocation(val); setErrors(prev => ({...prev, location: false})); }}
                 />
@@ -241,37 +234,37 @@ export default function StartupAddJob() {
           </View>
 
           {/* Section 2: Job Details */}
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             {renderSectionHeader(Layers, '2', 'Job Details', 'Capture candidate profile requirements and qualifications.')}
             
             <View style={styles.row}>
               <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
-                <Text style={styles.label}>Experience Required <Text style={styles.asterisk}>*</Text></Text>
+                <Text style={[styles.label, { color: colors.text }]}>Experience Required <Text style={[styles.asterisk, { color: isDark ? colors.danger : '#ef4444' }]}>*</Text></Text>
                 <TouchableOpacity 
-                  style={[styles.input, styles.dropdown]}
+                  style={[styles.input, styles.dropdown, { backgroundColor: colors.card, borderColor: colors.border }]}
                   onPress={() => openPicker('experience', experienceOptions)}
                 >
-                  <Text style={[styles.inputText, !experience && { color: TEXT_GRAY }]}>{experience || 'Select experience'}</Text>
-                  <ChevronDown size={16} color={TEXT_GRAY} />
+                  <Text style={[styles.inputText, { color: colors.text }, !experience && { color: colors.textSecondary }]}>{experience || 'Select experience'}</Text>
+                  <ChevronDown size={16} color={colors.textSecondary} />
                 </TouchableOpacity>
               </View>
 
               <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
-                <Text style={styles.label}>Education <Text style={styles.asterisk}>*</Text></Text>
+                <Text style={[styles.label, { color: colors.text }]}>Education <Text style={[styles.asterisk, { color: isDark ? colors.danger : '#ef4444' }]}>*</Text></Text>
                 <TouchableOpacity 
-                  style={[styles.input, styles.dropdown]}
+                  style={[styles.input, styles.dropdown, { backgroundColor: colors.card, borderColor: colors.border }]}
                   onPress={() => openPicker('education', educationOptions)}
                 >
-                  <Text style={styles.inputText}>{education}</Text>
-                  <ChevronDown size={16} color={TEXT_GRAY} />
+                  <Text style={[styles.inputText, { color: colors.text }]}>{education}</Text>
+                  <ChevronDown size={16} color={colors.textSecondary} />
                 </TouchableOpacity>
               </View>
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Number of Openings <Text style={styles.asterisk}>*</Text></Text>
+              <Text style={[styles.label, { color: colors.text }]}>Number of Openings <Text style={[styles.asterisk, { color: isDark ? colors.danger : '#ef4444' }]}>*</Text></Text>
               <TextInput 
-                style={styles.input} 
+                style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]} 
                 keyboardType="numeric"
                 value={openings}
                 onChangeText={setOpenings}
@@ -279,33 +272,33 @@ export default function StartupAddJob() {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Skills Required <Text style={styles.asterisk}>*</Text></Text>
+              <Text style={[styles.label, { color: colors.text }]}>Skills Required <Text style={[styles.asterisk, { color: isDark ? colors.danger : '#ef4444' }]}>*</Text></Text>
               <TextInput 
-                style={[styles.input, errors.skills && styles.inputError]} 
+                style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }, errors.skills && { borderColor: isDark ? colors.danger : '#ef4444' }]} 
                 placeholder="Type a skill and press Enter or ✓"
-                placeholderTextColor={TEXT_GRAY}
+                placeholderTextColor={colors.textSecondary}
                 value={skills}
                 onChangeText={(val) => { setSkills(val); setErrors(prev => ({...prev, skills: false})); }}
               />
-              {errors.skills && <Text style={styles.errorText}>Add at least one required skill</Text>}
+              {errors.skills && <Text style={[styles.errorText, { color: isDark ? colors.danger : '#ef4444' }]}>Add at least one required skill</Text>}
             </View>
           </View>
 
           {/* Section 3: Application Settings */}
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             {renderSectionHeader(Settings, '3', 'Application Settings', 'Control how candidates can apply and until when.')}
             
             <View style={styles.row}>
               <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
-                <Text style={styles.label}>Application Deadline <Text style={styles.asterisk}>*</Text></Text>
+                <Text style={[styles.label, { color: colors.text }]}>Application Deadline <Text style={[styles.asterisk, { color: isDark ? colors.danger : '#ef4444' }]}>*</Text></Text>
                 <TouchableOpacity 
-                  style={[styles.input, styles.dropdown]}
+                  style={[styles.input, styles.dropdown, { backgroundColor: colors.card, borderColor: colors.border }]}
                   onPress={() => setShowDatePicker(true)}
                 >
-                  <Text style={[{ flex: 1, fontSize: 13, color: TEXT_DARK }, !deadline && { color: TEXT_GRAY }]}>
+                  <Text style={[{ flex: 1, fontSize: 13, color: colors.text }, !deadline && { color: colors.textSecondary }]}>
                     {deadline || 'mm/dd/yyyy'}
                   </Text>
-                  <Calendar size={16} color={TEXT_DARK} />
+                  <Calendar size={16} color={colors.text} />
                 </TouchableOpacity>
                 {showDatePicker && (
                   <DateTimePicker
@@ -318,15 +311,15 @@ export default function StartupAddJob() {
               </View>
 
               <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
-                <Text style={styles.label}>Application Method <Text style={styles.asterisk}>*</Text></Text>
+                <Text style={[styles.label, { color: colors.text }]}>Application Method <Text style={[styles.asterisk, { color: isDark ? colors.danger : '#ef4444' }]}>*</Text></Text>
                 <View style={styles.chipsRow}>
                   {['Apply on platform', 'External link'].map(method => (
                     <TouchableOpacity 
                       key={method} 
-                      style={[styles.chip, applicationMethod === method && styles.chipActive]}
+                      style={[styles.chip, { backgroundColor: colors.card, borderColor: colors.border }, applicationMethod === method && { borderColor: colors.primary, backgroundColor: isDark ? colors.primary + '20' : '#faf5ff' }]}
                       onPress={() => setApplicationMethod(method)}
                     >
-                      <Text style={[styles.chipText, applicationMethod === method && styles.chipTextActive]}>{method}</Text>
+                      <Text style={[styles.chipText, { color: colors.text }, applicationMethod === method && { color: colors.primary }]}>{method}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -335,24 +328,24 @@ export default function StartupAddJob() {
           </View>
 
           {/* Section 4: Description */}
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             {renderSectionHeader(FileText, '4', 'Description', 'Provide a clear and complete role description.')}
             
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Job Description <Text style={styles.asterisk}>*</Text></Text>
+              <Text style={[styles.label, { color: colors.text }]}>Job Description <Text style={[styles.asterisk, { color: isDark ? colors.danger : '#ef4444' }]}>*</Text></Text>
               
-              <View style={[styles.richTextContainer, errors.description && styles.inputError]}>
-                <View style={styles.richTextToolbar}>
-                  <Text style={styles.toolbarIcon}>B</Text>
-                  <Text style={[styles.toolbarIcon, { fontStyle: 'italic' }]}>I</Text>
-                  <Text style={styles.toolbarIcon}>⋮≡</Text>
-                  <Text style={styles.toolbarIcon}>🔗</Text>
-                  <Text style={styles.toolbarIcon}>{'<>'}</Text>
+              <View style={[styles.richTextContainer, { borderColor: colors.border }, errors.description && { borderColor: isDark ? colors.danger : '#ef4444' }]}>
+                <View style={[styles.richTextToolbar, { backgroundColor: colors.inputBg, borderBottomColor: colors.border }]}>
+                  <Text style={[styles.toolbarIcon, { color: colors.textSecondary }]}>B</Text>
+                  <Text style={[styles.toolbarIcon, { fontStyle: 'italic', color: colors.textSecondary }]}>I</Text>
+                  <Text style={[styles.toolbarIcon, { color: colors.textSecondary }]}>⋮≡</Text>
+                  <Text style={[styles.toolbarIcon, { color: colors.textSecondary }]}>🔗</Text>
+                  <Text style={[styles.toolbarIcon, { color: colors.textSecondary }]}>{'<>'}</Text>
                 </View>
                 <TextInput 
-                  style={styles.textArea} 
+                  style={[styles.textArea, { backgroundColor: colors.card, color: colors.text }]} 
                   placeholder="Responsibilities, role impact, qualifications, hiring process, and expectations..."
-                  placeholderTextColor={TEXT_GRAY}
+                  placeholderTextColor={colors.textSecondary}
                   multiline
                   numberOfLines={6}
                   textAlignVertical="top"
@@ -360,23 +353,23 @@ export default function StartupAddJob() {
                   onChangeText={(val) => { setDescription(val); setErrors(prev => ({...prev, description: false})); }}
                 />
               </View>
-              {errors.description && <Text style={styles.errorText}>Job description is required</Text>}
+              {errors.description && <Text style={[styles.errorText, { color: isDark ? colors.danger : '#ef4444' }]}>Job description is required</Text>}
             </View>
           </View>
 
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <View style={styles.footer}>
-        <TouchableOpacity style={styles.secondaryBtn}>
-          <Text style={styles.secondaryBtnText}>Preview Job</Text>
+      <View style={[styles.footer, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
+        <TouchableOpacity style={[styles.secondaryBtn, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.secondaryBtnText, { color: colors.text }]}>Preview Job</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.secondaryBtn}>
-          <Text style={styles.secondaryBtnText}>Save as Draft</Text>
+        <TouchableOpacity style={[styles.secondaryBtn, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.secondaryBtnText, { color: colors.text }]}>Save as Draft</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.primaryBtn} onPress={handlePostJob} disabled={loading}>
+        <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: colors.primary }]} onPress={handlePostJob} disabled={loading}>
           {loading ? (
-            <ActivityIndicator color={WHITE} />
+            <ActivityIndicator color="#ffffff" />
           ) : (
             <Text style={styles.primaryBtnText}>Post Job</Text>
           )}
@@ -386,21 +379,21 @@ export default function StartupAddJob() {
       {/* Picker Modal */}
       <Modal visible={pickerConfig.visible} transparent animationType="slide">
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Option</Text>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Select Option</Text>
               <TouchableOpacity onPress={() => setPickerConfig({ ...pickerConfig, visible: false })} style={styles.closeBtn}>
-                <X size={20} color={TEXT_DARK} />
+                <X size={20} color={colors.text} />
               </TouchableOpacity>
             </View>
             <ScrollView showsVerticalScrollIndicator={false}>
               {pickerConfig.options.map(opt => (
                 <TouchableOpacity 
                   key={opt} 
-                  style={styles.pickerItem}
+                  style={[styles.pickerItem, { borderBottomColor: colors.border }]}
                   onPress={() => handleSelectOption(opt)}
                 >
-                  <Text style={styles.pickerItemText}>{opt}</Text>
+                  <Text style={[styles.pickerItemText, { color: colors.text }]}>{opt}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -412,79 +405,76 @@ export default function StartupAddJob() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: WHITE },
+  safeArea: { flex: 1 },
   header: { 
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', 
     paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 16,
-    backgroundColor: WHITE, borderBottomWidth: 1, borderBottomColor: BORDER
+    borderBottomWidth: 1
   },
   backBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'flex-start' },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: TEXT_DARK },
+  headerTitle: { fontSize: 18, fontWeight: '800' },
   
-  scroll: { flex: 1, backgroundColor: BG },
+  scroll: { flex: 1 },
   scrollContent: { padding: 16, paddingBottom: 40 },
   
   card: {
-    backgroundColor: WHITE, borderRadius: 12, padding: 20, marginBottom: 16,
-    borderWidth: 1, borderColor: BORDER,
+    borderRadius: 12, padding: 20, marginBottom: 16,
+    borderWidth: 1,
   },
   sectionHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 20 },
-  iconBox: { width: 32, height: 32, borderRadius: 8, backgroundColor: '#f1f5f9', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  sectionTitle: { fontSize: 16, fontWeight: '800', color: TEXT_DARK, marginBottom: 4 },
-  sectionSubtitle: { fontSize: 12, color: TEXT_GRAY },
+  iconBox: { width: 32, height: 32, borderRadius: 8, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  sectionTitle: { fontSize: 16, fontWeight: '800', marginBottom: 4 },
+  sectionSubtitle: { fontSize: 12 },
 
   inputGroup: { marginBottom: 16 },
-  label: { fontSize: 13, fontWeight: '700', color: TEXT_DARK, marginBottom: 8 },
-  asterisk: { color: ERROR },
+  label: { fontSize: 13, fontWeight: '700', marginBottom: 8 },
+  asterisk: { },
   input: { 
-    backgroundColor: WHITE, borderWidth: 1, borderColor: BORDER, 
-    borderRadius: 8, paddingHorizontal: 12, height: 44, fontSize: 13, color: TEXT_DARK 
+    borderWidth: 1, 
+    borderRadius: 8, paddingHorizontal: 12, height: 44, fontSize: 13 
   },
-  inputError: { borderColor: ERROR },
-  errorText: { color: ERROR, fontSize: 11, marginTop: 4, fontWeight: '500' },
+  errorText: { fontSize: 11, marginTop: 4, fontWeight: '500' },
   
   dropdown: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  inputText: { fontSize: 13, color: TEXT_DARK },
+  inputText: { fontSize: 13 },
 
   row: { flexDirection: 'row' },
   
   chipsRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
   chip: { 
     paddingHorizontal: 12, height: 36, borderRadius: 18, 
-    borderWidth: 1, borderColor: BORDER, backgroundColor: WHITE, 
+    borderWidth: 1, 
     justifyContent: 'center', alignItems: 'center' 
   },
-  chipActive: { borderColor: PRIMARY, backgroundColor: '#faf5ff' },
-  chipText: { fontSize: 12, fontWeight: '600', color: TEXT_DARK },
-  chipTextActive: { color: PRIMARY },
+  chipText: { fontSize: 12, fontWeight: '600' },
 
-  richTextContainer: { borderWidth: 1, borderColor: BORDER, borderRadius: 8, overflow: 'hidden' },
-  richTextToolbar: { flexDirection: 'row', alignItems: 'center', padding: 8, backgroundColor: '#f8fafc', borderBottomWidth: 1, borderBottomColor: BORDER, gap: 16 },
-  toolbarIcon: { fontSize: 14, fontWeight: '700', color: TEXT_GRAY },
-  textArea: { backgroundColor: WHITE, padding: 12, fontSize: 13, color: TEXT_DARK, minHeight: 120 },
+  richTextContainer: { borderWidth: 1, borderRadius: 8, overflow: 'hidden' },
+  richTextToolbar: { flexDirection: 'row', alignItems: 'center', padding: 8, borderBottomWidth: 1, gap: 16 },
+  toolbarIcon: { fontSize: 14, fontWeight: '700' },
+  textArea: { padding: 12, fontSize: 13, minHeight: 120 },
   
   footer: { 
     flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center',
-    padding: 16, backgroundColor: WHITE, borderTopWidth: 1, borderTopColor: BORDER,
+    padding: 16, borderTopWidth: 1,
     paddingBottom: Platform.OS === 'ios' ? 32 : 16, gap: 12
   },
   secondaryBtn: { 
     paddingHorizontal: 16, height: 40, borderRadius: 8, 
     justifyContent: 'center', alignItems: 'center',
-    borderWidth: 1, borderColor: BORDER, backgroundColor: WHITE 
+    borderWidth: 1
   },
-  secondaryBtnText: { color: TEXT_DARK, fontSize: 13, fontWeight: '600' },
+  secondaryBtnText: { fontSize: 13, fontWeight: '600' },
   primaryBtn: { 
-    backgroundColor: PRIMARY, paddingHorizontal: 24, height: 40, borderRadius: 8, 
+    paddingHorizontal: 24, height: 40, borderRadius: 8, 
     justifyContent: 'center', alignItems: 'center'
   },
-  primaryBtnText: { color: WHITE, fontSize: 13, fontWeight: '700' },
+  primaryBtnText: { color: '#ffffff', fontSize: 13, fontWeight: '700' },
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: WHITE, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: '80%' },
+  modalContent: { borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: '80%' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  modalTitle: { fontSize: 18, fontWeight: '800', color: TEXT_DARK },
+  modalTitle: { fontSize: 18, fontWeight: '800' },
   closeBtn: { padding: 4 },
-  pickerItem: { paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
-  pickerItemText: { fontSize: 15, color: TEXT_DARK }
+  pickerItem: { paddingVertical: 14, borderBottomWidth: 1 },
+  pickerItemText: { fontSize: 15 }
 });

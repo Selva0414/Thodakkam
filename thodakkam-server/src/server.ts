@@ -303,6 +303,39 @@ app.put('/api/user/:id', async (req: Request, res: Response): Promise<void> => {
   }
 });
 
+// Change user password
+app.post('/api/user/change-password', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { userId, currentPassword, newPassword } = req.body;
+
+    if (!userId || !currentPassword || !newPassword) {
+      res.status(400).json({ success: false, message: 'All fields are required' });
+      return;
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      res.status(404).json({ success: false, message: 'User not found' });
+      return;
+    }
+
+    if (user.password !== currentPassword) {
+      res.status(400).json({ success: false, message: 'Incorrect current password' });
+      return;
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { password: newPassword }
+    });
+
+    res.status(200).json({ success: true, message: 'Password updated successfully' });
+  } catch (err) {
+    console.error('Change password error:', err);
+    res.status(500).json({ success: false, message: 'Server error updating password' });
+  }
+});
+
 // Configure Nodemailer Transport
 const transporter = nodemailer.createTransport({
   service: 'gmail',
