@@ -11,6 +11,7 @@ import {
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import StartupHeader from '../components/StartupHeader';
 import Svg, { Path, Circle } from 'react-native-svg';
+import { globalNotificationStore } from '../utils/notificationStore';
 
 const PRIMARY = '#662483';
 const BG = '#f8fafc';
@@ -141,13 +142,23 @@ export default function StartupJobs() {
       // Fetch assessment results for this candidate
       if (selectedCandidate.userId && jobToTrack?.id) {
         fetch(`https://thodakkam-backend.onrender.com/api/assessment-results/${selectedCandidate.userId}/${jobToTrack.id}`)
-          .then(res => res.json())
+          .then(async res => {
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            const contentType = res.headers.get("content-type");
+            if (contentType && contentType.indexOf("application/json") !== -1) {
+              return res.json();
+            } else {
+              throw new Error("Response is not JSON");
+            }
+          })
           .then(data => {
-            if (data.success && data.results) {
+            if (data && data.success && data.results) {
               setAssessmentResults(data.results);
             }
           })
-          .catch(err => console.error('Error fetching assessment results:', err));
+          .catch(err => {
+            console.log('Assessment results API not yet deployed or error:', err.message);
+          });
       }
     }
   }, [selectedCandidate]);
@@ -162,14 +173,11 @@ export default function StartupJobs() {
       });
       if (res.ok) {
         if (newStatus === 'SELECTED' && selectedCandidate.userId && jobToTrack?.startupId) {
-          await fetch('https://thodakkam-backend.onrender.com/api/messages', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              senderId: jobToTrack.startupId,
-              receiverId: selectedCandidate.userId,
-              text: `Congratulations! You have been selected for the ${jobToTrack.title} role at ${companyName}.`
-            })
+          globalNotificationStore.addNotification({
+            title: `Selected for ${jobToTrack.title}`,
+            description: `Congratulations! You have been selected for the ${jobToTrack.title} role at ${companyName}.`,
+            type: 'success',
+            targetRole: 'student'
           });
         }
         setSelectedCandidate({ ...selectedCandidate, status: newStatus });

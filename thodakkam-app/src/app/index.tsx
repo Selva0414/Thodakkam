@@ -33,13 +33,12 @@ function ActionButton({ title, onPress }: { title: string; onPress?: () => void 
   const [isHovered, setIsHovered] = useState(false);
 
   return (
-    <View
-      // @ts-ignore
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
+    <View>
       <Pressable
         onPress={onPress}
+        // @ts-ignore
+        onHoverIn={() => setIsHovered(true)}
+        onHoverOut={() => setIsHovered(false)}
         style={({ pressed }) => [
           styles.button,
           isHovered && styles.buttonHovered,
