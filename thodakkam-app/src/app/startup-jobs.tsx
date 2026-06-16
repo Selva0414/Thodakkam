@@ -191,13 +191,13 @@ export default function StartupJobs() {
   const handleNavPress = (label: string) => {
     setActiveTab(label);
     if (label === 'Dashboard') {
-      router.replace({ pathname: '/startup-dashboard' as any, params: { companyName } });
+      router.navigate({ pathname: '/startup-dashboard' as any, params: { companyName } });
     } else if (label === 'Candidates') {
-      router.replace({ pathname: '/startup-candidates' as any, params: { companyName } });
+      router.navigate({ pathname: '/startup-candidates' as any, params: { companyName } });
     } else if (label === 'Interviews') {
-      router.replace({ pathname: '/startup-interviews' as any, params: { companyName } });
+      router.navigate({ pathname: '/startup-interviews' as any, params: { companyName } });
     } else if (label === 'Community') {
-      router.replace({ pathname: '/startup-community' as any, params: { companyName } });
+      router.navigate({ pathname: '/startup-community' as any, params: { companyName } });
     }
   };
 

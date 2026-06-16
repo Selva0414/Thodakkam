@@ -163,7 +163,7 @@ export default function StartupDashboard() {
             </View>
           </View>
           <View style={[styles.lineChartContainer, { zIndex: 1, elevation: 1 }]}>
-            <Svg height="120" width="100%" viewBox="0 0 300 120">
+            <View collapsable={false}><Svg height="120" width="100%" viewBox="0 0 300 120">
               <Path 
                 d={chartData.fillD} 
                 fill="#fdf4ff" 
@@ -174,7 +174,7 @@ export default function StartupDashboard() {
                 stroke="#0f172a" 
                 strokeWidth="2.5" 
               />
-            </Svg>
+            </Svg></View>
             <View style={styles.chartXAxis}>
               {chartData.labels.map((lbl, idx) => (
                  <Text key={idx} style={styles.xAxisLabel}>{lbl}</Text>
@@ -280,13 +280,13 @@ export default function StartupDashboard() {
               onPress={() => {
                 setActiveTab(item.label);
                 if (item.label === 'Jobs') {
-                  router.replace({ pathname: '/startup-jobs' as any, params: { companyName } });
+                  router.navigate({ pathname: '/startup-jobs' as any, params: { companyName } });
                 } else if (item.label === 'Candidates') {
-                  router.replace({ pathname: '/startup-candidates' as any, params: { companyName } });
+                  router.navigate({ pathname: '/startup-candidates' as any, params: { companyName } });
                 } else if (item.label === 'Interviews') {
-                  router.replace({ pathname: '/startup-interviews' as any, params: { companyName } });
+                  router.navigate({ pathname: '/startup-interviews' as any, params: { companyName } });
                 } else if (item.label === 'Feed') {
-                  router.replace({ pathname: '/startup-community' as any, params: { companyName } });
+                  router.navigate({ pathname: '/startup-community' as any, params: { companyName } });
                 }
               }}
             >
