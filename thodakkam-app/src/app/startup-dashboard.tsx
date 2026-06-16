@@ -32,6 +32,7 @@ export default function StartupDashboard() {
 
   useFocusEffect(
     useCallback(() => {
+      setActiveTab('Home');
       const onBackPress = () => {
         BackHandler.exitApp();
         return true;
@@ -278,8 +279,9 @@ export default function StartupDashboard() {
               key={item.label} 
               style={styles.navItem}
               onPress={() => {
-                setActiveTab(item.label);
-                if (item.label === 'Jobs') {
+                if (item.label === 'Home') {
+                  setActiveTab('Home');
+                } else if (item.label === 'Jobs') {
                   router.navigate({ pathname: '/startup-jobs' as any, params: { companyName } });
                 } else if (item.label === 'Candidates') {
                   router.navigate({ pathname: '/startup-candidates' as any, params: { companyName } });

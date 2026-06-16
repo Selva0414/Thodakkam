@@ -147,13 +147,7 @@ export default function StudentAssessments() {
     fetchUserAndAssessments();
   }, [params.userId, params.userName]);
 
-  if (loading) {
-    return (
-      <SafeAreaView style={[styles.safeArea, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color={PRIMARY} />
-      </SafeAreaView>
-    );
-  }
+
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -166,7 +160,11 @@ export default function StudentAssessments() {
           <Text style={styles.subtitle}>Complete assessments assigned by companies</Text>
         </View>
 
-        {assessments.length === 0 ? (
+        {loading ? (
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 40 }}>
+            <ActivityIndicator size="large" color={PRIMARY} />
+          </View>
+        ) : assessments.length === 0 ? (
           <View style={styles.emptyCard}>
             <View style={styles.emptyIconWrap}>
               <ClipboardList size={32} color="#cbd5e1" />
@@ -241,7 +239,7 @@ export default function StudentAssessments() {
         </Animated.View>
       </ScrollView>
 
-      <BottomTabBar activeTab="Assessments" />
+      <BottomTabBar activeTab="Tests" />
     </SafeAreaView>
   );
 }

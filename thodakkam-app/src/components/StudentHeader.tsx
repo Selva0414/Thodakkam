@@ -86,19 +86,23 @@ export default function StudentHeader({ user }: { user?: { id?: string, name: st
         <View style={navStyles.drawerOverlay}>
           <TouchableOpacity style={navStyles.drawerOverlayBg} onPress={() => setShowProfileDropdown(false)} activeOpacity={1} />
           <View style={navStyles.drawerContent}>
-            <View style={{ paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 20 }}>
-              <TouchableOpacity onPress={() => { setShowProfileDropdown(false); router.push('/student-profile'); }}>
-                {localUser.profilePhoto ? (
-                  <Image source={{ uri: localUser.profilePhoto }} style={navStyles.drawerAvatar} />
-                ) : (
-                  <View style={navStyles.drawerAvatarFallback}>
-                    <Text style={navStyles.drawerAvatarText}>{firstLetter}</Text>
+            <View>
+              <View style={{ height: Platform.OS === 'ios' ? 120 : 100, backgroundColor: PRIMARY, width: '100%', borderTopLeftRadius: 24 }} />
+              <View style={{ paddingHorizontal: 20, paddingBottom: 20, marginTop: -40 }}>
+                <TouchableOpacity onPress={() => { setShowProfileDropdown(false); router.push('/student-profile'); }}>
+                  <View style={{ backgroundColor: WHITE, padding: 4, borderRadius: 40, alignSelf: 'flex-start', marginBottom: 12, elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 }}>
+                    {localUser.profilePhoto ? (
+                      <Image source={{ uri: localUser.profilePhoto }} style={navStyles.drawerAvatar} />
+                    ) : (
+                      <View style={navStyles.drawerAvatarFallback}>
+                        <Text style={navStyles.drawerAvatarText}>{firstLetter}</Text>
+                      </View>
+                    )}
                   </View>
-                )}
-                <Text style={navStyles.drawerName}>{localUser.name || 'Student'}</Text>
-                {localUser.email ? <Text style={navStyles.drawerBio}>{localUser.email}</Text> : null}
-                {localUser.phone ? <Text style={navStyles.drawerLocation}>{localUser.phone}</Text> : null}
-              </TouchableOpacity>
+                  <Text style={navStyles.drawerName}>{localUser.name || 'Student'}</Text>
+                  {localUser.email ? <Text style={navStyles.drawerBio}>{localUser.email}</Text> : null}
+                </TouchableOpacity>
+              </View>
             </View>
 
             <View style={navStyles.drawerDivider} />
@@ -107,8 +111,11 @@ export default function StudentHeader({ user }: { user?: { id?: string, name: st
 
             <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12 }}>
               <TouchableOpacity style={navStyles.drawerMenuItem} onPress={() => { setShowProfileDropdown(false); router.push('/student-profile'); }}><Text style={navStyles.drawerMenuText}>My profile</Text></TouchableOpacity>
-              <TouchableOpacity style={navStyles.drawerMenuItem}><Text style={navStyles.drawerMenuText}>Saved posts</Text></TouchableOpacity>
+              <TouchableOpacity style={navStyles.drawerMenuItem} onPress={() => { setShowProfileDropdown(false); router.push({ pathname: '/student-my-jobs' as any }); }}><Text style={navStyles.drawerMenuText}>My Jobs</Text></TouchableOpacity>
+              <TouchableOpacity style={navStyles.drawerMenuItem} onPress={() => { setShowProfileDropdown(false); router.push({ pathname: '/saved-posts' as any, params: { role: 'student', identifier: userStore.email } }); }}><Text style={navStyles.drawerMenuText}>Saved posts</Text></TouchableOpacity>
               <TouchableOpacity style={navStyles.drawerMenuItem}><Text style={navStyles.drawerMenuText}>My Network</Text></TouchableOpacity>
+              <TouchableOpacity style={navStyles.drawerMenuItem}><Text style={navStyles.drawerMenuText}>General</Text></TouchableOpacity>
+              <TouchableOpacity style={navStyles.drawerMenuItem}><Text style={navStyles.drawerMenuText}>Practice</Text></TouchableOpacity>
             </ScrollView>
 
             <View style={navStyles.drawerDivider} />
@@ -177,12 +184,12 @@ const navStyles = StyleSheet.create({
   
   drawerOverlay: { flex: 1, flexDirection: 'row-reverse' },
   drawerOverlayBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' },
-  drawerContent: { width: '80%', maxWidth: 320, backgroundColor: WHITE, height: '100%', position: 'absolute', right: 0, top: 0, bottom: 0, elevation: 10, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 10, shadowOffset: { width: -2, height: 0 } },
-  drawerAvatar: { width: 72, height: 72, borderRadius: 36, marginBottom: 16 },
-  drawerAvatarFallback: { width: 72, height: 72, borderRadius: 36, backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
+  drawerContent: { width: '80%', maxWidth: 320, backgroundColor: WHITE, height: '100%', position: 'absolute', right: 0, top: 0, bottom: 0, elevation: 10, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 10, shadowOffset: { width: -2, height: 0 }, borderTopLeftRadius: 24, borderBottomLeftRadius: 24 },
+  drawerAvatar: { width: 72, height: 72, borderRadius: 36 },
+  drawerAvatarFallback: { width: 72, height: 72, borderRadius: 36, backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center' },
   drawerAvatarText: { color: WHITE, fontSize: 24, fontWeight: '700' },
-  drawerName: { fontSize: 20, fontWeight: '700', color: DARK, marginBottom: 8 },
-  drawerBio: { fontSize: 14, color: DARK, fontWeight: '500', marginBottom: 4 },
+  drawerName: { fontSize: 20, fontWeight: '800', color: '#0f172a', marginBottom: 4 },
+  drawerBio: { fontSize: 14, color: '#0f172a', fontWeight: '500', marginBottom: 4 },
   drawerLocation: { fontSize: 14, color: '#475569', fontWeight: '500', marginBottom: 4 },
   drawerDivider: { height: 1, backgroundColor: '#e2e8f0' },
   drawerMenuItem: { paddingHorizontal: 20, paddingVertical: 14 },

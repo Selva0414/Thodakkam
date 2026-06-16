@@ -96,7 +96,7 @@ export default function StartupMessages() {
         });
         setAllUsersToMessage(formattedUsers);
       }
-      
+
       // Fetch active conversations
       const convRes = await fetch(`https://thodakkam-backend.onrender.com/api/messages/conversations/${userId}`);
       if (convRes.ok) {
@@ -104,7 +104,7 @@ export default function StartupMessages() {
         const pinnedStr = await AsyncStorage.getItem(`pinned_candidates_${userId}`);
         let pinnedIds: string[] = [];
         if (pinnedStr) {
-          try { pinnedIds = JSON.parse(pinnedStr); } catch(e){}
+          try { pinnedIds = JSON.parse(pinnedStr); } catch (e) { }
         }
 
         if (convData.success) {
@@ -113,7 +113,7 @@ export default function StartupMessages() {
             const u = formattedUsers.find(u => u.id === id);
             return u ? { id: u.id, name: u.name, active: false, avatar: u.avatar } : null;
           }).filter(Boolean);
-          
+
           if (activeCandidates.length > 0 && activeCandidates[0]) {
             setCandidates(activeCandidates as any[]);
             if (!activeChatId) {
@@ -138,12 +138,12 @@ export default function StartupMessages() {
       }
       return [{ id: user.id, name: user.name, active: true, avatar: user.avatar }, ...updated];
     });
-    
+
     if (myUserId) {
       AsyncStorage.getItem(`pinned_candidates_${myUserId}`).then(pinnedStr => {
         let pinnedIds: string[] = [];
         if (pinnedStr) {
-          try { pinnedIds = JSON.parse(pinnedStr); } catch(e){}
+          try { pinnedIds = JSON.parse(pinnedStr); } catch (e) { }
         }
         if (!pinnedIds.includes(user.id)) {
           pinnedIds.unshift(user.id);
@@ -151,7 +151,7 @@ export default function StartupMessages() {
         }
       });
     }
-    
+
     if (!myUserId) return;
 
     try {
@@ -163,9 +163,9 @@ export default function StartupMessages() {
             id: m.id,
             text: m.text,
             isSentByMe: m.senderId === myUserId,
-            time: new Date(m.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+            time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
           }));
-          setChatMessages(prev => ({...prev, [user.id]: formattedMsgs}));
+          setChatMessages(prev => ({ ...prev, [user.id]: formattedMsgs }));
         }
       }
     } catch (err) {
@@ -178,7 +178,7 @@ export default function StartupMessages() {
       setActiveChatId(candidateId);
       setCandidates(prev => prev.map(s => ({ ...s, active: s.id === candidateId })));
     }
-    
+
     const uid = overrideUserId || myUserId;
     if (!uid) return;
     try {
@@ -190,9 +190,9 @@ export default function StartupMessages() {
             id: m.id,
             text: m.text,
             isSentByMe: m.senderId === myUserId,
-            time: new Date(m.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+            time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
           }));
-          setChatMessages(prev => ({...prev, [candidateId]: formattedMsgs}));
+          setChatMessages(prev => ({ ...prev, [candidateId]: formattedMsgs }));
         }
       }
     } catch (err) {
@@ -202,9 +202,9 @@ export default function StartupMessages() {
 
   const sendActualMessage = async (msgText: string) => {
     if (!msgText.trim() || !activeChatId || !myUserId) return;
-    
+
     const tempId = Date.now().toString();
-    const newMessage = { id: tempId, text: msgText, isSentByMe: true, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) };
+    const newMessage = { id: tempId, text: msgText, isSentByMe: true, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
     setChatMessages(prev => ({
       ...prev,
       [activeChatId]: [...(prev[activeChatId] || []), newMessage]
@@ -226,7 +226,7 @@ export default function StartupMessages() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ senderId: myUserId, receiverId: activeChatId, text: msgText })
       });
-      
+
       globalNotificationStore.addNotification({
         title: 'New Message',
         description: 'You received a new message',
@@ -268,7 +268,7 @@ export default function StartupMessages() {
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const fileUri = result.assets[0].uri;
         const fileName = result.assets[0].name;
-        
+
         // Convert to base64
         const response = await fetch(fileUri);
         const blob = await response.blob();
@@ -301,7 +301,7 @@ export default function StartupMessages() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
-        
+
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()}>
@@ -379,33 +379,33 @@ export default function StartupMessages() {
                               {msg.text.split('|')[0].replace('[DOCUMENT] ', '').replace('Sent a document: ', '')}
                             </Text>
                           </View>
-                          
+
                           {/* Inner White Card */}
                           <View style={{ backgroundColor: WHITE, height: 140, marginHorizontal: 12, borderRadius: 12, justifyContent: 'center', alignItems: 'center' }}>
                             <Paperclip size={48} color="#94a3b8" />
                           </View>
 
                           {/* Footer with Download */}
-                          <TouchableOpacity 
+                          <TouchableOpacity
                             style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12, marginTop: 4 }}
                             onPress={() => {
-                               const parts = msg.text.split('|');
-                               const fileName = parts[0].replace('[DOCUMENT] ', '').replace('Sent a document: ', '');
-                               if (parts.length > 1) {
-                                 const base64Data = parts[1];
-                                 if (Platform.OS === 'web') {
-                                    const a = document.createElement("a");
-                                    a.href = base64Data;
-                                    a.download = fileName;
-                                    a.click();
-                                 } else {
-                                    Linking.openURL(base64Data).catch(() => {
-                                      Alert.alert('Download Error', 'Could not open the document.');
-                                    });
-                                 }
-                               } else {
-                                 Alert.alert('Download Started', 'Downloading ' + fileName);
-                               }
+                              const parts = msg.text.split('|');
+                              const fileName = parts[0].replace('[DOCUMENT] ', '').replace('Sent a document: ', '');
+                              if (parts.length > 1) {
+                                const base64Data = parts[1];
+                                if (Platform.OS === 'web') {
+                                  const a = document.createElement("a");
+                                  a.href = base64Data;
+                                  a.download = fileName;
+                                  a.click();
+                                } else {
+                                  Linking.openURL(base64Data).catch(() => {
+                                    Alert.alert('Download Error', 'Could not open the document.');
+                                  });
+                                }
+                              } else {
+                                Alert.alert('Download Started', 'Downloading ' + fileName);
+                              }
                             }}
                           >
                             <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, paddingRight: 8 }}>
@@ -503,26 +503,26 @@ export default function StartupMessages() {
         </View>
       </KeyboardAvoidingView>
 
-            {/* Image Viewer Modal */}
+      {/* Image Viewer Modal */}
       <Modal visible={!!selectedImage} transparent animationType="fade">
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center', alignItems: 'center' }}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={{ position: 'absolute', top: 40, right: 20, zIndex: 10, padding: 10 }}
             onPress={() => setSelectedImage(null)}
           >
             <X size={28} color="#fff" />
           </TouchableOpacity>
           <Image source={{ uri: selectedImage || '' }} style={{ width: '100%', height: '70%' }} resizeMode="contain" />
-          <TouchableOpacity 
+          <TouchableOpacity
             style={{ marginTop: 20, backgroundColor: '#662483', paddingHorizontal: 24, paddingVertical: 14, borderRadius: 30, flexDirection: 'row', alignItems: 'center' }}
             onPress={() => {
               if (Platform.OS === 'web') {
-                 const a = document.createElement("a");
-                 a.href = selectedImage || '';
-                 a.download = 'image.jpg';
-                 a.click();
+                const a = document.createElement("a");
+                a.href = selectedImage || '';
+                a.download = 'image.jpg';
+                a.click();
               } else {
-                 Linking.openURL(selectedImage || '').catch(() => Alert.alert('Error', 'Could not download image.'));
+                Linking.openURL(selectedImage || '').catch(() => Alert.alert('Error', 'Could not download image.'));
               }
             }}
           >
@@ -624,7 +624,7 @@ const styles = StyleSheet.create({
 
   newChatBtn: { alignItems: 'center', marginRight: 4 },
   newChatIconBox: { width: 56, height: 56, borderRadius: 28, borderWidth: 1, borderColor: '#cbd5e1', borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center', marginBottom: 6 },
-  
+
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   modalContent: { backgroundColor: WHITE, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, height: '70%' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },

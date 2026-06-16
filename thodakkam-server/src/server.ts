@@ -1172,7 +1172,9 @@ app.get('/api/posts', async (req: Request, res: Response): Promise<void> => {
         user: true, 
         startup: true,
         likes: { include: { user: true, startup: true } },
-        comments: { include: { user: true, startup: true } }
+        comments: { include: { user: true, startup: true } },
+        reposts: { include: { user: true, startup: true } },
+        savedBy: { include: { user: true, startup: true } }
       } as any,
       orderBy: { createdAt: 'desc' }
     });
@@ -1265,6 +1267,136 @@ app.post('/api/posts/:id/like', async (req: Request, res: Response): Promise<voi
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Server error toggling like' });
+  }
+});
+
+app.post('/api/posts/:id/repost', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = req.params.id as string;
+    const { email, companyName } = req.body;
+    if (!email && !companyName) { res.status(400).json({ success: false, message: 'Email or companyName required' }); return; }
+    
+    let userId = null;
+    let startupId = null;
+
+    if (email) {
+      const user = await prisma.user.findUnique({ where: { email } });
+      if (user) userId = user.id;
+    }
+    
+    if (!userId && companyName) {
+      const startup = await prisma.startup.findFirst({ where: { companyName } });
+      if (startup) startupId = startup.id;
+    }
+
+    if (!userId && !startupId) { res.status(404).json({ success: false, message: 'User or Startup not found' }); return; }
+
+    // @ts-ignore
+    const existingRepost = await prisma.repost.findFirst({
+      where: { postId: id, OR: [ { userId: userId || undefined }, { startupId: startupId || undefined } ] }
+    });
+
+    if (existingRepost) {
+      // @ts-ignore
+      await prisma.repost.delete({ where: { id: existingRepost.id } });
+      res.status(200).json({ success: true, message: 'Unreposted', reposted: false });
+    } else {
+      // @ts-ignore
+      await prisma.repost.create({
+        data: { postId: id, userId, startupId }
+      });
+      res.status(200).json({ success: true, message: 'Reposted', reposted: true });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error toggling repost' });
+  }
+});
+
+app.post('/api/posts/:id/save', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = req.params.id as string;
+    const { email, companyName } = req.body;
+    if (!email && !companyName) { res.status(400).json({ success: false, message: 'Email or companyName required' }); return; }
+    
+    let userId = null;
+    let startupId = null;
+
+    if (email) {
+      const user = await prisma.user.findUnique({ where: { email } });
+      if (user) userId = user.id;
+    }
+    
+    if (!userId && companyName) {
+      const startup = await prisma.startup.findFirst({ where: { companyName } });
+      if (startup) startupId = startup.id;
+    }
+
+    if (!userId && !startupId) { res.status(404).json({ success: false, message: 'User or Startup not found' }); return; }
+
+    // @ts-ignore
+    const existingSave = await prisma.savedPost.findFirst({
+      where: { postId: id, OR: [ { userId: userId || undefined }, { startupId: startupId || undefined } ] }
+    });
+
+    if (existingSave) {
+      // @ts-ignore
+      await prisma.savedPost.delete({ where: { id: existingSave.id } });
+      res.status(200).json({ success: true, message: 'Unsaved', saved: false });
+    } else {
+      // @ts-ignore
+      await prisma.savedPost.create({
+        data: { postId: id, userId, startupId }
+      });
+      res.status(200).json({ success: true, message: 'Saved', saved: true });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error toggling save' });
+  }
+});
+
+app.get('/api/posts/saved/:identifier', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const identifier = req.params.identifier as string; // can be email or companyName
+    const type = req.query.type as string; // 'student' or 'startup'
+    
+    let userId = null;
+    let startupId = null;
+
+    if (type === 'startup') {
+      const startup = await prisma.startup.findFirst({ where: { companyName: identifier } });
+      if (startup) startupId = startup.id;
+    } else {
+      const user = await prisma.user.findUnique({ where: { email: identifier } });
+      if (user) userId = user.id;
+    }
+
+    if (!userId && !startupId) { res.status(404).json({ success: false, message: 'User or Startup not found' }); return; }
+
+    // @ts-ignore
+    const savedPostsRelations = await prisma.savedPost.findMany({
+      where: { OR: [ { userId: userId || undefined }, { startupId: startupId || undefined } ] },
+      include: {
+        post: {
+          include: { 
+            user: true, 
+            startup: true,
+            likes: { include: { user: true, startup: true } },
+            comments: { include: { user: true, startup: true } },
+            reposts: { include: { user: true, startup: true } },
+            savedBy: { include: { user: true, startup: true } }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    
+    const posts = savedPostsRelations.map((sp: any) => sp.post);
+    res.status(200).json({ success: true, posts });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error fetching saved posts' });
   }
 });
 
@@ -1517,6 +1649,89 @@ app.get('/api/assessment-results/:userId/:jobId', async (req: Request, res: Resp
   } catch (error) {
     console.error('Error fetching results:', error);
     res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// ─── Job Saving & My Jobs Routes ─────────────────────────────────────────────
+app.post('/api/jobs/:id/save', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const jobId = req.params.id as string;
+    const { email } = req.body;
+    
+    if (!email) {
+      res.status(400).json({ success: false, message: 'Email required' });
+      return;
+    }
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      res.status(404).json({ success: false, message: 'User not found' });
+      return;
+    }
+
+    // @ts-ignore
+    const existingSave = await prisma.savedJob.findUnique({
+      where: {
+        jobId_userId: { jobId, userId: user.id }
+      }
+    });
+
+    if (existingSave) {
+      // @ts-ignore
+      await prisma.savedJob.delete({ where: { id: existingSave.id } });
+      res.status(200).json({ success: true, message: 'Job Unsaved', saved: false });
+    } else {
+      // @ts-ignore
+      await prisma.savedJob.create({
+        data: { jobId, userId: user.id }
+      });
+      res.status(200).json({ success: true, message: 'Job Saved', saved: true });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error toggling save job' });
+  }
+});
+
+app.get('/api/jobs/my-jobs/:identifier', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const identifier = req.params.identifier as string;
+    
+    const user = await prisma.user.findUnique({ where: { email: identifier } });
+    if (!user) {
+      res.status(404).json({ success: false, message: 'User not found' });
+      return;
+    }
+
+    // @ts-ignore
+    const savedJobsRelations = await prisma.savedJob.findMany({
+      where: { userId: user.id },
+      include: {
+        job: {
+          include: { startup: true }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const applications = await prisma.application.findMany({
+      where: { userId: user.id },
+      include: {
+        job: {
+          include: { startup: true }
+        }
+      },
+      orderBy: { appliedAt: 'desc' }
+    });
+
+    res.status(200).json({ 
+      success: true, 
+      savedJobs: savedJobsRelations.map((sj: any) => sj.job),
+      applications
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error fetching my jobs' });
   }
 });
 

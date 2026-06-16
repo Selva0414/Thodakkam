@@ -10,6 +10,7 @@ import {
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import StudentHeader from '../components/StudentHeader';
+import { userStore } from '../utils/userStore';
 
 const PRIMARY = '#6a1b9a';
 const BG = '#f4f5f7';
@@ -107,14 +108,7 @@ export default function StudentJobs() {
             </Text>
           </View>
 
-        {/* Filter Bar */}
-        <View style={styles.filterBar}>
-          <TouchableOpacity style={styles.filterBtn}>
-            <SlidersHorizontal size={14} color={DARK} />
-            <Text style={styles.filterBtnText}>Filters</Text>
-          </TouchableOpacity>
-          <Text style={styles.sortText}>Sort by: <Text style={styles.sortTextBold}>Match Score</Text></Text>
-        </View>
+
 
         {/* Job List */}
         {loading ? (
@@ -122,109 +116,107 @@ export default function StudentJobs() {
         ) : jobs.length === 0 ? (
           <Text style={{ textAlign: 'center', marginTop: 20, color: GRAY }}>No active jobs found right now.</Text>
         ) : (
-          jobs.map(job => {
-            const matchScore = Math.floor(Math.random() * (98 - 70 + 1) + 70);
-            
-            let startupPhoto = job.startup?.companyLogo || job.startup?.profilePhoto;
-            if (startupPhoto && !startupPhoto.startsWith('http') && !startupPhoto.startsWith('data:')) {
-              const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend.onrender.com' : 'https://thodakkam-backend.onrender.com';
-              startupPhoto = `${baseUrl}/uploads/${startupPhoto.split(/[/\\]/).pop()}`;
-            }
-
-            return (
-              <View key={job.id} style={styles.jobCard}>
-                <View style={styles.cardTopRow}>
-                  <View style={styles.companyLogoBox}>
-                    {startupPhoto ? (
-                      <Image source={{ uri: startupPhoto }} style={styles.companyLogo} resizeMode="contain" />
-                    ) : (
-                      <Text style={styles.companyLogoText}>{(job.startup?.companyName || 'C').substring(0,2).toUpperCase()}</Text>
-                    )}
-                  </View>
-                  
-                  <View style={styles.jobMainInfo}>
-                    <View style={styles.titleRowFlex}>
-                      <Text style={styles.jobTitleLarge} numberOfLines={1}>{job.title}</Text>
-                      <View style={styles.sparkleBadge}>
-                        <Sparkles size={10} color="#3730a3" style={{ marginRight: 4 }} />
-                        <Text style={styles.sparkleText}>{matchScore}% Match</Text>
-                      </View>
-                    </View>
-                    <Text style={styles.companyNameText}>{job.startup?.companyName?.toUpperCase() || 'COMPANY'}</Text>
-                    <View style={styles.locationRow}>
-                      <MapPin size={10} color={GRAY} />
-                      <Text style={styles.locationText}>{job.location || 'Remote'}</Text>
-                    </View>
-                  </View>
-                </View>
-                
-                <View style={styles.tagsContainer}>
-                  {(job.requirements || []).slice(0, 2).map((req: string, idx: number) => (
-                    <View key={idx} style={styles.tagPill}><Text style={styles.tagPillText}>{req}</Text></View>
-                  ))}
-                  {job.type && (
-                    <View style={styles.tagPill}><Text style={styles.tagPillText}>{job.type}</Text></View>
-                  )}
-                </View>
-                
-                <View style={styles.cardDivider} />
-                
-                <View style={styles.cardBottomRow}>
-                  <TouchableOpacity style={styles.bookmarkBtn}>
-                    <Bookmark size={16} color={DARK} />
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={styles.applyPurpleBtn}
-                    onPress={() => router.push({ pathname: '/student-apply', params: { jobId: job.id, jobTitle: job.title } })}
-                  >
-                    <Text style={styles.applyPurpleBtnText}>Apply Now</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            );
-          })
+          jobs.map(job => <JobItem key={job.id} job={job} router={router} />)
         )}
 
-        {/* AI Promo Card */}
-        <View style={styles.aiPromoCard}>
-          <Text style={styles.aiPromoTitle}>Want better matches?</Text>
-          <Text style={styles.aiPromoSub}>
-            Our AI model analyzes your profile, skills, and experience to find the most relevant opportunities for your career path.
-          </Text>
-          
-          <View style={styles.aiStatsRow}>
-            <View style={styles.aiStatBox}>
-              <Text style={styles.aiStatNum}>12</Text>
-              <Text style={styles.aiStatLabel}>NEW MATCHES</Text>
-            </View>
-            <View style={styles.aiStatBox}>
-              <Text style={styles.aiStatNum}>4</Text>
-              <Text style={styles.aiStatLabel}>INTERVIEWS</Text>
-            </View>
-          </View>
-          
-          <TouchableOpacity style={styles.analyzeBtn}>
-            <Text style={styles.analyzeBtnText}>ANALYZE</Text>
-            <ArrowRight size={14} color={DARK} style={{ marginLeft: 4 }} />
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.uploadBtn}>
-            <Upload size={14} color={WHITE} style={{ marginRight: 6 }} />
-            <Text style={styles.uploadBtnText}>Upload Resume</Text>
-          </TouchableOpacity>
-        </View>
         </Animated.View>
 
       </ScrollView>
 
-      {/* Floating Action Button */}
-      <TouchableOpacity style={styles.fab}>
-        <MessageCircle size={18} color={WHITE} style={{ marginRight: 6 }} />
-        <Text style={styles.fabText}>Respond to Request</Text>
-      </TouchableOpacity>
 
       <BottomTabBar />
     </SafeAreaView>
+  );
+}
+
+function JobItem({ job, router }: { job: any, router: any }) {
+  const matchScore = Math.floor(Math.random() * (98 - 70 + 1) + 70);
+  
+  const initiallySaved = job.savedBy ? job.savedBy.some((s: any) => s.user?.email === userStore.email) : false;
+  const [hasSaved, setHasSaved] = useState(initiallySaved);
+  const [isSaving, setIsSaving] = useState(false);
+
+  let startupPhoto = job.startup?.companyLogo || job.startup?.profilePhoto;
+  if (startupPhoto && !startupPhoto.startsWith('http') && !startupPhoto.startsWith('data:')) {
+    const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend.onrender.com' : 'https://thodakkam-backend.onrender.com';
+    startupPhoto = `${baseUrl}/uploads/${startupPhoto.split(/[/\\]/).pop()}`;
+  }
+
+  const handleSave = async () => {
+    if (isSaving) return;
+    const newSavedState = !hasSaved;
+    setHasSaved(newSavedState);
+    setIsSaving(true);
+    
+    try {
+      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend.onrender.com' : 'https://thodakkam-backend.onrender.com';
+      const res = await fetch(`${baseUrl}/api/jobs/${job.id}/save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: userStore.email })
+      });
+      const data = await res.json();
+      if (!data.success) {
+        setHasSaved(!newSavedState);
+      }
+    } catch (err) {
+      console.error(err);
+      setHasSaved(!newSavedState);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <View style={styles.jobCard}>
+      <View style={styles.cardTopRow}>
+        <View style={styles.companyLogoBox}>
+          {startupPhoto ? (
+            <Image source={{ uri: startupPhoto }} style={styles.companyLogo} resizeMode="contain" />
+          ) : (
+            <Text style={styles.companyLogoText}>{(job.startup?.companyName || 'C').substring(0,2).toUpperCase()}</Text>
+          )}
+        </View>
+        
+        <View style={styles.jobMainInfo}>
+          <View style={styles.titleRowFlex}>
+            <Text style={styles.jobTitleLarge} numberOfLines={1}>{job.title}</Text>
+            <View style={styles.sparkleBadge}>
+              <Sparkles size={10} color="#3730a3" style={{ marginRight: 4 }} />
+              <Text style={styles.sparkleText}>{matchScore}% Match</Text>
+            </View>
+          </View>
+          <Text style={styles.companyNameText}>{job.startup?.companyName?.toUpperCase() || 'COMPANY'}</Text>
+          <View style={styles.locationRow}>
+            <MapPin size={10} color={GRAY} />
+            <Text style={styles.locationText}>{job.location || 'Remote'}</Text>
+          </View>
+        </View>
+      </View>
+      
+      <View style={styles.tagsContainer}>
+        {(job.requirements || []).slice(0, 2).map((req: string, idx: number) => (
+          <View key={idx} style={styles.tagPill}><Text style={styles.tagPillText}>{req}</Text></View>
+        ))}
+        {job.type && (
+          <View style={styles.tagPill}><Text style={styles.tagPillText}>{job.type}</Text></View>
+        )}
+      </View>
+      
+      <View style={styles.cardDivider} />
+      
+      <View style={styles.cardBottomRow}>
+        <TouchableOpacity style={styles.bookmarkBtn} onPress={handleSave} disabled={isSaving}>
+          <Bookmark size={16} color={hasSaved ? PRIMARY : DARK} fill={hasSaved ? PRIMARY : 'transparent'} />
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.applyPurpleBtn}
+          onPress={() => router.push({ pathname: '/student-apply', params: { jobId: job.id, jobTitle: job.title } })}
+        >
+          <Text style={styles.applyPurpleBtnText}>Apply Now</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 }
 

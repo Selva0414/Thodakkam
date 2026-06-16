@@ -233,7 +233,6 @@ export default function AdminDashboard() {
               key={item.label} 
               style={styles.navItem}
               onPress={() => {
-                setActiveTab(item.label);
                 if (item.label === 'Startups') {
                   router.navigate('/admin-startups' as any);
                 } else if (item.label === 'Students') {

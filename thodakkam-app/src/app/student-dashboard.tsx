@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, TouchableOpacity,
-  SafeAreaView, TextInput, Platform, Image, Animated, BackHandler
+  SafeAreaView, TextInput, Platform, Image, Animated, BackHandler, ActivityIndicator
 } from 'react-native';
 import {
   Bell, Search, Upload, Clock, CheckCircle, Video,
@@ -431,20 +431,18 @@ export default function StudentDashboard() {
     fetchUser();
   }, [params.userId, params.userName, params.profilePhoto]);
 
-  if (loading) {
-    return (
-      <SafeAreaView style={[styles.safeArea, { justifyContent: 'center', alignItems: 'center' }]}>
-        <Text>Loading dashboard...</Text>
-      </SafeAreaView>
-    );
-  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <StudentHeader user={userData} />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
-          <WelcomeSection user={userData} />
+        {loading ? (
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 40 }}>
+            <ActivityIndicator size="large" color={PRIMARY} />
+          </View>
+        ) : (
+          <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+            <WelcomeSection user={userData} />
           <ApplicationOverview applications={applications} />
           <UpcomingInterviews applications={applications} />
           <SkillsInDemand />
@@ -455,8 +453,9 @@ export default function StudentDashboard() {
           {applications.some((a: any) => a.status === 'OFFERED') && (
             <OfferBanner />
           )}
-          <View style={{ height: 24 }} />
-        </Animated.View>
+            <View style={{ height: 24 }} />
+          </Animated.View>
+        )}
       </ScrollView>
       <BottomTabBar />
     </SafeAreaView>

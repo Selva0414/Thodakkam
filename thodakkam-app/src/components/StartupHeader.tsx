@@ -151,11 +151,14 @@ export default function StartupHeader({ companyName = 'Echo Digital' }: { compan
               <TouchableOpacity style={styles.drawerMenuItem} onPress={() => { closeMenu(); setShowProfileModal(true); }}>
                 <Text style={styles.drawerMenuText}>My profile</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.drawerMenuItem}>
+              <TouchableOpacity style={styles.drawerMenuItem} onPress={() => { closeMenu(); router.push({ pathname: '/saved-posts' as any, params: { role: 'startup', identifier: companyName } }); }}>
                 <Text style={styles.drawerMenuText}>Saved posts</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.drawerMenuItem} onPress={() => { closeMenu(); setShowNetworkModal(true); }}>
                 <Text style={styles.drawerMenuText}>My Network</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.drawerMenuItem} onPress={() => { closeMenu(); }}>
+                <Text style={styles.drawerMenuText}>Reschedule</Text>
               </TouchableOpacity>
             </ScrollView>
 

@@ -338,7 +338,7 @@ export default function StartupCreateAssessment() {
           <Text style={styles.cardTitle}>Assessment Rounds ({selectedRounds.length})</Text>
           <Text style={styles.sectionSubtitle}>Select the rounds for your assessment process</Text>
 
-          <View style={styles.roundsContainer}>
+          <View style={[styles.roundsContainer, isMobile && { flexDirection: 'column' }]}>
             {rounds.map((r) => {
               const isSelected = selectedRounds.includes(r.id);
               const Icon = r.icon;

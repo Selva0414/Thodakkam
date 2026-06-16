@@ -42,6 +42,7 @@ export default function StartupJobs() {
 
   useFocusEffect(
     React.useCallback(() => {
+      setActiveTab('Jobs');
       fetchJobs();
     }, [companyName])
   );
@@ -189,7 +190,6 @@ export default function StartupJobs() {
   };
 
   const handleNavPress = (label: string) => {
-    setActiveTab(label);
     if (label === 'Dashboard') {
       router.navigate({ pathname: '/startup-dashboard' as any, params: { companyName } });
     } else if (label === 'Candidates') {

@@ -36,6 +36,7 @@ export default function StartupCandidates() {
 
   useFocusEffect(
     React.useCallback(() => {
+      setActiveTab('Candidates');
       fetchApplications();
     }, [companyName])
   );
@@ -68,7 +69,6 @@ export default function StartupCandidates() {
   };
 
   const handleNavPress = (label: string) => {
-    setActiveTab(label);
     if (label === 'Home') {
       router.navigate({ pathname: '/startup-dashboard' as any, params: { companyName } });
     } else if (label === 'Jobs') {
@@ -166,8 +166,10 @@ export default function StartupCandidates() {
                       <View collapsable={false}><Svg width="40" height="40" viewBox="0 0 40 40">
                         <Circle cx="20" cy="20" r={ATS_CIRCLE_RADIUS} stroke="#f1f5f9" strokeWidth="3" fill="none" />
                         <Circle cx="20" cy="20" r={ATS_CIRCLE_RADIUS} stroke={atsColor} strokeWidth="3" fill="none" strokeDasharray={ATS_CIRCLE_CIRCUMFERENCE} strokeDashoffset={progressStroke} strokeLinecap="round" transform="rotate(-90 20 20)" />
-                        <SvgText x="20" y="24" fontSize="10" fontWeight="bold" fill={atsColor} textAnchor="middle">{app.atsScore}%</SvgText>
                       </Svg></View>
+                      <View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center' }]}>
+                        <Text style={{ fontSize: 10, fontWeight: 'bold', color: atsColor }}>{app.atsScore}%</Text>
+                      </View>
                     </View>
                   </View>
 

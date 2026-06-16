@@ -22,7 +22,6 @@ export default function AdminAnalytics() {
   const [timeFilter, setTimeFilter] = useState('7 Days');
 
   const handleTabPress = (label: string) => {
-    setActiveTab(label);
     if (label === 'Home') {
       router.navigate('/admin-dashboard' as any);
     } else if (label === 'Startups') {

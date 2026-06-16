@@ -35,14 +35,14 @@ function BottomTabBar({ activeTab }: { activeTab: string }) {
         return (
           <TouchableOpacity key={label} style={tabBarStyles.tab} onPress={() => {
             if (path && path !== '/student-messages' && activeTab === 'Chat') {
-               router.push(path as any);
+              router.push(path as any);
             } else if (path && !isActive) {
-               router.push(path as any);
+              router.push(path as any);
             }
           }}>
             <View style={[{ padding: 8, borderRadius: 20 }, isActive && { backgroundColor: PRIMARY + '20', transform: [{ scale: 1.1 }] }]}>
-                  <Icon size={22} color={isActive ? PRIMARY : TEXT_GRAY} />
-                </View>
+              <Icon size={22} color={isActive ? PRIMARY : TEXT_GRAY} />
+            </View>
             <Text style={[tabBarStyles.label, isActive && tabBarStyles.labelActive]}>{label}</Text>
           </TouchableOpacity>
         );
@@ -129,7 +129,7 @@ export default function StudentMessages() {
         });
         setAllUsersToMessage(formattedUsers);
       }
-      
+
       // Fetch active conversations
       const convRes = await fetch(`https://thodakkam-backend.onrender.com/api/messages/conversations/${userId}`);
       if (convRes.ok) {
@@ -137,7 +137,7 @@ export default function StudentMessages() {
         const pinnedStr = await AsyncStorage.getItem(`pinned_startups_${userId}`);
         let pinnedIds: string[] = [];
         if (pinnedStr) {
-          try { pinnedIds = JSON.parse(pinnedStr); } catch(e){}
+          try { pinnedIds = JSON.parse(pinnedStr); } catch (e) { }
         }
 
         if (convData.success) {
@@ -146,7 +146,7 @@ export default function StudentMessages() {
             const u = formattedUsers.find(u => u.id === id);
             return u ? { id: u.id, name: u.name, active: false, avatar: u.avatar } : null;
           }).filter(Boolean);
-          
+
           if (activeStartups.length > 0 && activeStartups[0]) {
             setStartups(activeStartups as any[]);
             if (!activeChatId) {
@@ -176,7 +176,7 @@ export default function StudentMessages() {
       AsyncStorage.getItem(`pinned_startups_${myUserId}`).then(pinnedStr => {
         let pinnedIds: string[] = [];
         if (pinnedStr) {
-          try { pinnedIds = JSON.parse(pinnedStr); } catch(e){}
+          try { pinnedIds = JSON.parse(pinnedStr); } catch (e) { }
         }
         if (!pinnedIds.includes(user.id)) {
           pinnedIds.unshift(user.id);
@@ -196,9 +196,9 @@ export default function StudentMessages() {
             id: m.id,
             text: m.text,
             isSentByMe: m.senderId === myUserId,
-            time: new Date(m.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+            time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
           }));
-          setChatMessages(prev => ({...prev, [user.id]: formattedMsgs}));
+          setChatMessages(prev => ({ ...prev, [user.id]: formattedMsgs }));
         }
       }
     } catch (err) {
@@ -211,7 +211,7 @@ export default function StudentMessages() {
       setActiveChatId(startupId);
       setStartups(prev => prev.map(s => ({ ...s, active: s.id === startupId })));
     }
-    
+
     const uid = overrideUserId || myUserId;
     if (!uid) return;
     try {
@@ -223,9 +223,9 @@ export default function StudentMessages() {
             id: m.id,
             text: m.text,
             isSentByMe: m.senderId === myUserId,
-            time: new Date(m.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+            time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
           }));
-          setChatMessages(prev => ({...prev, [startupId]: formattedMsgs}));
+          setChatMessages(prev => ({ ...prev, [startupId]: formattedMsgs }));
         }
       }
     } catch (err) {
@@ -235,9 +235,9 @@ export default function StudentMessages() {
 
   const sendActualMessage = async (msgText: string) => {
     if (!msgText.trim() || !activeChatId || !myUserId) return;
-    
+
     const tempId = Date.now().toString();
-    const newMessage = { id: tempId, text: msgText, isSentByMe: true, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) };
+    const newMessage = { id: tempId, text: msgText, isSentByMe: true, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
     setChatMessages(prev => ({
       ...prev,
       [activeChatId]: [...(prev[activeChatId] || []), newMessage]
@@ -259,7 +259,7 @@ export default function StudentMessages() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ senderId: myUserId, receiverId: activeChatId, text: msgText })
       });
-      
+
       globalNotificationStore.addNotification({
         title: 'New Message',
         description: 'You received a new message',
@@ -276,7 +276,7 @@ export default function StudentMessages() {
     setShowEmojis(false);
   };
 
-    const handlePickImage = async () => {
+  const handlePickImage = async () => {
     setShowAttachmentMenu(false);
     if (!activeChatId) return;
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -301,7 +301,7 @@ export default function StudentMessages() {
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const fileUri = result.assets[0].uri;
         const fileName = result.assets[0].name;
-        
+
         // Convert to base64
         const response = await fetch(fileUri);
         const blob = await response.blob();
@@ -322,180 +322,180 @@ export default function StudentMessages() {
       <StudentHeader />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
         <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
-        {/* Startup Horizontal List */}
-        <View style={styles.startupListContainer}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.startupList}>
-            <TouchableOpacity style={styles.newChatBtn} onPress={() => setIsModalVisible(true)}>
-              <View style={styles.newChatIconBox}>
-                <Plus size={24} color={PRIMARY} />
-              </View>
-              <Text style={styles.startupName}>New</Text>
-            </TouchableOpacity>
-
-            {startups.map(startup => (
-              <TouchableOpacity key={startup.id} style={styles.startupItem} onPress={() => handleSelectChat(startup.id)}>
-                <View style={styles.avatarContainer}>
-                  <Image source={{ uri: startup.avatar }} style={[styles.startupAvatar, startup.active && styles.activeAvatarBorder]} />
-                  {startup.active && <View style={styles.activeDot} />}
+          {/* Startup Horizontal List */}
+          <View style={styles.startupListContainer}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.startupList}>
+              <TouchableOpacity style={styles.newChatBtn} onPress={() => setIsModalVisible(true)}>
+                <View style={styles.newChatIconBox}>
+                  <Plus size={24} color={PRIMARY} />
                 </View>
-                <Text style={[styles.startupName, startup.active && styles.activeStartupName]}>{startup.name}</Text>
+                <Text style={styles.startupName}>New</Text>
               </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
 
-        {/* Chat Area */}
-        <ScrollView style={styles.chatArea} contentContainerStyle={styles.chatContent}>
-          {!activeChatId ? (
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 100 }}>
-              <MessageSquare size={48} color="#cbd5e1" />
-              <Text style={{ marginTop: 16, color: '#94a3b8', fontSize: 16 }}>Select or start a new conversation</Text>
-            </View>
-          ) : (
-            <>
-              <View style={styles.dateLabelContainer}>
-                <View style={styles.dateLabel}>
-                  <Text style={styles.dateLabelText}>TODAY</Text>
-                </View>
+              {startups.map(startup => (
+                <TouchableOpacity key={startup.id} style={styles.startupItem} onPress={() => handleSelectChat(startup.id)}>
+                  <View style={styles.avatarContainer}>
+                    <Image source={{ uri: startup.avatar }} style={[styles.startupAvatar, startup.active && styles.activeAvatarBorder]} />
+                    {startup.active && <View style={styles.activeDot} />}
+                  </View>
+                  <Text style={[styles.startupName, startup.active && styles.activeStartupName]}>{startup.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+
+          {/* Chat Area */}
+          <ScrollView style={styles.chatArea} contentContainerStyle={styles.chatContent}>
+            {!activeChatId ? (
+              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 100 }}>
+                <MessageSquare size={48} color="#cbd5e1" />
+                <Text style={{ marginTop: 16, color: '#94a3b8', fontSize: 16 }}>Select or start a new conversation</Text>
               </View>
+            ) : (
+              <>
+                <View style={styles.dateLabelContainer}>
+                  <View style={styles.dateLabel}>
+                    <Text style={styles.dateLabelText}>TODAY</Text>
+                  </View>
+                </View>
 
-              {(chatMessages[activeChatId] || []).length === 0 && (
-                <Text style={{ textAlign: 'center', color: TEXT_GRAY, marginTop: 20 }}>No messages yet. Say hi!</Text>
-              )}
+                {(chatMessages[activeChatId] || []).length === 0 && (
+                  <Text style={{ textAlign: 'center', color: TEXT_GRAY, marginTop: 20 }}>No messages yet. Say hi!</Text>
+                )}
 
-              {(chatMessages[activeChatId] || []).map((msg: any) => (
-                <View key={msg.id} style={[styles.messageRow, msg.isSentByMe ? styles.messageRowSent : null]}>
-                  {!msg.isSentByMe && <Image source={{ uri: startups.find(s => s.id === activeChatId)?.avatar }} style={styles.messageAvatar} />}
-                  <View style={[styles.messageContent, msg.isSentByMe ? { alignItems: 'flex-end' } : null]}>
-                    <Text style={styles.messageMeta}>{msg.isSentByMe ? 'You' : startups.find(s => s.id === activeChatId)?.name} • {msg.time}</Text>
-                    <View style={[msg.isSentByMe ? styles.messageBubbleSent : styles.messageBubbleReceived, (msg.text.startsWith('data:image/') || msg.text.startsWith('[DOCUMENT] ') || msg.text.startsWith('Sent a document: ')) && { padding: 0, backgroundColor: 'transparent', elevation: 0, shadowOpacity: 0 }]}>
-                      {msg.text.startsWith('data:image/') ? (
-                        <TouchableOpacity onPress={() => setSelectedImage(msg.text)}>
-                          <Image source={{ uri: msg.text }} style={{ width: 200, height: 200, borderRadius: 8 }} resizeMode="cover" />
-                        </TouchableOpacity>
-                      ) : msg.text.startsWith('[DOCUMENT] ') || msg.text.startsWith('Sent a document: ') ? (
-                        <View style={{ width: 260, backgroundColor: PRIMARY, borderRadius: 16, overflow: 'hidden' }}>
-                          <View style={{ flexDirection: 'row', alignItems: 'center', padding: 12, paddingBottom: 8 }}>
-                            <Paperclip size={16} color="rgba(255,255,255,0.7)" style={{ marginRight: 8 }} />
-                            <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, fontWeight: '500' }} numberOfLines={1}>
-                              {msg.text.split('|')[0].replace('[DOCUMENT] ', '').replace('Sent a document: ', '')}
-                            </Text>
-                          </View>
-                          <View style={{ backgroundColor: WHITE, height: 140, marginHorizontal: 12, borderRadius: 12, justifyContent: 'center', alignItems: 'center' }}>
-                            <Paperclip size={48} color="#94a3b8" />
-                          </View>
-                          <TouchableOpacity 
-                            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12, marginTop: 4 }}
-                            onPress={() => {
-                               const parts = msg.text.split('|');
-                               const fileName = parts[0].replace('[DOCUMENT] ', '').replace('Sent a document: ', '');
-                               if (parts.length > 1) {
-                                 const base64Data = parts[1];
-                                 if (Platform.OS === 'web') {
+                {(chatMessages[activeChatId] || []).map((msg: any) => (
+                  <View key={msg.id} style={[styles.messageRow, msg.isSentByMe ? styles.messageRowSent : null]}>
+                    {!msg.isSentByMe && <Image source={{ uri: startups.find(s => s.id === activeChatId)?.avatar }} style={styles.messageAvatar} />}
+                    <View style={[styles.messageContent, msg.isSentByMe ? { alignItems: 'flex-end' } : null]}>
+                      <Text style={styles.messageMeta}>{msg.isSentByMe ? 'You' : startups.find(s => s.id === activeChatId)?.name} • {msg.time}</Text>
+                      <View style={[msg.isSentByMe ? styles.messageBubbleSent : styles.messageBubbleReceived, (msg.text.startsWith('data:image/') || msg.text.startsWith('[DOCUMENT] ') || msg.text.startsWith('Sent a document: ')) && { padding: 0, backgroundColor: 'transparent', elevation: 0, shadowOpacity: 0 }]}>
+                        {msg.text.startsWith('data:image/') ? (
+                          <TouchableOpacity onPress={() => setSelectedImage(msg.text)}>
+                            <Image source={{ uri: msg.text }} style={{ width: 200, height: 200, borderRadius: 8 }} resizeMode="cover" />
+                          </TouchableOpacity>
+                        ) : msg.text.startsWith('[DOCUMENT] ') || msg.text.startsWith('Sent a document: ') ? (
+                          <View style={{ width: 260, backgroundColor: PRIMARY, borderRadius: 16, overflow: 'hidden' }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', padding: 12, paddingBottom: 8 }}>
+                              <Paperclip size={16} color="rgba(255,255,255,0.7)" style={{ marginRight: 8 }} />
+                              <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, fontWeight: '500' }} numberOfLines={1}>
+                                {msg.text.split('|')[0].replace('[DOCUMENT] ', '').replace('Sent a document: ', '')}
+                              </Text>
+                            </View>
+                            <View style={{ backgroundColor: WHITE, height: 140, marginHorizontal: 12, borderRadius: 12, justifyContent: 'center', alignItems: 'center' }}>
+                              <Paperclip size={48} color="#94a3b8" />
+                            </View>
+                            <TouchableOpacity
+                              style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12, marginTop: 4 }}
+                              onPress={() => {
+                                const parts = msg.text.split('|');
+                                const fileName = parts[0].replace('[DOCUMENT] ', '').replace('Sent a document: ', '');
+                                if (parts.length > 1) {
+                                  const base64Data = parts[1];
+                                  if (Platform.OS === 'web') {
                                     const a = document.createElement("a");
                                     a.href = base64Data || '';
                                     a.download = fileName;
                                     a.click();
-                                 } else {
+                                  } else {
                                     Linking.openURL(base64Data || '').catch(() => {
                                       Alert.alert('Download Error', 'Could not open the document.');
                                     });
-                                 }
-                               } else {
-                                 Alert.alert('Download Started', 'Downloading ' + fileName);
-                               }
-                            }}
-                          >
-                            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, paddingRight: 8 }}>
-                              <Paperclip size={14} color="rgba(255,255,255,0.9)" style={{ marginRight: 6 }} />
-                              <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 14, fontWeight: '500' }} numberOfLines={1}>
-                                {msg.text.split('|')[0].replace('[DOCUMENT] ', '').replace('Sent a document: ', '')}
-                              </Text>
-                            </View>
-                            <Download size={18} color="rgba(255,255,255,0.7)" />
-                          </TouchableOpacity>
-                        </View>
-                      ) : (
-                        <Text style={msg.isSentByMe ? styles.messageTextSent : styles.messageTextReceived}>{msg.text}</Text>
-                      )}
+                                  }
+                                } else {
+                                  Alert.alert('Download Started', 'Downloading ' + fileName);
+                                }
+                              }}
+                            >
+                              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, paddingRight: 8 }}>
+                                <Paperclip size={14} color="rgba(255,255,255,0.9)" style={{ marginRight: 6 }} />
+                                <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 14, fontWeight: '500' }} numberOfLines={1}>
+                                  {msg.text.split('|')[0].replace('[DOCUMENT] ', '').replace('Sent a document: ', '')}
+                                </Text>
+                              </View>
+                              <Download size={18} color="rgba(255,255,255,0.7)" />
+                            </TouchableOpacity>
+                          </View>
+                        ) : (
+                          <Text style={msg.isSentByMe ? styles.messageTextSent : styles.messageTextReceived}>{msg.text}</Text>
+                        )}
+                      </View>
                     </View>
                   </View>
-                </View>
+                ))}
+              </>
+            )}
+          </ScrollView>
+
+          {/* Emoji Bar */}
+          {showEmojis && (
+            <View style={{ flexDirection: 'row', backgroundColor: '#f8fafc', padding: 10, justifyContent: 'space-around', borderTopWidth: 1, borderColor: '#e2e8f0' }}>
+              {COMMON_EMOJIS.map(emoji => (
+                <TouchableOpacity key={emoji} onPress={() => setMessage(prev => prev + emoji)}>
+                  <Text style={{ fontSize: 24 }}>{emoji}</Text>
+                </TouchableOpacity>
               ))}
-            </>
-          )}
-        </ScrollView>
-
-        {/* Emoji Bar */}
-        {showEmojis && (
-          <View style={{ flexDirection: 'row', backgroundColor: '#f8fafc', padding: 10, justifyContent: 'space-around', borderTopWidth: 1, borderColor: '#e2e8f0' }}>
-            {COMMON_EMOJIS.map(emoji => (
-              <TouchableOpacity key={emoji} onPress={() => setMessage(prev => prev + emoji)}>
-                <Text style={{ fontSize: 24 }}>{emoji}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-
-        {/* Input Area */}
-        <View style={styles.inputContainer}>
-          {showAttachmentMenu && (
-            <View style={{ position: 'absolute', bottom: 70, left: 16, backgroundColor: WHITE, borderRadius: 12, padding: 8, width: 200, zIndex: 100, elevation: 10, shadowColor: PRIMARY, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 16, borderWidth: 1, borderColor: '#f3e8ff' }}>
-              <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', padding: 16, paddingBottom: 12 }} onPress={handlePickDocument}>
-                <Paperclip size={18} color="#4c1d95" style={{ marginRight: 12 }} />
-                <Text style={{ color: '#4c1d95', fontSize: 15, fontWeight: '500' }}>Attach File</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', padding: 16, paddingTop: 12 }} onPress={handlePickImage}>
-                <LucideImage size={18} color="#4c1d95" style={{ marginRight: 12 }} />
-                <Text style={{ color: '#4c1d95', fontSize: 15, fontWeight: '500' }}>Image</Text>
-              </TouchableOpacity>
             </View>
           )}
-          <View style={styles.inputWrapper}>
-            <TouchableOpacity style={[styles.attachBtn, { backgroundColor: '#f3e8ff', width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' }]} onPress={() => setShowAttachmentMenu(!showAttachmentMenu)} disabled={!activeChatId}>
-              <Plus size={18} color="#8b5cf6" />
-            </TouchableOpacity>
-            <TextInput
-              style={styles.textInput}
-              placeholder="Write a message..."
-              placeholderTextColor="#94a3b8"
-              value={message}
-              onChangeText={setMessage}
-            />
-            <TouchableOpacity style={styles.emojiBtn} onPress={() => setShowEmojis(!showEmojis)}>
-              <Smile size={20} color={TEXT_GRAY} />
+
+          {/* Input Area */}
+          <View style={styles.inputContainer}>
+            {showAttachmentMenu && (
+              <View style={{ position: 'absolute', bottom: 70, left: 16, backgroundColor: WHITE, borderRadius: 12, padding: 8, width: 200, zIndex: 100, elevation: 10, shadowColor: PRIMARY, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 16, borderWidth: 1, borderColor: '#f3e8ff' }}>
+                <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', padding: 16, paddingBottom: 12 }} onPress={handlePickDocument}>
+                  <Paperclip size={18} color="#4c1d95" style={{ marginRight: 12 }} />
+                  <Text style={{ color: '#4c1d95', fontSize: 15, fontWeight: '500' }}>Attach File</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', padding: 16, paddingTop: 12 }} onPress={handlePickImage}>
+                  <LucideImage size={18} color="#4c1d95" style={{ marginRight: 12 }} />
+                  <Text style={{ color: '#4c1d95', fontSize: 15, fontWeight: '500' }}>Image</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            <View style={styles.inputWrapper}>
+              <TouchableOpacity style={[styles.attachBtn, { backgroundColor: '#f3e8ff', width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' }]} onPress={() => setShowAttachmentMenu(!showAttachmentMenu)} disabled={!activeChatId}>
+                <Plus size={18} color="#8b5cf6" />
+              </TouchableOpacity>
+              <TextInput
+                style={styles.textInput}
+                placeholder="Write a message..."
+                placeholderTextColor="#94a3b8"
+                value={message}
+                onChangeText={setMessage}
+              />
+              <TouchableOpacity style={styles.emojiBtn} onPress={() => setShowEmojis(!showEmojis)}>
+                <Smile size={20} color={TEXT_GRAY} />
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity style={[styles.sendBtn, !activeChatId && { opacity: 0.5 }]} onPress={handleSendMessage} disabled={!activeChatId}>
+              <Send size={18} color={WHITE} />
             </TouchableOpacity>
           </View>
-          <TouchableOpacity style={[styles.sendBtn, !activeChatId && { opacity: 0.5 }]} onPress={handleSendMessage} disabled={!activeChatId}>
-            <Send size={18} color={WHITE} />
-          </TouchableOpacity>
-        </View>
 
         </Animated.View>
         {/* Bottom Navigation */}
-        <BottomTabBar activeTab="Messages" />
+        <BottomTabBar activeTab="Chat" />
       </KeyboardAvoidingView>
 
       {/* Image Viewer Modal */}
       <Modal visible={!!selectedImage} transparent animationType="fade">
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center', alignItems: 'center' }}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={{ position: 'absolute', top: 40, right: 20, zIndex: 10, padding: 10 }}
             onPress={() => setSelectedImage(null)}
           >
             <X size={28} color="#fff" />
           </TouchableOpacity>
           <Image source={{ uri: selectedImage || '' }} style={{ width: '100%', height: '70%' }} resizeMode="contain" />
-          <TouchableOpacity 
+          <TouchableOpacity
             style={{ marginTop: 20, backgroundColor: '#5A279B', paddingHorizontal: 24, paddingVertical: 14, borderRadius: 30, flexDirection: 'row', alignItems: 'center' }}
             onPress={() => {
               if (Platform.OS === 'web') {
-                 const a = document.createElement("a");
-                 a.href = selectedImage || '';
-                 a.download = 'image.jpg';
-                 a.click();
+                const a = document.createElement("a");
+                a.href = selectedImage || '';
+                a.download = 'image.jpg';
+                a.click();
               } else {
-                 Linking.openURL(selectedImage || '').catch(() => Alert.alert('Error', 'Could not download image.'));
+                Linking.openURL(selectedImage || '').catch(() => Alert.alert('Error', 'Could not download image.'));
               }
             }}
           >

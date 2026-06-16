@@ -97,7 +97,6 @@ export default function StartupCommunity() {
   );
 
   const handleNavPress = (label: string) => {
-    setActiveTab(label);
     if (label === 'Home') {
       router.navigate({ pathname: '/startup-dashboard' as any, params: { companyName } });
     } else if (label === 'Jobs') {
@@ -200,6 +199,11 @@ function PostItem({ post, companyName, companyLogo }: { post: any, companyName: 
   const initialLikesCount = post.likes ? post.likes.length : 0;
   const initiallyLiked = post.likes ? post.likes.some((l: any) => l.startup?.companyName === companyName) : false;
 
+  const initialRepostsCount = post.reposts ? post.reposts.length : 0;
+  const initiallyReposted = post.reposts ? post.reposts.some((r: any) => r.startup?.companyName === companyName) : false;
+
+  const initiallySaved = post.savedBy ? post.savedBy.some((s: any) => s.startup?.companyName === companyName) : false;
+
   // Fallback to random if no likes field
   const [likesCount, setLikesCount] = useState(post.likes ? initialLikesCount : Math.floor(Math.random() * 100));
   const [liked, setLiked] = useState(initiallyLiked);
@@ -209,6 +213,11 @@ function PostItem({ post, companyName, companyLogo }: { post: any, companyName: 
   const [commentText, setCommentText] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isCommenting, setIsCommenting] = useState(false);
+  const [isReposting, setIsReposting] = useState(false);
+  const [repostCount, setRepostCount] = useState(initialRepostsCount);
+  const [hasReposted, setHasReposted] = useState(initiallyReposted);
+  const [isSaving, setIsSaving] = useState(false);
+  const [hasSaved, setHasSaved] = useState(initiallySaved);
 
   const handleLike = async () => {
     const newLikedState = !liked;
@@ -285,6 +294,61 @@ function PostItem({ post, companyName, companyLogo }: { post: any, companyName: 
     }
   };
 
+  const handleRepost = async () => {
+    if (isReposting) return;
+    const newRepostedState = !hasReposted;
+    setHasReposted(newRepostedState);
+    setRepostCount((prev: number) => newRepostedState ? prev + 1 : prev - 1);
+    setIsReposting(true);
+    
+    try {
+      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend.onrender.com' : 'https://thodakkam-backend.onrender.com';
+      const res = await fetch(`${baseUrl}/api/posts/${post.id}/repost`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ companyName: companyName })
+      });
+      const data = await res.json();
+      if (!data.success) {
+        // Revert on failure
+        setHasReposted(!newRepostedState);
+        setRepostCount((prev: number) => newRepostedState ? prev - 1 : prev + 1);
+      }
+    } catch (err) {
+      console.error(err);
+      // Revert on failure
+      setHasReposted(!newRepostedState);
+      setRepostCount((prev: number) => newRepostedState ? prev - 1 : prev + 1);
+    } finally {
+      setIsReposting(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (isSaving) return;
+    const newSavedState = !hasSaved;
+    setHasSaved(newSavedState);
+    setIsSaving(true);
+    
+    try {
+      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend.onrender.com' : 'https://thodakkam-backend.onrender.com';
+      const res = await fetch(`${baseUrl}/api/posts/${post.id}/save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ companyName })
+      });
+      const data = await res.json();
+      if (!data.success) {
+        setHasSaved(!newSavedState);
+      }
+    } catch (err) {
+      console.error(err);
+      setHasSaved(!newSavedState);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <View style={styles.postCard}>
       <View style={styles.postHeader}>
@@ -329,13 +393,13 @@ function PostItem({ post, companyName, companyLogo }: { post: any, companyName: 
           <Text style={[styles.footerActionText, showComments && { color: PRIMARY }]}>{comments.length}</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.footerAction}>
-          <Repeat size={20} color={GRAY} />
-          <Text style={styles.footerActionText}>0</Text>
+        <TouchableOpacity style={styles.footerAction} onPress={handleRepost} disabled={isReposting}>
+          <Repeat size={20} color={hasReposted ? PRIMARY : GRAY} />
+          <Text style={[styles.footerActionText, hasReposted && { color: PRIMARY }]}>{repostCount}</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={[styles.footerAction, styles.shareAction]}>
-          <Bookmark size={18} color={GRAY} />
+        <TouchableOpacity style={[styles.footerAction, styles.shareAction]} onPress={handleSave} disabled={isSaving}>
+          <Bookmark size={18} color={hasSaved ? PRIMARY : GRAY} fill={hasSaved ? PRIMARY : 'transparent'} />
         </TouchableOpacity>
       </View>
 

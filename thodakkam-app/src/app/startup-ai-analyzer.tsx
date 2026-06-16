@@ -27,7 +27,6 @@ export default function StartupAiAnalyzer() {
   const [activeTab, setActiveTab] = useState('Candidates');
 
   const handleNavPress = (label: string) => {
-    setActiveTab(label);
     if (label === 'Home') router.navigate({ pathname: '/startup-dashboard' as any, params: { companyName } });
     else if (label === 'Jobs') router.navigate({ pathname: '/startup-jobs' as any, params: { companyName } });
     else if (label === 'Candidates') router.navigate({ pathname: '/startup-candidates' as any, params: { companyName } });

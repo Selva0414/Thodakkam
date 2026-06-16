@@ -31,7 +31,6 @@ export default function AdminSettings() {
   const [notifInvestor, setNotifInvestor] = useState(true);
 
   const handleTabPress = (label: string) => {
-    setActiveTab(label);
     if (label === 'Home') {
       router.navigate('/admin-dashboard' as any);
     } else if (label === 'Startups') {

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, Pressable, SafeAreaView, ScrollView, Platform, Dimensions, Image, useWindowDimensions, LayoutAnimation } from 'react-native';
-import { useVideoPlayer, VideoView } from 'expo-video';
+import { useVideoPlayer, VideoView, VideoPlayer } from 'expo-video';
 import { useRouter } from 'expo-router';
 import { Briefcase, GraduationCap, ShieldCheck, ArrowRight, Sparkles, Star, MessageSquare, CheckCircle2, Check, Zap, Activity, TrendingUp, UserCog, X, ChevronLeft, ChevronRight, Rocket } from 'lucide-react-native';
 import Animated, { FadeIn, FadeInDown, FadeInUp, FadeOutDown, useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing } from 'react-native-reanimated';
@@ -957,7 +957,7 @@ export default function HomeScreen() {
   const { height, width } = useWindowDimensions();
   const isMobile = width < 768;
 
-  const player = useVideoPlayer(require('../../assets/images/background-video.mp4'), player => {
+  const player = useVideoPlayer(require('../../assets/images/Backgound.mp4'), (player: VideoPlayer) => {
     player.loop = true;
     player.muted = true;
     player.play();
@@ -973,7 +973,7 @@ export default function HomeScreen() {
             {/* Background video */}
             {Platform.OS === 'web' ? (
               <video
-                src={require('../../assets/images/background-video.mp4')}
+                src={require('../../assets/images/Backgound.mp4')}
                 autoPlay
                 loop
                 muted
