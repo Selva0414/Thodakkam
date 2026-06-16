@@ -110,9 +110,9 @@ export default function ForgotPassword() {
       if (data.success) {
         Alert.alert("Success", "Password updated successfully", [
           { text: "OK", onPress: () => {
-              if (role === 'student') router.replace('/login');
-              else if (role === 'startup') router.replace('/startup-login');
-              else if (role === 'admin') router.replace('/admin-login');
+              if (role === 'student') router.navigate('/login');
+              else if (role === 'startup') router.navigate('/startup-login');
+              else if (role === 'admin') router.navigate('/admin-login');
               else router.back();
           } }
         ]);

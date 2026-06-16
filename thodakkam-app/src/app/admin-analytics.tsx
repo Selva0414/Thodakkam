@@ -24,13 +24,13 @@ export default function AdminAnalytics() {
   const handleTabPress = (label: string) => {
     setActiveTab(label);
     if (label === 'Home') {
-      router.replace('/admin-dashboard' as any);
+      router.navigate('/admin-dashboard' as any);
     } else if (label === 'Startups') {
-      router.replace('/admin-startups' as any);
+      router.navigate('/admin-startups' as any);
     } else if (label === 'Students') {
-      router.replace('/admin-students' as any);
+      router.navigate('/admin-students' as any);
     } else if (label === 'Settings') {
-      router.replace('/admin-settings' as any);
+      router.navigate('/admin-settings' as any);
     }
   };
 
@@ -126,7 +126,7 @@ export default function AdminAnalytics() {
           </View>
           
           <View style={styles.lineChartContainer}>
-            <Svg height="120" width="100%" viewBox="0 0 300 120">
+            <View collapsable={false}><Svg height="120" width="100%" viewBox="0 0 300 120">
               {/* Grid Lines */}
               <Path d="M0,20 L300,20" stroke="#f1f5f9" strokeWidth="1" />
               <Path d="M0,60 L300,60" stroke="#f1f5f9" strokeWidth="1" />
@@ -137,7 +137,7 @@ export default function AdminAnalytics() {
               
               {/* Current Line */}
               <Path d="M10,100 Q60,40 120,70 T230,10 L290,100" fill="none" stroke="#0f172a" strokeWidth="3" />
-            </Svg>
+            </Svg></View>
             <View style={styles.chartXAxis}>
               {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
                 <Text key={day} style={styles.xAxisLabel}>{day}</Text>
@@ -151,7 +151,7 @@ export default function AdminAnalytics() {
           <Text style={styles.cardTitle}>Startup Categories</Text>
           <View style={styles.donutContainer}>
             <View style={styles.donutBox}>
-              <Svg height="120" width="120" viewBox="0 0 100 100">
+              <View collapsable={false}><Svg height="120" width="120" viewBox="0 0 100 100">
                 {/* Background Ring */}
                 <Circle cx="50" cy="50" r="40" stroke="#f1f5f9" strokeWidth="12" fill="none" />
                 {/* Fintech 45% */}
@@ -162,7 +162,7 @@ export default function AdminAnalytics() {
                 <Circle cx="50" cy="50" r="40" stroke="#22c55e" strokeWidth="12" strokeDasharray="37 251" strokeDashoffset="-163" fill="none" strokeLinecap="round" />
                 {/* EdTech 10% */}
                 <Circle cx="50" cy="50" r="40" stroke="#94a3b8" strokeWidth="12" strokeDasharray="25 251" strokeDashoffset="-200" fill="none" strokeLinecap="round" />
-              </Svg>
+              </Svg></View>
               <View style={styles.donutCenter}>
                 <Text style={styles.donutCenterText}>100%</Text>
               </View>

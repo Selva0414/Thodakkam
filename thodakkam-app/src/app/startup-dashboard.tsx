@@ -135,10 +135,10 @@ export default function StartupDashboard() {
         </ScrollView>
 
         {/* Candidate Growth Chart */}
-        <View style={[styles.chartCard, { zIndex: 50, elevation: 50 }]}>
-          <View style={[styles.cardHeader, { zIndex: 50, elevation: 50 }]}>
+        <View style={[styles.chartCard, { zIndex: 50, elevation: 5 }]}>
+          <View style={[styles.cardHeader, { zIndex: 50, elevation: 5 }]}>
             <Text style={styles.cardTitle}>Candidate Growth</Text>
-            <View style={{ zIndex: 50, elevation: 50 }}>
+            <View style={{ zIndex: 50, elevation: 5 }}>
               <TouchableOpacity 
                 style={styles.dropdownBtn}
                 onPress={() => setIsChartDropdownOpen(!isChartDropdownOpen)}

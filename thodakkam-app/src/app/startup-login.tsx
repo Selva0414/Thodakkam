@@ -43,7 +43,7 @@ export default function StartupLoginScreen() {
         await AsyncStorage.setItem('startupCompanyName', data.startup.companyName);
         alert(`Welcome back, ${data.startup.founderName}!`);
         // Navigate to the startup dashboard
-        router.replace({
+        router.navigate({
           pathname: '/startup-dashboard',
           params: { companyName: data.startup.companyName }
         });
@@ -149,7 +149,7 @@ export default function StartupLoginScreen() {
 
             <TouchableOpacity 
               style={styles.backHomeButton} 
-              onPress={() => router.replace('/')}
+              onPress={() => router.navigate('/')}
             >
               <ArrowLeft size={16} color="#64748b" style={{ marginRight: 6 }} />
               <Text style={styles.backHomeText}>Back to Home</Text>

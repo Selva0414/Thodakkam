@@ -70,13 +70,13 @@ export default function StartupCandidates() {
   const handleNavPress = (label: string) => {
     setActiveTab(label);
     if (label === 'Home') {
-      router.replace({ pathname: '/startup-dashboard' as any, params: { companyName } });
+      router.navigate({ pathname: '/startup-dashboard' as any, params: { companyName } });
     } else if (label === 'Jobs') {
-      router.replace({ pathname: '/startup-jobs' as any, params: { companyName } });
+      router.navigate({ pathname: '/startup-jobs' as any, params: { companyName } });
     } else if (label === 'Interviews') {
-      router.replace({ pathname: '/startup-interviews' as any, params: { companyName } });
+      router.navigate({ pathname: '/startup-interviews' as any, params: { companyName } });
     } else if (label === 'Feed') {
-      router.replace({ pathname: '/startup-community' as any, params: { companyName } });
+      router.navigate({ pathname: '/startup-community' as any, params: { companyName } });
     }
   };
 
@@ -163,11 +163,11 @@ export default function StartupCandidates() {
 
                     {/* ATS Score Circle */}
                     <View style={styles.atsContainer}>
-                      <Svg width="40" height="40" viewBox="0 0 40 40">
+                      <View collapsable={false}><Svg width="40" height="40" viewBox="0 0 40 40">
                         <Circle cx="20" cy="20" r={ATS_CIRCLE_RADIUS} stroke="#f1f5f9" strokeWidth="3" fill="none" />
                         <Circle cx="20" cy="20" r={ATS_CIRCLE_RADIUS} stroke={atsColor} strokeWidth="3" fill="none" strokeDasharray={ATS_CIRCLE_CIRCUMFERENCE} strokeDashoffset={progressStroke} strokeLinecap="round" transform="rotate(-90 20 20)" />
                         <SvgText x="20" y="24" fontSize="10" fontWeight="bold" fill={atsColor} textAnchor="middle">{app.atsScore}%</SvgText>
-                      </Svg>
+                      </Svg></View>
                     </View>
                   </View>
 

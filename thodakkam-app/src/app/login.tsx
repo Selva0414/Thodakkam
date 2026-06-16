@@ -68,7 +68,7 @@ export default function LoginScreen() {
       const data = await response.json();
       if (data.success && data.user) {
         await AsyncStorage.setItem('studentUserId', data.user.id);
-        router.replace({
+        router.navigate({
           pathname: '/student-dashboard',
           params: { userId: data.user.id }
         });
@@ -78,7 +78,7 @@ export default function LoginScreen() {
     } catch (err) {
       // Server unreachable – fall back to sample credentials
       if (email.trim().toLowerCase() === 'student@thodakkam.edu' && password === 'Student@123') {
-        router.replace({
+        router.navigate({
           pathname: '/student-dashboard',
           params: { userName: 'Student' }
         });

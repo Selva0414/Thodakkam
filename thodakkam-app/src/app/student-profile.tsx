@@ -246,7 +246,7 @@ export default function StudentProfile() {
         <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
         <View style={styles.headerRow}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <TouchableOpacity onPress={() => { if (router.canGoBack()) { router.back(); } else { router.replace('/student-dashboard'); } }} style={styles.backBtn}>
+            <TouchableOpacity onPress={() => { if (router.canGoBack()) { router.back(); } else { router.navigate('/student-dashboard'); } }} style={styles.backBtn}>
               <ArrowLeft size={24} color={DARK} />
             </TouchableOpacity>
             <Text style={styles.pageTitle}>My Profile</Text>

@@ -167,7 +167,7 @@ export default function StudentCodingExam() {
             <CheckCircle size={32} color="#10b981" />
             <Text style={styles.successTitle}>Already Completed</Text>
             <Text style={styles.successSubtitle}>You have already passed this coding assessment.</Text>
-            <TouchableOpacity style={styles.returnBtn} onPress={() => router.replace('/student-assessments')}>
+            <TouchableOpacity style={styles.returnBtn} onPress={() => router.navigate('/student-assessments')}>
               <Text style={styles.returnBtnText}>Return to Dashboard</Text>
             </TouchableOpacity>
           </View>
@@ -176,7 +176,7 @@ export default function StudentCodingExam() {
             <CheckCircle size={32} color="#10b981" />
             <Text style={styles.successTitle}>Assessment Passed</Text>
             <Text style={styles.successSubtitle}>You successfully passed the coding round. The startup has been notified of your result.</Text>
-            <TouchableOpacity style={styles.returnBtn} onPress={() => router.replace('/student-assessments')}>
+            <TouchableOpacity style={styles.returnBtn} onPress={() => router.navigate('/student-assessments')}>
               <Text style={styles.returnBtnText}>Return to Dashboard</Text>
             </TouchableOpacity>
           </View>

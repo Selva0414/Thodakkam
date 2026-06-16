@@ -35,7 +35,7 @@ export default function AdminLoginScreen() {
 
       if (response.ok) {
         alert('Master Admin login successful!');
-        router.replace('/admin-dashboard');
+        router.navigate('/admin-dashboard');
       } else {
         setErrorMessage(data.message || 'Invalid credentials.');
       }

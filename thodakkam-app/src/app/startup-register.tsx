@@ -206,7 +206,7 @@ export default function StartupRegisterScreen() {
                   style={styles.modalCloseButton}
                   onPress={() => {
                     setShowSuccessModal(false);
-                    router.replace('/startup-login');
+                    router.navigate('/startup-login');
                   }}
                 >
                   <X size={20} color="#662483" />

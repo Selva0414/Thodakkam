@@ -235,13 +235,13 @@ export default function AdminDashboard() {
               onPress={() => {
                 setActiveTab(item.label);
                 if (item.label === 'Startups') {
-                  router.replace('/admin-startups' as any);
+                  router.navigate('/admin-startups' as any);
                 } else if (item.label === 'Students') {
-                  router.replace('/admin-students' as any);
+                  router.navigate('/admin-students' as any);
                 } else if (item.label === 'Analytics') {
-                  router.replace('/admin-analytics' as any);
+                  router.navigate('/admin-analytics' as any);
                 } else if (item.label === 'Settings') {
-                  router.replace('/admin-settings' as any);
+                  router.navigate('/admin-settings' as any);
                 }
               }}
             >

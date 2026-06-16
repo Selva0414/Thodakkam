@@ -99,13 +99,13 @@ export default function StartupCommunity() {
   const handleNavPress = (label: string) => {
     setActiveTab(label);
     if (label === 'Home') {
-      router.replace({ pathname: '/startup-dashboard' as any, params: { companyName } });
+      router.navigate({ pathname: '/startup-dashboard' as any, params: { companyName } });
     } else if (label === 'Jobs') {
-      router.replace({ pathname: '/startup-jobs' as any, params: { companyName } });
+      router.navigate({ pathname: '/startup-jobs' as any, params: { companyName } });
     } else if (label === 'Candidates') {
-      router.replace({ pathname: '/startup-candidates' as any, params: { companyName } });
+      router.navigate({ pathname: '/startup-candidates' as any, params: { companyName } });
     } else if (label === 'Interviews') {
-      router.replace({ pathname: '/startup-interviews' as any, params: { companyName } });
+      router.navigate({ pathname: '/startup-interviews' as any, params: { companyName } });
     }
   };
 

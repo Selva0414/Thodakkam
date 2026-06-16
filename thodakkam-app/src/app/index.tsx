@@ -64,14 +64,14 @@ export default function HomeScreen() {
       try {
         const studentId = await AsyncStorage.getItem('studentUserId');
         if (studentId) {
-          router.replace({ pathname: '/student-dashboard', params: { userId: studentId } });
+          router.navigate({ pathname: '/student-dashboard', params: { userId: studentId } });
           return;
         }
         const startupId = await AsyncStorage.getItem('startupId');
         const startupCompanyName = await AsyncStorage.getItem('startupCompanyName');
         if (startupId) {
           if (startupCompanyName) {
-            router.replace({ pathname: '/startup-dashboard', params: { startupId, companyName: startupCompanyName } });
+            router.navigate({ pathname: '/startup-dashboard', params: { startupId, companyName: startupCompanyName } });
             return;
           } else {
             // Broken state (old login without company name), force re-login

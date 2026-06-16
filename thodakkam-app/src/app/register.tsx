@@ -278,7 +278,7 @@ export default function RegisterScreen() {
                 style={styles.modalDashboardButton}
                 onPress={() => {
                   setShowSuccessModal(false);
-                  router.replace('/login');
+                  router.navigate('/login');
                 }}
               >
                 <LayoutGrid size={18} color="#ffffff" style={{ marginRight: 8 }} />
@@ -448,7 +448,7 @@ export default function RegisterScreen() {
 
         {/* Bottom Bar */}
         <View style={styles.bottomBar}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => router.replace('/')}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.navigate('/')}>
             <Text style={styles.backBtnText}>Back</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.completeBtn} onPress={handleCompleteProfile}>

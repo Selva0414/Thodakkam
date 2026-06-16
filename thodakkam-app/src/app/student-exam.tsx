@@ -137,7 +137,7 @@ export default function StudentExam() {
             <CheckCircle size={32} color="#10b981" />
             <Text style={styles.successTitle}>Already Completed</Text>
             <Text style={styles.successSubtitle}>You have already attended and submitted this assessment.</Text>
-            <TouchableOpacity style={styles.returnBtn} onPress={() => router.replace('/student-assessments')}>
+            <TouchableOpacity style={styles.returnBtn} onPress={() => router.navigate('/student-assessments')}>
               <Text style={styles.returnBtnText}>Return to Dashboard</Text>
             </TouchableOpacity>
           </View>
@@ -148,7 +148,7 @@ export default function StudentExam() {
             <CheckCircle size={32} color="#10b981" />
             <Text style={styles.successTitle}>Exam Submitted</Text>
             <Text style={styles.successSubtitle}>Your responses have been recorded and sent to the startup.</Text>
-            <TouchableOpacity style={styles.returnBtn} onPress={() => router.replace('/student-assessments')}>
+            <TouchableOpacity style={styles.returnBtn} onPress={() => router.navigate('/student-assessments')}>
               <Text style={styles.returnBtnText}>Return to Dashboard</Text>
             </TouchableOpacity>
           </View>

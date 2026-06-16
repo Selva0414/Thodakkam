@@ -23,13 +23,13 @@ export default function AdminStudents() {
   const handleTabPress = (label: string) => {
     setActiveTab(label);
     if (label === 'Home') {
-      router.replace('/admin-dashboard' as any);
+      router.navigate('/admin-dashboard' as any);
     } else if (label === 'Startups') {
-      router.replace('/admin-startups' as any);
+      router.navigate('/admin-startups' as any);
     } else if (label === 'Analytics') {
-      router.replace('/admin-analytics' as any);
+      router.navigate('/admin-analytics' as any);
     } else if (label === 'Settings') {
-      router.replace('/admin-settings' as any);
+      router.navigate('/admin-settings' as any);
     }
   };
 

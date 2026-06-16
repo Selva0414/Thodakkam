@@ -38,7 +38,7 @@ function BottomTabBar() {
             key={label} 
             style={tabBarStyles.tab} 
             onPress={() => {
-              if (path) router.replace(path as any);
+              if (path) router.navigate(path as any);
             }}
           >
             <View style={[{ padding: 8, borderRadius: 20 }, isActive && { backgroundColor: PRIMARY + '20', transform: [{ scale: 1.1 }] }]}>
