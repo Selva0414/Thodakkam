@@ -1342,7 +1342,7 @@ export default function HomeScreen() {
   const { height, width } = useWindowDimensions();
   const isMobile = width < 768;
 
-  const player = useVideoPlayer(require('../../assets/images/background-video.mp4'), (player: any) => {
+  const player = useVideoPlayer(require('../../assets/images/Backgound.mp4'), (player: any) => {
     player.loop = true;
     player.muted = true;
     player.play();
@@ -1364,7 +1364,7 @@ export default function HomeScreen() {
             {/* Background video */}
             {Platform.OS === 'web' ? (
               <video
-                src={require('../../assets/images/background-video.mp4')}
+                src={require('../../assets/images/Backgound.mp4')}
                 autoPlay
                 loop
                 muted

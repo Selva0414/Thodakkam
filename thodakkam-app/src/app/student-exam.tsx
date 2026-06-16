@@ -124,7 +124,7 @@ export default function StudentExam() {
     });
 
     const percent = totalScore > 0 ? Math.round((score / totalScore) * 100) : 0;
-    alert(`Assessment submitted successfully! You scored ${percent}%`);
+    alert(`Assessment submitted successfully!`);
     
     if (assessmentId) {
       await AsyncStorage.setItem(`assessment_completed_${assessmentId}`, 'true');
