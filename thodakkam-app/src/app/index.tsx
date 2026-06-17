@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, Text, View, Pressable, SafeAreaView, ScrollView, Platform, Dimensions, Image, useWindowDimensions, LayoutAnimation } from 'react-native';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useRouter } from 'expo-router';
 import { Image as ExpoImage } from 'expo-image';
 import { Briefcase, GraduationCap, ShieldCheck, ArrowRight, Sparkles, Star, MessageSquare, CheckCircle2, Check, Zap, Activity, TrendingUp, UserCog, X, ChevronLeft, ChevronRight, Rocket } from 'lucide-react-native';
 import Animated, { FadeIn, FadeInDown, FadeInUp, FadeOutDown, useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing } from 'react-native-reanimated';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 const { width } = Dimensions.get('window');
 const PRIMARY = '#722DB6';
 const PRIMARY_DARK = '#5A279B';
@@ -375,37 +374,37 @@ function SuperchargeSection() {
       </View>
 
       {/* Mockup Box (Stacked under the text, animated) */}
-      <Animated.View entering={FadeInUp.duration(1000).delay(300).springify()} style={[{ width: '100%', backgroundColor: '#ffffff', borderRadius: 24, padding: 32, borderWidth: 1, borderColor: '#f1f5f9', ...Platform.select({ web: { boxShadow: '0 20px 60px rgba(0,0,0,0.06)' } }) }, animatedFloatingStyle]}>
+      <Animated.View entering={FadeInUp.duration(1000).delay(300).springify()} style={[{ width: '100%', backgroundColor: '#ffffff', borderRadius: 24, padding: isMobile ? 16 : 32, borderWidth: 1, borderColor: '#f1f5f9', ...Platform.select({ web: { boxShadow: '0 20px 60px rgba(0,0,0,0.06)' } }) }, animatedFloatingStyle]}>
         <Text style={{ fontSize: 18, fontWeight: '800', color: '#0f172a', marginBottom: 24 }}>Active Shortlist • Frontend Developer</Text>
         
         {/* Item 1 */}
-        <View style={{ backgroundColor: '#f8fafc', borderRadius: 16, padding: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, borderWidth: 1, borderColor: '#f1f5f9' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: PRIMARY, alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
+        <View style={{ backgroundColor: '#f8fafc', borderRadius: 16, padding: isMobile ? 12 : 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, borderWidth: 1, borderColor: '#f1f5f9' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+            <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: PRIMARY, alignItems: 'center', justifyContent: 'center', marginRight: isMobile ? 12 : 16 }}>
               <Text style={{ color: '#fff', fontSize: 16, fontWeight: '800' }}>AS</Text>
             </View>
-            <View>
+            <View style={{ flex: 1, marginRight: 8 }}>
               <Text style={{ fontSize: 16, fontWeight: '800', color: '#0f172a' }}>Shabari</Text>
               <Text style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>React • TailwindCSS</Text>
             </View>
           </View>
-          <View style={{ backgroundColor: '#f3e8ff', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20 }}>
+          <View style={{ backgroundColor: '#f3e8ff', paddingHorizontal: isMobile ? 8 : 12, paddingVertical: 8, borderRadius: 20 }}>
             <Text style={{ color: PRIMARY, fontSize: 11, fontWeight: '800', letterSpacing: 0.5 }}>98% MATCH</Text>
           </View>
         </View>
 
         {/* Item 2 */}
-        <View style={{ backgroundColor: '#f8fafc', borderRadius: 16, padding: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: '#f1f5f9' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: '#c084fc', alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
+        <View style={{ backgroundColor: '#f8fafc', borderRadius: 16, padding: isMobile ? 12 : 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: '#f1f5f9' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+            <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: '#c084fc', alignItems: 'center', justifyContent: 'center', marginRight: isMobile ? 12 : 16 }}>
               <Text style={{ color: '#fff', fontSize: 16, fontWeight: '800' }}>MU</Text>
             </View>
-            <View>
+            <View style={{ flex: 1, marginRight: 8 }}>
               <Text style={{ fontSize: 16, fontWeight: '800', color: '#0f172a' }}>Mukesh</Text>
               <Text style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>Vue.js • Node.js</Text>
             </View>
           </View>
-          <View style={{ backgroundColor: '#dcfce7', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20 }}>
+          <View style={{ backgroundColor: '#dcfce7', paddingHorizontal: isMobile ? 8 : 12, paddingVertical: 8, borderRadius: 20 }}>
             <Text style={{ color: '#10b981', fontSize: 11, fontWeight: '800', letterSpacing: 0.5 }}>92% MATCH</Text>
           </View>
         </View>
@@ -1154,7 +1153,7 @@ function SuccessStoriesSection() {
     }
 
     const targetAngle = -90 + continuousIndex.current * 72;
-    const targetRadius = (activeIndex % 2 === 0 ? 120 : 180) - 26;
+    const targetRadius = (activeIndex % 2 === 0 ? 90 : 140) - 26;
 
     indicatorAngle.value = withTiming(targetAngle, { duration: 800, easing: Easing.out(Easing.back(1.2)) });
     indicatorWidth.value = withTiming(targetRadius, { duration: 800, easing: Easing.out(Easing.back(1.2)) });
@@ -1221,8 +1220,8 @@ function SuccessStoriesSection() {
            {/* The animated pointing line */}
            <Animated.View style={[{
              position: 'absolute',
-             left: 200,
-             top: 199,
+             left: 160,
+             top: 159,
              height: 2,
              backgroundColor: PRIMARY,
              zIndex: 8,
@@ -1232,7 +1231,7 @@ function SuccessStoriesSection() {
            {SUCCESS_STORIES.map((story, i) => {
              const isActive = i === activeIndex;
              const angle = (i / SUCCESS_STORIES.length) * Math.PI * 2 - Math.PI / 2;
-             const radius = i % 2 === 0 ? 120 : 180;
+             const radius = i % 2 === 0 ? 90 : 140;
              const x = Math.cos(angle) * radius;
              const y = Math.sin(angle) * radius;
              
@@ -1343,25 +1342,7 @@ export default function HomeScreen() {
   const { height, width } = useWindowDimensions();
   const isMobile = width < 768;
 
-  useEffect(() => {
-    const checkLoginStatus = async () => {
-      try {
-        const studentUserId = await AsyncStorage.getItem('studentUserId');
-        const startupId = await AsyncStorage.getItem('startupId');
-
-        if (studentUserId) {
-          router.replace('/student-dashboard');
-        } else if (startupId) {
-          router.replace('/startup-dashboard');
-        }
-      } catch (error) {
-        console.error('Error checking login status:', error);
-      }
-    };
-    checkLoginStatus();
-  }, []);
-
-  const player = useVideoPlayer(require('../../assets/images/Backgound.mp4'), (player: any) => {
+  const player = useVideoPlayer(require('../../assets/images/background-video.mp4'), (player: any) => {
     player.loop = true;
     player.muted = true;
     player.play();
@@ -1373,9 +1354,7 @@ export default function HomeScreen() {
 
         {/* Top Navigation / Logo */}
         <Animated.View entering={FadeInDown.duration(800).delay(100)} style={{ width: '100%', maxWidth: 1200, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', marginBottom: 10 }}>
-          <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', borderWidth: 2, borderColor: '#9333ea', marginRight: 16 }}>
-            <Image source={require('../../assets/images/Thodakkam-circle.png')} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
-          </View>
+          <Image source={require('../../assets/images/Thodakkam logo.jpeg')} style={{ width: 64, height: 64, marginRight: 16 }} resizeMode="contain" />
           <Text style={{ fontSize: 38, fontWeight: '900', color: '#9333ea', letterSpacing: -1 }}>Thodakkam</Text>
         </Animated.View>
 
@@ -1385,7 +1364,7 @@ export default function HomeScreen() {
             {/* Background video */}
             {Platform.OS === 'web' ? (
               <video
-                src={require('../../assets/images/Backgound.mp4')}
+                src={require('../../assets/images/background-video.mp4')}
                 autoPlay
                 loop
                 muted
@@ -1425,9 +1404,11 @@ export default function HomeScreen() {
             ]}>
               Where Ambitious{'\n'}Students Meet <TypewriterText strings={TYPEWRITER_STRINGS} />
             </Text>
-            <Text style={[styles.heroSubtitle, isMobile && { fontSize: 14, lineHeight: 22 }]}>
-              India's AI-powered hiring ecosystem by Echo Digital Works. Startups discover verified student talent in minutes, while students build real-world proof of work and land high-growth internship roles.
-            </Text>
+            <View style={[styles.glassTextContainer, isMobile && { padding: 12 }]}>
+              <Text style={[styles.heroSubtitle, isMobile && { fontSize: 14, lineHeight: 22 }]}>
+                India's AI-powered hiring ecosystem by Echo Digital Works. Startups discover verified student talent in minutes, while students build real-world proof of work and land high-growth internship roles.
+              </Text>
+            </View>
           </Animated.View>
         </View>
 
@@ -1519,7 +1500,7 @@ const styles = StyleSheet.create({
     paddingVertical: 80,
     borderRadius: 32,
     overflow: 'hidden',
-    backgroundColor: '#000000',
+    backgroundColor: '#ffffff',
   },
   heroContent: {
     alignItems: 'center',
@@ -1530,19 +1511,14 @@ const styles = StyleSheet.create({
   heroAnimationContainer: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 1,
-  }, heroAnimation: {
+  }, 
+  heroAnimation: {
     width: '100%',
     height: '100%',
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)', // Increased fade to 15% for text readability
-    ...Platform.select({
-      web: {
-        backdropFilter: 'blur(0px)',
-        WebkitBackdropFilter: 'blur(0px)',
-      }
-    }),
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     zIndex: 1,
   },
   badge: {
@@ -1568,6 +1544,17 @@ const styles = StyleSheet.create({
     letterSpacing: -1,
     lineHeight: Platform.OS === 'web' ? 64 : 48,
     marginBottom: 20,
+  },
+  glassTextContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.4)',
+    borderRadius: 16,
+    padding: 20,
+    ...Platform.select({
+      web: {
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
+      }
+    }),
   },
   heroSubtitle: {
     fontSize: Platform.OS === 'web' ? 20 : 16,
@@ -1945,8 +1932,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#f1f5f9',
     gap: 16,
-    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.02)',
     elevation: 2,
+    ...Platform.select({
+      web: { boxShadow: '0 4px 20px rgba(0, 0, 0, 0.02)' }
+    }),
   },
   opWidgetItem: {
     flexDirection: 'row',
@@ -2335,9 +2324,9 @@ const styles = StyleSheet.create({
   successTitle: { fontSize: Platform.OS === 'web' ? 42 : 32, fontWeight: '800', color: '#0f172a', marginBottom: 12, textAlign: 'center', letterSpacing: -1 },
   successSubtitle: { fontSize: 16, color: '#64748b', textAlign: 'center', marginBottom: 60, maxWidth: 600, lineHeight: 24 },
   successContent: { flexDirection: 'row', width: '100%', alignItems: 'center', justifyContent: 'center', gap: 60 },
-  successOrbitContainer: { width: 400, height: 400, alignItems: 'center', justifyContent: 'center', position: 'relative' },
-  successOrbitRing1: { position: 'absolute', width: 240, height: 240, borderRadius: 120, borderWidth: 1, borderColor: '#e2e8f0', borderStyle: 'dashed' },
-  successOrbitRing2: { position: 'absolute', width: 360, height: 360, borderRadius: 180, borderWidth: 1, borderColor: '#e2e8f0', borderStyle: 'dashed' },
+  successOrbitContainer: { width: 320, height: 320, alignItems: 'center', justifyContent: 'center', position: 'relative' },
+  successOrbitRing1: { position: 'absolute', width: 180, height: 180, borderRadius: 90, borderWidth: 1, borderColor: '#e2e8f0', borderStyle: 'dashed' },
+  successOrbitRing2: { position: 'absolute', width: 280, height: 280, borderRadius: 140, borderWidth: 1, borderColor: '#e2e8f0', borderStyle: 'dashed' },
   successOrbitCenter: { width: 48, height: 48, borderRadius: 24, backgroundColor: PRIMARY, alignItems: 'center', justifyContent: 'center', zIndex: 10, ...Platform.select({ web: { boxShadow: `0 0 20px rgba(114, 45, 182, 0.4)` } }) },
   successAvatarWrapper: { position: 'absolute', width: 48, height: 48, borderRadius: 24, padding: 3, backgroundColor: '#ffffff', zIndex: 5, ...Platform.select({ web: { transition: 'all 0.3s ease' }}) },
   successAvatar: { width: '100%', height: '100%', borderRadius: 20, overflow: 'hidden' },

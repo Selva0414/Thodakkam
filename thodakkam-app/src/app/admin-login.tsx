@@ -151,14 +151,7 @@ export default function AdminLoginScreen() {
               </Text>
             </TouchableOpacity>
 
-            <View style={styles.signupContainer}>
-              <Text style={styles.signupText}>
-                Don't have an account?{' '}
-                <Text style={styles.signupBold} onPress={() => {/* Handle Register */}}>
-                  Sign Up
-                </Text>
-              </Text>
-            </View>
+
 
           </View>
 
