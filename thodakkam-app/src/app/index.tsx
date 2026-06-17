@@ -1354,7 +1354,7 @@ export default function HomeScreen() {
 
         {/* Top Navigation / Logo */}
         <Animated.View entering={FadeInDown.duration(800).delay(100)} style={{ width: '100%', maxWidth: 1200, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', marginBottom: 10 }}>
-          <Image source={require('../../assets/images/Thodakkam logo.png')} style={{ width: 64, height: 64, marginRight: 16 }} resizeMode="contain" />
+          <Image source={require('../../assets/images/Thodakkam logo.jpeg')} style={{ width: 64, height: 64, marginRight: 16 }} resizeMode="contain" />
           <Text style={{ fontSize: 38, fontWeight: '900', color: '#9333ea', letterSpacing: -1 }}>Thodakkam</Text>
         </Animated.View>
 
