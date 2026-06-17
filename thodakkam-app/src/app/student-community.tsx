@@ -13,6 +13,9 @@ import { useCallback } from 'react';
 import StudentHeader from '../components/StudentHeader';
 import { userStore } from '../utils/userStore';
 import { useAppTheme } from '../context/ThemeContext';
+import { Dimensions, Modal } from 'react-native';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 function BottomTabBar() {
   const router = useRouter();
@@ -81,16 +84,42 @@ export default function StudentCommunity() {
       if (data.success) {
         const processedPosts = data.posts.map((post: any) => {
           let pImageUrl = post.imageUrl;
-          if (pImageUrl && !pImageUrl.startsWith('http') && !pImageUrl.startsWith('data:image')) {
-            const filename = pImageUrl.split(/[/\\]/).pop();
-            pImageUrl = `${baseUrl}/uploads/${filename}`;
+          let parsedImages: string[] = [];
+          if (pImageUrl) {
+            try {
+              const parsed = JSON.parse(pImageUrl);
+              if (Array.isArray(parsed)) {
+                parsedImages = parsed.map(url => {
+                  if (!url.startsWith('http') && !url.startsWith('data:image')) {
+                    const filename = url.split(/[/\\]/).pop();
+                    return `${baseUrl}/uploads/${filename}`;
+                  }
+                  return url;
+                });
+              } else {
+                if (!pImageUrl.startsWith('http') && !pImageUrl.startsWith('data:image')) {
+                  const filename = pImageUrl.split(/[/\\]/).pop();
+                  parsedImages = [`${baseUrl}/uploads/${filename}`];
+                } else {
+                  parsedImages = [pImageUrl];
+                }
+              }
+            } catch (e) {
+              if (!pImageUrl.startsWith('http') && !pImageUrl.startsWith('data:image')) {
+                const filename = pImageUrl.split(/[/\\]/).pop();
+                parsedImages = [`${baseUrl}/uploads/${filename}`];
+              } else {
+                parsedImages = [pImageUrl];
+              }
+            }
           }
+
           let uPhoto = post.user?.profilePhoto;
           if (uPhoto && !uPhoto.startsWith('http') && !uPhoto.startsWith('data:image')) {
             const filename = uPhoto.split(/[/\\]/).pop();
             uPhoto = `${baseUrl}/uploads/${filename}`;
           }
-          return { ...post, imageUrl: pImageUrl, user: post.user ? { ...post.user, profilePhoto: uPhoto } : null };
+          return { ...post, imageUrls: parsedImages, user: post.user ? { ...post.user, profilePhoto: uPhoto } : null };
         });
         setPosts(processedPosts);
       }
@@ -190,6 +219,10 @@ function PostItem({ post }: { post: any }) {
   const [hasReposted, setHasReposted] = useState(initiallyReposted);
   const [isSaving, setIsSaving] = useState(false);
   const [hasSaved, setHasSaved] = useState(initiallySaved);
+
+  // Image Viewer State
+  const [viewerVisible, setViewerVisible] = useState(false);
+  const [viewerIndex, setViewerIndex] = useState(0);
 
   const handleLike = async () => {
     const newLikedState = !liked;
@@ -327,8 +360,60 @@ function PostItem({ post }: { post: any }) {
 
       {post.text ? <Text style={[styles.postText, { color: colors.text }]}>{post.text}</Text> : null}
 
-      {post.imageUrl && (
-        <Image source={{ uri: post.imageUrl }} style={[styles.postImage, { backgroundColor: colors.inputBg }]} resizeMode="contain" />
+      {post.imageUrls && post.imageUrls.length > 0 && (
+        <View style={styles.imageGridContainer}>
+          {post.imageUrls.length === 1 ? (
+            <TouchableOpacity onPress={() => { setViewerIndex(0); setViewerVisible(true); }} activeOpacity={0.9}>
+              <Image source={{ uri: post.imageUrls[0] }} style={[styles.postImage, { backgroundColor: colors.inputBg }]} resizeMode="contain" />
+            </TouchableOpacity>
+          ) : post.imageUrls.length === 2 ? (
+            <View style={{ flexDirection: 'row', gap: 4, height: 220, marginBottom: 12 }}>
+              {post.imageUrls.map((img: string, idx: number) => (
+                <TouchableOpacity key={idx} style={{ flex: 1 }} onPress={() => { setViewerIndex(idx); setViewerVisible(true); }} activeOpacity={0.9}>
+                  <Image source={{ uri: img }} style={[{ flex: 1, borderRadius: 12, backgroundColor: colors.inputBg }]} resizeMode="cover" />
+                </TouchableOpacity>
+              ))}
+            </View>
+          ) : post.imageUrls.length === 3 ? (
+            <View style={{ flexDirection: 'row', gap: 4, height: 220, marginBottom: 12 }}>
+              <TouchableOpacity style={{ flex: 1 }} onPress={() => { setViewerIndex(0); setViewerVisible(true); }} activeOpacity={0.9}>
+                <Image source={{ uri: post.imageUrls[0] }} style={[{ flex: 1, borderRadius: 12, backgroundColor: colors.inputBg }]} resizeMode="cover" />
+              </TouchableOpacity>
+              <View style={{ flex: 1, gap: 4 }}>
+                <TouchableOpacity style={{ flex: 1 }} onPress={() => { setViewerIndex(1); setViewerVisible(true); }} activeOpacity={0.9}>
+                  <Image source={{ uri: post.imageUrls[1] }} style={[{ flex: 1, borderRadius: 12, backgroundColor: colors.inputBg }]} resizeMode="cover" />
+                </TouchableOpacity>
+                <TouchableOpacity style={{ flex: 1 }} onPress={() => { setViewerIndex(2); setViewerVisible(true); }} activeOpacity={0.9}>
+                  <Image source={{ uri: post.imageUrls[2] }} style={[{ flex: 1, borderRadius: 12, backgroundColor: colors.inputBg }]} resizeMode="cover" />
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            <View style={{ flexDirection: 'row', gap: 4, height: 220, marginBottom: 12 }}>
+              <View style={{ flex: 1, gap: 4 }}>
+                <TouchableOpacity style={{ flex: 1 }} onPress={() => { setViewerIndex(0); setViewerVisible(true); }} activeOpacity={0.9}>
+                  <Image source={{ uri: post.imageUrls[0] }} style={[{ flex: 1, borderRadius: 12, backgroundColor: colors.inputBg }]} resizeMode="cover" />
+                </TouchableOpacity>
+                <TouchableOpacity style={{ flex: 1 }} onPress={() => { setViewerIndex(2); setViewerVisible(true); }} activeOpacity={0.9}>
+                  <Image source={{ uri: post.imageUrls[2] }} style={[{ flex: 1, borderRadius: 12, backgroundColor: colors.inputBg }]} resizeMode="cover" />
+                </TouchableOpacity>
+              </View>
+              <View style={{ flex: 1, gap: 4 }}>
+                <TouchableOpacity style={{ flex: 1 }} onPress={() => { setViewerIndex(1); setViewerVisible(true); }} activeOpacity={0.9}>
+                  <Image source={{ uri: post.imageUrls[1] }} style={[{ flex: 1, borderRadius: 12, backgroundColor: colors.inputBg }]} resizeMode="cover" />
+                </TouchableOpacity>
+                <TouchableOpacity style={{ flex: 1, position: 'relative' }} onPress={() => { setViewerIndex(3); setViewerVisible(true); }} activeOpacity={0.9}>
+                  <Image source={{ uri: post.imageUrls[3] }} style={[{ flex: 1, borderRadius: 12, backgroundColor: colors.inputBg }]} resizeMode="cover" />
+                  {post.imageUrls.length > 4 && (
+                    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 12, justifyContent: 'center', alignItems: 'center' }}>
+                      <Text style={{ color: '#fff', fontSize: 24, fontWeight: 'bold' }}>+{post.imageUrls.length - 4}</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        </View>
       )}
 
       <View style={[styles.postFooter, showComments && { borderBottomWidth: 1, borderBottomColor: colors.border, paddingBottom: 16, marginBottom: 16 }]}>
@@ -429,6 +514,45 @@ function PostItem({ post }: { post: any }) {
           </View>
         </View>
       )}
+
+      {/* Full Screen Image Viewer Modal */}
+      <Modal visible={viewerVisible} transparent animationType="fade">
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.95)' }}>
+          <SafeAreaView style={{ flex: 1 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, zIndex: 10 }}>
+              <TouchableOpacity onPress={() => setViewerVisible(false)} style={{ padding: 8 }}>
+                <Text style={{ color: '#fff', fontSize: 32, lineHeight: 32 }}>×</Text>
+              </TouchableOpacity>
+              <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>
+                {viewerIndex + 1} / {post.imageUrls?.length || 0}
+              </Text>
+              <View style={{ width: 40 }} />
+            </View>
+            <ScrollView
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onMomentumScrollEnd={(e) => {
+                const newIndex = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+                setViewerIndex(newIndex);
+              }}
+              contentOffset={{ x: viewerIndex * SCREEN_WIDTH, y: 0 }}
+              style={{ flex: 1 }}
+            >
+              {post.imageUrls?.map((img: string, idx: number) => (
+                <View key={idx} style={{ width: SCREEN_WIDTH, height: '100%', justifyContent: 'center', alignItems: 'center' }}>
+                  <Image source={{ uri: img }} style={{ width: '100%', height: '80%' }} resizeMode="contain" />
+                </View>
+              ))}
+            </ScrollView>
+            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: 20, gap: 8 }}>
+              {post.imageUrls?.map((_: any, idx: number) => (
+                <View key={idx} style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: viewerIndex === idx ? '#fff' : 'rgba(255,255,255,0.3)' }} />
+              ))}
+            </View>
+          </SafeAreaView>
+        </View>
+      </Modal>
     </View>
   );
 }

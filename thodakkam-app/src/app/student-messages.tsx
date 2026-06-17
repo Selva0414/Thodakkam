@@ -14,43 +14,13 @@ import StudentHeader from '../components/StudentHeader';
 import { globalNotificationStore } from '../utils/notificationStore';
 import { useAppTheme } from '../context/ThemeContext';
 
-function BottomTabBar({ activeTab }: { activeTab: string }) {
-  const router = useRouter();
-  const { colors } = useAppTheme();
-  const tabs = [
-    { label: 'Home', icon: LayoutDashboard, path: '/student-dashboard' },
-    { label: 'Jobs Board', icon: Briefcase, path: '/student-jobs' },
-    { label: 'Tests', icon: ClipboardList, path: '/student-assessments' },
-    { label: 'Chat', icon: MessageSquare, path: '/student-messages' },
-    { label: 'Feed', icon: Users, path: '/student-community' },
-  ];
-  return (
-    <View style={[tabBarStyles.container, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
-      {tabs.map(({ label, icon: Icon, path }) => {
-        const isActive = activeTab === label;
-        return (
-          <TouchableOpacity key={label} style={tabBarStyles.tab} onPress={() => {
-            if (path && path !== '/student-messages' && activeTab === 'Chat') {
-              router.push(path as any);
-            } else if (path && !isActive) {
-              router.push(path as any);
-            }
-          }}>
-            <View style={[{ padding: 8, borderRadius: 20 }, isActive && { backgroundColor: colors.primary + '20', transform: [{ scale: 1.1 }] }]}>
-              <Icon size={22} color={isActive ? colors.primary : colors.textSecondary} />
-            </View>
-            <Text style={[tabBarStyles.label, { color: colors.textSecondary }, isActive && { color: colors.primary, fontWeight: '700' }]}>{label}</Text>
-          </TouchableOpacity>
-        );
-      })}
-    </View>
-  );
-}
+
 
 export default function StudentMessages() {
   const router = useRouter();
   const { colors, isDark } = useAppTheme();
   const [message, setMessage] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -466,8 +436,6 @@ export default function StudentMessages() {
           </View>
 
         </Animated.View>
-        {/* Bottom Navigation */}
-        <BottomTabBar activeTab="Chat" />
       </KeyboardAvoidingView>
 
       {/* Image Viewer Modal */}
@@ -512,11 +480,20 @@ export default function StudentMessages() {
 
             <View style={[styles.searchBar, { backgroundColor: colors.inputBg }]}>
               <Search size={18} color={colors.textSecondary} />
-              <TextInput style={[styles.searchInput, { color: colors.text }]} placeholder="Search students or startups..." placeholderTextColor={colors.textSecondary} />
+              <TextInput 
+                style={[styles.searchInput, { color: colors.text }]} 
+                placeholder="Search students or startups..." 
+                placeholderTextColor={colors.textSecondary}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
             </View>
 
             <ScrollView style={styles.userList}>
-              {allUsersToMessage.map(u => (
+              {allUsersToMessage.filter(u => 
+                u.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                u.type.toLowerCase().includes(searchQuery.toLowerCase())
+              ).map(u => (
                 <TouchableOpacity key={u.id} style={[styles.userListItem, { borderBottomColor: colors.border }]} onPress={() => handleStartConversation(u)}>
                   <Image source={{ uri: u.avatar }} style={styles.userListAvatar} />
                   <View style={styles.userInfo}>
@@ -565,7 +542,7 @@ const styles = StyleSheet.create({
   messageBubbleSent: { padding: 16, borderRadius: 20, borderTopRightRadius: 4 },
   messageTextSent: { fontSize: 14, lineHeight: 20 },
 
-  inputContainer: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: 1, paddingBottom: Platform.OS === 'ios' ? 100 : 80 },
+  inputContainer: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: 1, paddingBottom: Platform.OS === 'ios' ? 34 : 20 },
   inputWrapper: { flex: 1, flexDirection: 'row', alignItems: 'center', borderRadius: 24, paddingHorizontal: 16, height: 48, marginRight: 12 },
   attachBtn: { marginRight: 12 },
   textInput: { flex: 1, fontSize: 14 },
@@ -587,8 +564,3 @@ const styles = StyleSheet.create({
   userType: { fontSize: 12, marginTop: 2 },
 });
 
-const tabBarStyles = StyleSheet.create({
-  container: { position: 'absolute', bottom: 0, left: 0, right: 0, height: Platform.OS === 'ios' ? 80 : 70, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', paddingBottom: Platform.OS === 'ios' ? 20 : 0, borderTopWidth: 1 },
-  tab: { alignItems: 'center', justifyContent: 'center', flex: 1, height: '100%' },
-  label: { fontSize: 10, marginTop: 4, fontWeight: '500' },
-});

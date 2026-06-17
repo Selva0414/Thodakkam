@@ -19,7 +19,7 @@ export default function StartupAddPost() {
   const { colors, isDark } = useAppTheme();
 
   const [text, setText] = useState('');
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [category, setCategory] = useState('Update');
   const [loading, setLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -29,11 +29,12 @@ export default function StartupAddPost() {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 0.5,
       base64: true,
+      allowsMultipleSelection: true,
     });
 
     if (!result.canceled && result.assets && result.assets.length > 0) {
-      const asset = result.assets[0];
-      setImageUrl(`data:image/jpeg;base64,${asset.base64}`);
+      const newImages = result.assets.map(asset => `data:image/jpeg;base64,${asset.base64}`);
+      setImageUrls(prev => [...prev, ...newImages]);
     }
   };
 
@@ -51,7 +52,7 @@ export default function StartupAddPost() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           text,
-          imageUrl: imageUrl,
+          imageUrl: imageUrls.length > 0 ? JSON.stringify(imageUrls) : null,
           category,
           email: userStore.email || 'startup@example.com',
           companyName: companyName
@@ -105,13 +106,17 @@ export default function StartupAddPost() {
                 onChangeText={setText}
                 textAlignVertical="top"
               />
-              {imageUrl && (
-                <View style={styles.previewImageContainer}>
-                  <Image source={{ uri: imageUrl }} style={styles.previewImage} />
-                  <TouchableOpacity style={styles.removeImageBtn} onPress={() => setImageUrl(null)}>
-                    <Text style={styles.removeImageText}>×</Text>
-                  </TouchableOpacity>
-                </View>
+              {imageUrls.length > 0 && (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12 }}>
+                  {imageUrls.map((uri, idx) => (
+                    <View key={idx} style={[styles.previewImageContainer, { marginRight: 12, marginTop: 0 }]}>
+                      <Image source={{ uri }} style={styles.previewImage} />
+                      <TouchableOpacity style={styles.removeImageBtn} onPress={() => setImageUrls(prev => prev.filter((_, i) => i !== idx))}>
+                        <Text style={styles.removeImageText}>×</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </ScrollView>
               )}
               <View style={[styles.purpleDot, { backgroundColor: colors.primary }]} />
             </View>

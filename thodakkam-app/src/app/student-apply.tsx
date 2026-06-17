@@ -13,16 +13,11 @@ import { globalNotificationStore } from '../utils/notificationStore';
 import { userStore } from '../utils/userStore';
 import StudentHeader from '../components/StudentHeader';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const PRIMARY = '#6a1b9a';
-const BG = '#f8f9fa';
-const WHITE = '#ffffff';
-const DARK = '#0f172a';
-const GRAY = '#6b7280';
-const BORDER = '#e2e8f0';
+import { useAppTheme } from '../context/ThemeContext';
 
 function BottomTabBar() {
   const router = useRouter();
+  const { colors } = useAppTheme();
   const active = 'Jobs';
   const tabs = [
     { label: 'Home', icon: LayoutDashboard, path: '/student-dashboard' },
@@ -31,7 +26,7 @@ function BottomTabBar() {
     { label: 'Feed', icon: Users, path: '/student-community' },
   ];
   return (
-    <View style={tabBarStyles.container}>
+    <View style={[tabBarStyles.container, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
       {tabs.map(({ label, icon: Icon, path }) => {
         const isActive = active === label;
         return (
@@ -42,10 +37,10 @@ function BottomTabBar() {
               if (path) router.push(path as any);
             }}
           >
-            <View style={[{ padding: 8, borderRadius: 20 }, isActive && { backgroundColor: PRIMARY + '20', transform: [{ scale: 1.1 }] }]}>
-                  <Icon size={22} color={isActive ? PRIMARY : GRAY} />
+            <View style={[{ padding: 8, borderRadius: 20 }, isActive && { backgroundColor: colors.primary + '20', transform: [{ scale: 1.1 }] }]}>
+                  <Icon size={22} color={isActive ? colors.primary : colors.textSecondary} />
                 </View>
-            <Text style={[tabBarStyles.label, isActive && tabBarStyles.labelActive]}>{label}</Text>
+            <Text style={[tabBarStyles.label, { color: colors.textSecondary }, isActive && { color: colors.primary, fontWeight: '700' }]}>{label}</Text>
           </TouchableOpacity>
         );
       })}
@@ -56,6 +51,7 @@ function BottomTabBar() {
 export default function StudentApply() {
   const params = useLocalSearchParams();
   const router = useRouter();
+  const { colors, isDark } = useAppTheme();
   const jobId = params.jobId as string;
   const jobTitle = (params.jobTitle as string) || "Internship";
 
@@ -153,83 +149,86 @@ export default function StudentApply() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StudentHeader />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 
         {/* Page Titles */}
         <View style={styles.titleSection}>
-          <Text style={styles.pageTitle}>Apply for {jobTitle}</Text>
-          <Text style={styles.pageSubtitle}>Here you can apply for a position in our company</Text>
+          <Text style={[styles.pageTitle, { color: colors.text }]}>Apply for {jobTitle}</Text>
+          <Text style={[styles.pageSubtitle, { color: colors.textSecondary }]}>Here you can apply for a position in our company</Text>
         </View>
 
         {/* Application Form Card */}
         {isChecking ? (
-          <View style={[styles.formCard, { alignItems: 'center', paddingVertical: 40 }]}>
-            <Text style={{ color: GRAY }}>Checking application status...</Text>
+          <View style={[styles.formCard, { backgroundColor: colors.card, borderColor: colors.border, alignItems: 'center', paddingVertical: 40 }]}>
+            <Text style={{ color: colors.textSecondary }}>Checking application status...</Text>
           </View>
         ) : alreadyApplied ? (
-          <View style={[styles.formCard, { alignItems: 'center', paddingVertical: 40 }]}>
-            <View style={[styles.successIconBox, { backgroundColor: '#fef2f2' }]}>
+          <View style={[styles.formCard, { backgroundColor: colors.card, borderColor: colors.border, alignItems: 'center', paddingVertical: 40 }]}>
+            <View style={[styles.successIconBox, { backgroundColor: isDark ? '#ef444420' : '#fef2f2' }]}>
               <AlertCircle size={36} color="#ef4444" />
             </View>
-            <Text style={styles.successTitle}>Already Applied!</Text>
-            <Text style={styles.successSubtitle}>
+            <Text style={[styles.successTitle, { color: colors.text }]}>Already Applied!</Text>
+            <Text style={[styles.successSubtitle, { color: colors.textSecondary }]}>
               You have already submitted an application for the {jobTitle} position. Please wait for the company to review your profile.
             </Text>
-            <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-              <Text style={styles.backBtnText}>Back to Jobs</Text>
+            <TouchableOpacity style={[styles.backBtn, { backgroundColor: colors.inputBg }]} onPress={() => router.back()}>
+              <Text style={[styles.backBtnText, { color: colors.text }]}>Back to Jobs</Text>
             </TouchableOpacity>
           </View>
         ) : isSubmitted ? (
-          <View style={[styles.formCard, { alignItems: 'center', paddingVertical: 40 }]}>
-            <View style={styles.successIconBox}>
+          <View style={[styles.formCard, { backgroundColor: colors.card, borderColor: colors.border, alignItems: 'center', paddingVertical: 40 }]}>
+            <View style={[styles.successIconBox, { backgroundColor: isDark ? '#16a34a20' : '#dcfce7' }]}>
               <CheckCircle size={36} color="#16a34a" />
             </View>
-            <Text style={styles.successTitle}>Application Submitted!</Text>
-            <Text style={styles.successSubtitle}>
+            <Text style={[styles.successTitle, { color: colors.text }]}>Application Submitted!</Text>
+            <Text style={[styles.successSubtitle, { color: colors.textSecondary }]}>
               Your application for {jobTitle} has been successfully sent. We will review your profile and get back to you soon.
             </Text>
-            <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-              <Text style={styles.backBtnText}>Back to Jobs</Text>
+            <TouchableOpacity style={[styles.backBtn, { backgroundColor: colors.inputBg }]} onPress={() => router.back()}>
+              <Text style={[styles.backBtnText, { color: colors.text }]}>Back to Jobs</Text>
             </TouchableOpacity>
           </View>
         ) : (
-          <View style={styles.formCard}>
-            <Text style={styles.cardTitle}>Apply for Position</Text>
-            <Text style={styles.cardSubtitle}>
+          <View style={[styles.formCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>Apply for Position</Text>
+            <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]}>
               {jobTitle} - Engineering & Design
             </Text>
 
             {/* Full Name */}
-            <Text style={styles.label}>Full Name</Text>
+            <Text style={[styles.label, { color: colors.text }]}>Full Name</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
               value={form.fullName}
               onChangeText={(t) => setForm({ ...form, fullName: t })}
+              placeholderTextColor={colors.textSecondary}
             />
 
             {/* Email */}
-            <Text style={styles.label}>Email Address</Text>
+            <Text style={[styles.label, { color: colors.text }]}>Email Address</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
               value={form.email}
               keyboardType="email-address"
               onChangeText={(t) => setForm({ ...form, email: t })}
+              placeholderTextColor={colors.textSecondary}
             />
 
             {/* Phone Number */}
-            <Text style={styles.label}>Phone Number</Text>
+            <Text style={[styles.label, { color: colors.text }]}>Phone Number</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
               value={form.phone}
               keyboardType="phone-pad"
               onChangeText={(t) => setForm({ ...form, phone: t })}
+              placeholderTextColor={colors.textSecondary}
             />
 
             {/* Resume Upload */}
-            <Text style={styles.label}>Resume / CV</Text>
-            <TouchableOpacity style={styles.uploadBox} onPress={async () => {
+            <Text style={[styles.label, { color: colors.text }]}>Resume / CV</Text>
+            <TouchableOpacity style={[styles.uploadBox, { backgroundColor: colors.background, borderColor: colors.border }]} onPress={async () => {
               try {
                 const result = await DocumentPicker.getDocumentAsync({
                   type: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
@@ -246,24 +245,24 @@ export default function StudentApply() {
                 console.warn("Document picker error:", err);
               }
             }}>
-              <View style={styles.uploadIconWrap}>
-                <CloudUpload size={20} color={DARK} />
+              <View style={[styles.uploadIconWrap, { backgroundColor: isDark ? colors.primary + '20' : '#fee2e2' }]}>
+                <CloudUpload size={20} color={isDark ? colors.primary : colors.text} />
               </View>
               {form.resumeName ? (
-                <Text style={[styles.uploadText, { color: PRIMARY, fontWeight: '600' }]}>{form.resumeName}</Text>
+                <Text style={[styles.uploadText, { color: colors.primary, fontWeight: '600' }]}>{form.resumeName}</Text>
               ) : (
-                <Text style={styles.uploadText}>Click to upload or drag and drop</Text>
+                <Text style={[styles.uploadText, { color: colors.text }]}>Click to upload or drag and drop</Text>
               )}
-              <Text style={styles.uploadSubtext}>PDF, DOCX up to 10MB</Text>
+              <Text style={[styles.uploadSubtext, { color: colors.textSecondary }]}>PDF, DOCX up to 10MB</Text>
             </TouchableOpacity>
 
             {/* Submit Button */}
-            <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit} disabled={loading}>
+            <TouchableOpacity style={[styles.submitBtn, { backgroundColor: colors.primary }]} onPress={handleSubmit} disabled={loading}>
               <Text style={styles.submitBtnText}>{loading ? 'Submitting...' : 'Submit Application'}</Text>
-              {!loading && <Send size={14} color={WHITE} style={{ marginLeft: 6 }} />}
+              {!loading && <Send size={14} color="#ffffff" style={{ marginLeft: 6 }} />}
             </TouchableOpacity>
 
-            <Text style={styles.termsText}>
+            <Text style={[styles.termsText, { color: colors.textSecondary }]}>
               BY SUBMITTING, YOU AGREE TO OUR TERMS OF SERVICE
             </Text>
           </View>
@@ -277,6 +276,13 @@ export default function StudentApply() {
 }
 
 // ─── Styles ────────────────────────────────────────────────────────────────────
+
+const PRIMARY = '#6a1b9a';
+const BG = '#f8f9fa';
+const WHITE = '#ffffff';
+const DARK = '#0f172a';
+const GRAY = '#6b7280';
+const BORDER = '#e2e8f0';
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: BG },

@@ -60,7 +60,9 @@ export default function StudentHeader({ user }: { user?: { id?: string, name: st
     <View style={[navStyles.headerContainer, { backgroundColor: colors.card }]}>
       <View style={navStyles.headerTop}>
         <View style={navStyles.logoRow}>
-          <Image source={require('../../assets/images/Thodakkam logo.png')} style={{ width: 44, height: 44 }} resizeMode="contain" />
+          <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', borderWidth: 1.5, borderColor: colors.primary, marginRight: 8 }}>
+            <Image source={require('../../assets/images/Thodakkam-circle.png')} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+          </View>
           <Text style={[navStyles.logoText, { color: colors.text }]}>Student Portal</Text>
         </View>
         <View style={navStyles.headerIcons}>

@@ -1,17 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, TouchableOpacity,
-  SafeAreaView, TextInput, Platform, Image, Animated
+  SafeAreaView, TextInput, Platform, Image, Animated, Modal, Dimensions
 } from 'react-native';
 import {
   Bell, Search, Mail, Settings, LayoutDashboard, Briefcase,
   MessageSquare, Users, SlidersHorizontal, Monitor, Cloud, PenTool, Shield,
-  ArrowRight, Upload, MessageCircle, GraduationCap, ClipboardList, Bookmark, MapPin, Sparkles
+  ArrowRight, Upload, MessageCircle, GraduationCap, ClipboardList, Bookmark, MapPin, Sparkles, X
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import StudentHeader from '../components/StudentHeader';
 import { userStore } from '../utils/userStore';
 import { useAppTheme } from '../context/ThemeContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 function BottomTabBar() {
   const router = useRouter();
@@ -52,6 +53,7 @@ export default function StudentJobs() {
   const router = useRouter();
   const { colors } = useAppTheme();
   const [jobs, setJobs] = useState<any[]>([]);
+  const [userSkills, setUserSkills] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -74,7 +76,29 @@ export default function StudentJobs() {
 
   useEffect(() => {
     fetchJobs();
+    fetchUserSkills();
   }, []);
+
+  const fetchUserSkills = async () => {
+    try {
+      let id = userStore.id;
+      if (!id) {
+        const stored = await AsyncStorage.getItem('studentUserId');
+        if (stored) id = stored;
+      }
+      if (!id) id = '8bbe6fc3-2716-4821-b967-35b0689cbf11';
+
+      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend.onrender.com' : 'https://thodakkam-backend.onrender.com';
+      const response = await fetch(`${baseUrl}/api/user/${id}`);
+      const json = await response.json();
+
+      if (json.success && json.user && Array.isArray(json.user.skills)) {
+        setUserSkills(json.user.skills);
+      }
+    } catch (err) {
+      console.error('Error fetching user skills:', err);
+    }
+  };
 
   const fetchJobs = async () => {
     try {
@@ -100,7 +124,13 @@ export default function StudentJobs() {
           <View style={styles.titleSection}>
             <Text style={[styles.pageTitle, { color: colors.text }]}>Recommended for You</Text>
             <Text style={[styles.pageSubtitle, { color: colors.textSecondary }]}>
-              AI-matched jobs based on your <Text style={{fontWeight: '700'}}>Python</Text> and <Text style={{fontWeight: '700'}}>React</Text> expertise.
+              {userSkills.length >= 2 ? (
+                <>AI-matched jobs based on your <Text style={{fontWeight: '700'}}>{userSkills[0]}</Text> and <Text style={{fontWeight: '700'}}>{userSkills[1]}</Text> expertise.</>
+              ) : userSkills.length === 1 ? (
+                <>AI-matched jobs based on your <Text style={{fontWeight: '700'}}>{userSkills[0]}</Text> expertise.</>
+              ) : (
+                <>AI-matched jobs based on your profile expertise.</>
+              )}
             </Text>
           </View>
 
@@ -129,6 +159,7 @@ function JobItem({ job, router }: { job: any, router: any }) {
   const initiallySaved = job.savedBy ? job.savedBy.some((s: any) => s.user?.email === userStore.email) : false;
   const [hasSaved, setHasSaved] = useState(initiallySaved);
   const [isSaving, setIsSaving] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
 
   let startupPhoto = job.startup?.companyLogo || job.startup?.profilePhoto;
   if (startupPhoto && !startupPhoto.startsWith('http') && !startupPhoto.startsWith('data:')) {
@@ -162,7 +193,12 @@ function JobItem({ job, router }: { job: any, router: any }) {
   };
 
   return (
-    <View style={[styles.jobCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+    <>
+    <TouchableOpacity 
+      activeOpacity={0.7} 
+      onPress={() => setModalVisible(true)}
+      style={[styles.jobCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+    >
       <View style={styles.cardTopRow}>
         <View style={[styles.companyLogoBox, { backgroundColor: colors.inputBg }]}>
           {startupPhoto ? (
@@ -210,7 +246,98 @@ function JobItem({ job, router }: { job: any, router: any }) {
           <Text style={styles.applyPurpleBtnText}>Apply Now</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </TouchableOpacity>
+
+    <Modal
+      visible={modalVisible}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={() => setModalVisible(false)}
+    >
+      <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
+        <View style={[styles.modalContent, { backgroundColor: colors.background, marginTop: 60 }]}>
+          
+          <ScrollView contentContainerStyle={styles.modalScroll}>
+            {/* Header */}
+            <View style={styles.modalHeaderRow}>
+              <View style={[styles.companyLogoBox, { width: 64, height: 64, borderRadius: 32, backgroundColor: '#fff', marginRight: 16 }]}>
+                {startupPhoto ? (
+                  <Image source={{ uri: startupPhoto }} style={styles.companyLogo} resizeMode="contain" />
+                ) : (
+                  <Text style={[styles.companyLogoText, { color: colors.primary, fontSize: 24 }]}>{(job.startup?.companyName || 'C').substring(0,2).toUpperCase()}</Text>
+                )}
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.jobTitleLarge, { color: colors.text, fontSize: 22, marginBottom: 4 }]}>{job.title}</Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 14, textTransform: 'uppercase', letterSpacing: 1 }}>{job.startup?.companyName || 'COMPANY'}</Text>
+              </View>
+              <TouchableOpacity onPress={() => setModalVisible(false)} style={[styles.closeBtn, { backgroundColor: colors.card }]}>
+                <X size={20} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Grid Info */}
+            <View style={[styles.infoGrid, { backgroundColor: colors.card }]}>
+              <View style={styles.infoCol}>
+                <Text style={styles.infoLabel}>LOCATION</Text>
+                <Text style={[styles.infoValue, { color: colors.text }]}>{job.location || 'Remote'}</Text>
+              </View>
+              <View style={styles.infoCol}>
+                <Text style={styles.infoLabel}>EXPERIENCE</Text>
+                <Text style={[styles.infoValue, { color: colors.text }]}>{job.experience || 'Entry Level'}</Text>
+              </View>
+              <View style={styles.infoCol}>
+                <Text style={styles.infoLabel}>TYPE</Text>
+                <Text style={[styles.infoValue, { color: colors.text }]}>{job.type || 'Full Time'}</Text>
+              </View>
+              <View style={[styles.infoCol, { width: '100%', marginTop: 16 }]}>
+                <Text style={styles.infoLabel}>DOMAIN</Text>
+                <Text style={[styles.infoValue, { color: colors.text }]}>{job.domain || 'Software'}</Text>
+              </View>
+            </View>
+
+            {/* About Role */}
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>About the role</Text>
+            <Text style={[styles.sectionBody, { color: colors.textSecondary }]}>
+              {job.description || 'We are looking for an amazing candidate to join our team...'}
+            </Text>
+
+            {/* About Company */}
+            <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 24 }]}>About the company</Text>
+            <Text style={[styles.sectionBody, { color: colors.textSecondary }]}>
+              {job.startup?.description || 'A fast-growing startup revolutionizing the industry.'}
+            </Text>
+
+            {/* Skills */}
+            <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 24 }]}>Skills Required</Text>
+            <View style={styles.tagsContainer}>
+              {(job.requirements || []).map((req: string, idx: number) => (
+                <View key={idx} style={[styles.tagPill, { backgroundColor: colors.inputBg }]}><Text style={[styles.tagPillText, { color: colors.text }]}>{req}</Text></View>
+              ))}
+            </View>
+            <View style={{ height: 100 }} /> 
+          </ScrollView>
+
+          {/* Sticky Bottom Bar */}
+          <View style={[styles.stickyBottomBar, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
+            <TouchableOpacity style={[styles.bookmarkBtn, { borderColor: colors.border, width: 48, height: 48, marginRight: 16 }]} onPress={handleSave} disabled={isSaving}>
+              <Bookmark size={20} color={hasSaved ? colors.primary : colors.textSecondary} fill={hasSaved ? colors.primary : 'transparent'} />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.applyPurpleBtn, { backgroundColor: colors.text, flex: 1, height: 48, justifyContent: 'center' }]}
+              onPress={() => {
+                setModalVisible(false);
+                router.push({ pathname: '/student-apply', params: { jobId: job.id, jobTitle: job.title } });
+              }}
+            >
+              <Text style={[styles.applyPurpleBtnText, { color: colors.background, fontSize: 16 }]}>Apply Now</Text>
+            </TouchableOpacity>
+          </View>
+
+        </View>
+      </View>
+    </Modal>
+    </>
   );
 }
 
@@ -253,6 +380,19 @@ const styles = StyleSheet.create({
   bookmarkBtn: { width: 40, height: 40, borderRadius: 8, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
   applyPurpleBtn: { paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10, minWidth: 120, alignItems: 'center' },
   applyPurpleBtnText: { color: '#ffffff', fontSize: 13, fontWeight: '700' },
+
+  modalOverlay: { flex: 1, justifyContent: 'flex-end' },
+  modalContent: { flex: 1, borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: 'hidden' },
+  modalScroll: { padding: 24 },
+  modalHeaderRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 32 },
+  closeBtn: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
+  infoGrid: { flexDirection: 'row', flexWrap: 'wrap', borderRadius: 16, padding: 20, marginBottom: 32 },
+  infoCol: { width: '33.33%' },
+  infoLabel: { fontSize: 10, fontWeight: '700', color: '#64748b', marginBottom: 8, letterSpacing: 1 },
+  infoValue: { fontSize: 13, fontWeight: '600' },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 12 },
+  sectionBody: { fontSize: 14, lineHeight: 22 },
+  stickyBottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', padding: 20, borderTopWidth: 1 },
 });
 
 const tabBarStyles = StyleSheet.create({

@@ -44,6 +44,7 @@ function StatCard({ icon: Icon, iconBg, label, value }: any) {
 
 function ApplicationOverview({ applications = [] }: { applications?: any[] }) {
   const { colors } = useAppTheme();
+  const router = useRouter();
   const appliedCount = applications.length;
   const interviewingCount = applications.filter(a => a.status === 'INTERVIEW SCHEDULED').length;
   const offeredCount = applications.filter(a => a.status === 'OFFERED').length;
@@ -52,7 +53,7 @@ function ApplicationOverview({ applications = [] }: { applications?: any[] }) {
     <View style={[sectionCard.container, { backgroundColor: colors.card }]}>
       <View style={sectionCard.header}>
         <Text style={[sectionCard.title, { color: colors.text }]}>Application Overview</Text>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => router.push('/student-my-jobs')}>
           <Text style={[sectionCard.link, { color: colors.primary }]}>View Details</Text>
         </TouchableOpacity>
       </View>
@@ -87,13 +88,17 @@ function InterviewCard({ day, month, title, company, time, mode, modeColor }: an
 
 function UpcomingInterviews({ applications = [] }: { applications?: any[] }) {
   const { colors } = useAppTheme();
+  const router = useRouter();
   const upcomingApps = applications.filter(a => a.status === 'INTERVIEW SCHEDULED');
   
   if (upcomingApps.length === 0) {
     return (
       <View style={[sectionCard.container, { backgroundColor: colors.card }]}>
         <View style={sectionCard.header}>
-          <Text style={[sectionCard.title, { color: colors.text }]}>Upcoming Interviews</Text>
+          <TouchableOpacity onPress={() => router.push('/student-requests')} style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Text style={[sectionCard.title, { color: colors.text }]}>Upcoming Interviews</Text>
+            <ChevronRight size={20} color={colors.textSecondary} style={{ marginLeft: 8 }} />
+          </TouchableOpacity>
         </View>
         <Text style={{ color: colors.textSecondary, textAlign: 'center', marginVertical: 10 }}>No upcoming interviews scheduled yet.</Text>
       </View>
@@ -103,7 +108,10 @@ function UpcomingInterviews({ applications = [] }: { applications?: any[] }) {
   return (
     <View style={[sectionCard.container, { backgroundColor: colors.card }]}>
       <View style={sectionCard.header}>
-        <Text style={[sectionCard.title, { color: colors.text }]}>Upcoming Interviews</Text>
+        <TouchableOpacity onPress={() => router.push('/student-requests')} style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Text style={[sectionCard.title, { color: colors.text }]}>Upcoming Interviews</Text>
+          <ChevronRight size={20} color={colors.textSecondary} style={{ marginLeft: 8 }} />
+        </TouchableOpacity>
         <TouchableOpacity>
           <MoreHorizontal size={20} color={colors.textSecondary} />
         </TouchableOpacity>
@@ -154,21 +162,68 @@ function SkillBar({ label, pct, color }: any) {
 
 function SkillsInDemand() {
   const { colors } = useAppTheme();
-  const skills = [
+  const [skills, setSkills] = useState([
     { label: 'React & Next.js', pct: 90, color: colors.primary },
     { label: 'TypeScript', pct: 85, color: colors.primary },
     { label: 'Rust (Still Gap)', pct: 64, color: '#f59e0b' },
     { label: 'Kubernetes', pct: 48, color: colors.textSecondary },
-  ];
+  ]);
+  const [isAdding, setIsAdding] = useState(false);
+  const [newSkill, setNewSkill] = useState('');
+
+  const [newSkillPct, setNewSkillPct] = useState('');
+
+  const handleAddSkill = () => {
+    if (newSkill.trim() && newSkillPct.trim()) {
+      const pct = parseInt(newSkillPct);
+      if (!isNaN(pct)) {
+        setSkills([...skills, { label: newSkill, pct: Math.min(100, Math.max(0, pct)), color: colors.textSecondary }]);
+        setNewSkill('');
+        setNewSkillPct('');
+        setIsAdding(false);
+      }
+    } else if (newSkill.trim()) {
+      setSkills([...skills, { label: newSkill, pct: Math.floor(Math.random() * 50) + 10, color: colors.textSecondary }]);
+      setNewSkill('');
+      setNewSkillPct('');
+      setIsAdding(false);
+    }
+  };
+
   return (
     <View style={[sectionCard.container, { backgroundColor: colors.card }]}>
       <Text style={[sectionCard.title, { color: colors.text }]}>Skills in Demand</Text>
       <Text style={[skillStyles.subtitle, { color: colors.textSecondary }]}>Based on your matches and industry trends</Text>
       {skills.map((s, i) => <SkillBar key={i} {...s} />)}
-      <TouchableOpacity style={[skillStyles.addBtn, { borderColor: colors.primary + '40' }]}>
-        <Plus size={14} color={colors.primary} />
-        <Text style={[skillStyles.addBtnText, { color: colors.primary }]}>Add New Skill</Text>
-      </TouchableOpacity>
+      {isAdding ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12, gap: 8 }}>
+          <TextInput 
+            style={{ flex: 1, backgroundColor: colors.background, color: colors.text, padding: 8, borderRadius: 6, borderColor: colors.border, borderWidth: 1 }}
+            placeholder="Type skill name..."
+            placeholderTextColor={colors.textSecondary}
+            value={newSkill}
+            onChangeText={setNewSkill}
+            autoFocus
+          />
+          <TextInput 
+            style={{ width: 60, backgroundColor: colors.background, color: colors.text, padding: 8, borderRadius: 6, borderColor: colors.border, borderWidth: 1 }}
+            placeholder="%"
+            placeholderTextColor={colors.textSecondary}
+            value={newSkillPct}
+            onChangeText={setNewSkillPct}
+            keyboardType="numeric"
+            onSubmitEditing={handleAddSkill}
+          />
+          <TouchableOpacity onPress={handleAddSkill} style={{ backgroundColor: colors.primary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 6 }}>
+            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Add</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <TouchableOpacity style={[skillStyles.addBtn, { borderColor: colors.primary + '40' }]} onPress={() => setIsAdding(true)}>
+          <Plus size={14} color={colors.primary} />
+          <Text style={[skillStyles.addBtnText, { color: colors.primary }]}>Add New Skill</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }

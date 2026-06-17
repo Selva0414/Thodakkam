@@ -71,7 +71,9 @@ export default function StartupHeader({ companyName = 'Echo Digital' }: { compan
     <View style={[styles.headerCard, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
       <View style={styles.headerTop}>
         <View style={styles.adminInfo}>
-          <Image source={require('../../assets/images/Thodakkam logo.png')} style={{ width: 44, height: 44, marginRight: 12 }} resizeMode="contain" />
+          <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', borderWidth: 1.5, borderColor: colors.primary, marginRight: 12 }}>
+            <Image source={require('../../assets/images/Thodakkam-circle.png')} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+          </View>
           <View>
             <Text style={[styles.companyTitle, { color: colors.text }]}>{companyName}</Text>
             <Text style={[styles.companySubtitle, { color: colors.primary }]}>PREMIUM PLAN</Text>

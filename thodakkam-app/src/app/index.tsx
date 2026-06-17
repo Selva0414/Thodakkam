@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, Pressable, SafeAreaView, ScrollView, Platform, Dimensions, Image, useWindowDimensions, LayoutAnimation } from 'react-native';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useRouter } from 'expo-router';
 import { Image as ExpoImage } from 'expo-image';
 import { Briefcase, GraduationCap, ShieldCheck, ArrowRight, Sparkles, Star, MessageSquare, CheckCircle2, Check, Zap, Activity, TrendingUp, UserCog, X, ChevronLeft, ChevronRight, Rocket } from 'lucide-react-native';
 import Animated, { FadeIn, FadeInDown, FadeInUp, FadeOutDown, useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing } from 'react-native-reanimated';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 const { width } = Dimensions.get('window');
 const PRIMARY = '#722DB6';
 const PRIMARY_DARK = '#5A279B';
@@ -1342,6 +1343,24 @@ export default function HomeScreen() {
   const { height, width } = useWindowDimensions();
   const isMobile = width < 768;
 
+  useEffect(() => {
+    const checkLoginStatus = async () => {
+      try {
+        const studentUserId = await AsyncStorage.getItem('studentUserId');
+        const startupId = await AsyncStorage.getItem('startupId');
+
+        if (studentUserId) {
+          router.replace('/student-dashboard');
+        } else if (startupId) {
+          router.replace('/startup-dashboard');
+        }
+      } catch (error) {
+        console.error('Error checking login status:', error);
+      }
+    };
+    checkLoginStatus();
+  }, []);
+
   const player = useVideoPlayer(require('../../assets/images/Backgound.mp4'), (player: any) => {
     player.loop = true;
     player.muted = true;
@@ -1354,7 +1373,9 @@ export default function HomeScreen() {
 
         {/* Top Navigation / Logo */}
         <Animated.View entering={FadeInDown.duration(800).delay(100)} style={{ width: '100%', maxWidth: 1200, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', marginBottom: 10 }}>
-          <Image source={require('../../assets/images/Thodakkam logo.png')} style={{ width: 64, height: 64, marginRight: 16 }} resizeMode="contain" />
+          <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', borderWidth: 2, borderColor: '#9333ea', marginRight: 16 }}>
+            <Image source={require('../../assets/images/Thodakkam-circle.png')} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+          </View>
           <Text style={{ fontSize: 38, fontWeight: '900', color: '#9333ea', letterSpacing: -1 }}>Thodakkam</Text>
         </Animated.View>
 

@@ -13,6 +13,7 @@ import StartupHeader from '../components/StartupHeader';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { globalNotificationStore } from '../utils/notificationStore';
 import { useAppTheme } from '../context/ThemeContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function StartupJobs() {
   const router = useRouter();
