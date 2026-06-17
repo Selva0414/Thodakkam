@@ -44,7 +44,7 @@ export default function StartupHeader({ companyName = 'Echo Digital' }: { compan
 
   useEffect(() => {
     if (companyName) {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend.onrender.com' : 'https://thodakkam-backend.onrender.com';
+      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
       fetch(`${baseUrl}/api/startup/profile/${encodeURIComponent(companyName)}`)
         .then(res => res.json())
         .then(data => {

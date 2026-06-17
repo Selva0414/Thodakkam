@@ -47,7 +47,7 @@ export default function StartupJobs() {
   const fetchJobs = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`https://thodakkam-backend.onrender.com/api/jobs/startup/${companyName}`);
+      const response = await fetch(`https://thodakkam.onrender.com/api/jobs/startup/${companyName}`);
       
       if (!response.ok) {
         throw new Error(`Server returned ${response.status}`);
@@ -58,7 +58,7 @@ export default function StartupJobs() {
         setJobs(data.jobs);
       }
 
-      const profileRes = await fetch(`https://thodakkam-backend.onrender.com/api/startup/profile/${encodeURIComponent(companyName)}`);
+      const profileRes = await fetch(`https://thodakkam.onrender.com/api/startup/profile/${encodeURIComponent(companyName)}`);
       if (profileRes.ok) {
         const profileData = await profileRes.json();
         if (profileData.success && profileData.startup?.companyLogo) {
@@ -81,7 +81,7 @@ export default function StartupJobs() {
     
     try {
       const payload = targetJob ? { ...targetJob, status: newStatus } : { status: newStatus };
-      const res = await fetch(`https://thodakkam-backend.onrender.com/api/jobs/${jobId}`, {
+      const res = await fetch(`https://thodakkam.onrender.com/api/jobs/${jobId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -100,7 +100,7 @@ export default function StartupJobs() {
     setJobs(prevJobs => prevJobs.filter(j => j.id !== jobId));
 
     try {
-      const res = await fetch(`https://thodakkam-backend.onrender.com/api/jobs/${jobId}`, {
+      const res = await fetch(`https://thodakkam.onrender.com/api/jobs/${jobId}`, {
         method: 'DELETE'
       });
       if (res.ok) {
@@ -139,7 +139,7 @@ export default function StartupJobs() {
       
       // Fetch assessment results for this candidate
       if (selectedCandidate.userId && jobToTrack?.id) {
-        fetch(`https://thodakkam-backend.onrender.com/api/assessment-results/${selectedCandidate.userId}/${jobToTrack.id}`)
+        fetch(`https://thodakkam.onrender.com/api/assessment-results/${selectedCandidate.userId}/${jobToTrack.id}`)
           .then(async res => {
             if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
             const contentType = res.headers.get("content-type");
@@ -169,7 +169,7 @@ export default function StartupJobs() {
   const handleUpdateApplicationStatus = async (newStatus: string) => {
     if (!selectedCandidate) return;
     try {
-      const res = await fetch(`https://thodakkam-backend.onrender.com/api/applications/${selectedCandidate.id}`, {
+      const res = await fetch(`https://thodakkam.onrender.com/api/applications/${selectedCandidate.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
@@ -293,7 +293,7 @@ export default function StartupJobs() {
     }
     // Final fallback: try to load it from the backend uploads folder
     if (app?.resumeUrl) {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend.onrender.com' : 'https://thodakkam-backend.onrender.com';
+      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
       const fullUrl = app.resumeUrl.startsWith('http') ? app.resumeUrl : `${baseUrl}/uploads/${app.resumeUrl.split(/[/\\]/).pop()}`;
       Linking.openURL(fullUrl).catch(err => console.error("Couldn't load page", err));
     } else {

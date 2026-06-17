@@ -769,6 +769,19 @@ app.get('/api/admin/stats', async (req: Request, res: Response): Promise<void> =
   }
 });
 
+// 7a. Admin Get All Startups
+app.get('/api/admin/startups', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const startups = await prisma.startup.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+    res.status(200).json({ success: true, startups });
+  } catch (err) {
+    console.error('Admin fetch startups error:', err);
+    res.status(500).json({ success: false, message: 'Server error fetching startups' });
+  }
+});
+
 // ============================================
 // JOB MANAGEMENT API
 // ============================================

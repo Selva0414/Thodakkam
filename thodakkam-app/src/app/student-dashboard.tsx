@@ -7,7 +7,7 @@ import {
   Bell, Search, Upload, Clock, CheckCircle, Video,
   Building2, MoreHorizontal, TrendingUp, Plus, Briefcase,
   MessageSquare, Users, LayoutDashboard, ChevronRight, Zap, FileText, GraduationCap,
-  Mail, Settings, ClipboardList
+  Mail, Settings, ClipboardList, Sparkles
 } from 'lucide-react-native';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
@@ -444,7 +444,7 @@ export default function StudentDashboard() {
           return;
         }
 
-        const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend.onrender.com' : 'https://thodakkam-backend.onrender.com';
+        const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
         const response = await fetch(`${baseUrl}/api/user/${userId}`);
         const resJson = await response.json();
 
@@ -477,7 +477,7 @@ export default function StudentDashboard() {
       
       if (userIdToFetch) {
         try {
-          const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend.onrender.com' : 'https://thodakkam-backend.onrender.com';
+          const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
           const appRes = await fetch(`${baseUrl}/api/applications/user/${userIdToFetch}`);
           const appJson = await appRes.json();
           if (appJson.success && appJson.applications) {
@@ -519,6 +519,16 @@ export default function StudentDashboard() {
           </Animated.View>
         )}
       </ScrollView>
+      
+      {/* AI Career Coach FAB */}
+      <TouchableOpacity 
+        style={styles.fab}
+        onPress={() => router.push('/student-ai-coach')}
+        activeOpacity={0.8}
+      >
+        <Sparkles size={24} color="#ffffff" />
+      </TouchableOpacity>
+
       <BottomTabBar />
     </SafeAreaView>
   );
@@ -530,6 +540,26 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   scroll: { flex: 1 },
   scrollContent: { padding: 16, gap: 16, paddingBottom: 32 },
+  fab: {
+    ...Platform.select({
+      web: { position: 'fixed' as any },
+      default: { position: 'absolute' },
+    }),
+    bottom: Platform.OS === 'ios' ? 130 : 120,
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#8b5cf6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#8b5cf6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 8,
+    zIndex: 9999,
+  },
 });
 
 const welcomeStyles = StyleSheet.create({

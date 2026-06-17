@@ -88,7 +88,7 @@ export default function StudentJobs() {
       }
       if (!id) id = '8bbe6fc3-2716-4821-b967-35b0689cbf11';
 
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend.onrender.com' : 'https://thodakkam-backend.onrender.com';
+      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
       const response = await fetch(`${baseUrl}/api/user/${id}`);
       const json = await response.json();
 
@@ -102,7 +102,7 @@ export default function StudentJobs() {
 
   const fetchJobs = async () => {
     try {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend.onrender.com' : 'https://thodakkam-backend.onrender.com';
+      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
       const response = await fetch(`${baseUrl}/api/jobs`);
       const data = await response.json();
       if (data.success) {
@@ -163,7 +163,7 @@ function JobItem({ job, router }: { job: any, router: any }) {
 
   let startupPhoto = job.startup?.companyLogo || job.startup?.profilePhoto;
   if (startupPhoto && !startupPhoto.startsWith('http') && !startupPhoto.startsWith('data:')) {
-    const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend.onrender.com' : 'https://thodakkam-backend.onrender.com';
+    const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
     startupPhoto = `${baseUrl}/uploads/${startupPhoto.split(/[/\\]/).pop()}`;
   }
 
@@ -174,7 +174,7 @@ function JobItem({ job, router }: { job: any, router: any }) {
     setIsSaving(true);
     
     try {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend.onrender.com' : 'https://thodakkam-backend.onrender.com';
+      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
       const res = await fetch(`${baseUrl}/api/jobs/${job.id}/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

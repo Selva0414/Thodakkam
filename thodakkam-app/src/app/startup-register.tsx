@@ -24,7 +24,7 @@ const CATEGORIES = [
   'Others'
 ];
 
-const BASE_URL = Platform.OS === 'android' ? 'https://thodakkam-backend.onrender.com' : 'https://thodakkam-backend.onrender.com';
+const BASE_URL = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
 
 function InputField({ label, placeholder, value, onChangeText, secureTextEntry, rightIcon: RightIcon, onRightIconPress, keyboardType, autoCapitalize }: any) {
   return (

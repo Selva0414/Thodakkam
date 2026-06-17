@@ -40,7 +40,7 @@ export default function StartupCandidates() {
   const fetchApplications = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`https://thodakkam-backend.onrender.com/api/applications/startup/${companyName}`);
+      const response = await fetch(`https://thodakkam.onrender.com/api/applications/startup/${companyName}`);
       if (!response.ok) throw new Error(`Server returned ${response.status}`);
       const data = await response.json();
       if (data.success) {

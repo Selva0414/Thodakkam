@@ -73,7 +73,7 @@ export default function StudentMessages() {
 
   const fetchUsers = async (userId: string) => {
     try {
-      const res = await fetch('https://thodakkam-backend.onrender.com/api/users/all');
+      const res = await fetch('https://thodakkam.onrender.com/api/users/all');
       if (!res.ok) {
         console.warn('API /api/users/all returned ' + res.status);
         return;
@@ -96,7 +96,7 @@ export default function StudentMessages() {
         setAllUsersToMessage(formattedUsers);
       }
 
-      const convRes = await fetch(`https://thodakkam-backend.onrender.com/api/messages/conversations/${userId}`);
+      const convRes = await fetch(`https://thodakkam.onrender.com/api/messages/conversations/${userId}`);
       if (convRes.ok) {
         const convData = await convRes.json();
         const pinnedStr = await AsyncStorage.getItem(`pinned_startups_${userId}`);
@@ -153,7 +153,7 @@ export default function StudentMessages() {
     if (!myUserId) return;
 
     try {
-      const res = await fetch(`https://thodakkam-backend.onrender.com/api/messages/${myUserId}/${user.id}`);
+      const res = await fetch(`https://thodakkam.onrender.com/api/messages/${myUserId}/${user.id}`);
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
@@ -180,7 +180,7 @@ export default function StudentMessages() {
     const uid = overrideUserId || myUserId;
     if (!uid) return;
     try {
-      const res = await fetch(`https://thodakkam-backend.onrender.com/api/messages/${uid}/${startupId}`);
+      const res = await fetch(`https://thodakkam.onrender.com/api/messages/${uid}/${startupId}`);
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
@@ -219,7 +219,7 @@ export default function StudentMessages() {
     });
 
     try {
-      await fetch('https://thodakkam-backend.onrender.com/api/messages', {
+      await fetch('https://thodakkam.onrender.com/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ senderId: myUserId, receiverId: activeChatId, text: msgText })

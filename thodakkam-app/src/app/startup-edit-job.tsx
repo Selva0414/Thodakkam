@@ -110,7 +110,7 @@ export default function StartupEditJob() {
 
     setLoading(true);
     try {
-      const response = await fetch(`https://thodakkam-backend.onrender.com/api/jobs/${jobId}`, {
+      const response = await fetch(`https://thodakkam.onrender.com/api/jobs/${jobId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

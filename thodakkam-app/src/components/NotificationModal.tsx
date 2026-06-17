@@ -13,6 +13,7 @@ interface NotificationModalProps {
 export default function NotificationModal({ visible, onClose, role }: NotificationModalProps) {
   const { colors, isDark } = useAppTheme();
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     const fetchNotifs = () => {
@@ -32,6 +33,11 @@ export default function NotificationModal({ visible, onClose, role }: Notificati
     
     return () => unsubscribe();
   }, [role]);
+
+  const handleClose = () => {
+    setShowAll(false);
+    onClose();
+  };
 
   const getIcon = (type: string) => {
     switch(type) {
@@ -60,22 +66,22 @@ export default function NotificationModal({ visible, onClose, role }: Notificati
       visible={visible}
       transparent={true}
       animationType="fade"
-      onRequestClose={onClose}
+      onRequestClose={handleClose}
     >
       <View style={styles.overlay}>
-        <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
+        <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={handleClose} />
         
-        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}>
+        <View style={[styles.card, showAll && styles.cardExpanded, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}>
           {/* Header */}
           <View style={styles.header}>
-            <Text style={[styles.headerTitle, { color: colors.primary }]}>Notifications</Text>
-            <TouchableOpacity style={[styles.closeBtn, { backgroundColor: isDark ? colors.primary + '20' : '#f3e8ff' }]} onPress={onClose}>
+            <Text style={[styles.headerTitle, { color: colors.primary }]}>{showAll ? 'All Notifications' : 'Notifications'}</Text>
+            <TouchableOpacity style={[styles.closeBtn, { backgroundColor: isDark ? colors.primary + '20' : '#f3e8ff' }]} onPress={handleClose}>
               <X size={16} color={colors.primary} />
             </TouchableOpacity>
           </View>
 
           {/* List */}
-          <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
+          <ScrollView style={[styles.list, showAll && styles.listExpanded]} showsVerticalScrollIndicator={showAll}>
             {notifications.length === 0 ? (
               <Text style={{ textAlign: 'center', color: colors.textSecondary, marginVertical: 20 }}>No new notifications.</Text>
             ) : (
@@ -97,10 +103,12 @@ export default function NotificationModal({ visible, onClose, role }: Notificati
           </ScrollView>
 
           {/* Footer */}
-          <TouchableOpacity style={styles.footer} onPress={onClose}>
-            <Text style={[styles.footerText, { color: colors.primary }]}>View all notifications</Text>
-            <ArrowRight size={14} color={colors.primary} style={{ marginLeft: 4 }} />
-          </TouchableOpacity>
+          {!showAll && (
+            <TouchableOpacity style={styles.footer} onPress={() => setShowAll(true)}>
+              <Text style={[styles.footerText, { color: colors.primary }]}>View all notifications</Text>
+              <ArrowRight size={14} color={colors.primary} style={{ marginLeft: 4 }} />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </Modal>
@@ -128,6 +136,9 @@ const styles = StyleSheet.create({
       default: { shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 16, elevation: 10 },
     }),
   },
+  cardExpanded: {
+    maxHeight: '90%',
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -147,6 +158,9 @@ const styles = StyleSheet.create({
   },
   list: {
     maxHeight: 300,
+  },
+  listExpanded: {
+    maxHeight: undefined,
   },
   item: {
     flexDirection: 'row',

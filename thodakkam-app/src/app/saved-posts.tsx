@@ -92,7 +92,7 @@ export default function SavedPosts() {
         setLoading(false);
         return;
       }
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend.onrender.com' : 'https://thodakkam-backend.onrender.com';
+      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
       const res = await fetch(`${baseUrl}/api/posts/saved/${encodeURIComponent(identifier)}?type=${role}`);
       const data = await res.json();
       if (data.success) {
@@ -184,7 +184,7 @@ function PostItem({ post, role, identifier }: { post: any, role: string, identif
     setLikesCount((prev: number) => newLikedState ? prev + 1 : prev - 1);
     
     try {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend.onrender.com' : 'https://thodakkam-backend.onrender.com';
+      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
       await fetch(`${baseUrl}/api/posts/${post.id}/like`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -203,7 +203,7 @@ function PostItem({ post, role, identifier }: { post: any, role: string, identif
     setIsCommenting(true);
     
     try {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend.onrender.com' : 'https://thodakkam-backend.onrender.com';
+      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
       const res = await fetch(`${baseUrl}/api/posts/${post.id}/comment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -244,7 +244,7 @@ function PostItem({ post, role, identifier }: { post: any, role: string, identif
     setIsReposting(true);
     
     try {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend.onrender.com' : 'https://thodakkam-backend.onrender.com';
+      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
       const res = await fetch(`${baseUrl}/api/posts/${post.id}/repost`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -273,7 +273,7 @@ function PostItem({ post, role, identifier }: { post: any, role: string, identif
     setIsSaving(true);
     
     try {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend.onrender.com' : 'https://thodakkam-backend.onrender.com';
+      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
       const res = await fetch(`${baseUrl}/api/posts/${post.id}/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

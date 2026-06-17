@@ -28,7 +28,7 @@ export default function StartupInterviews() {
 
   const fetchAssessments = async () => {
     try {
-      const res = await fetch(`https://thodakkam-backend.onrender.com/api/assessments/${encodeURIComponent(companyName)}`);
+      const res = await fetch(`https://thodakkam.onrender.com/api/assessments/${encodeURIComponent(companyName)}`);
       const data = await res.json();
       if (data.success && data.assessments) {
         const mapped = data.assessments.map((a: any) => {

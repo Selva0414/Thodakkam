@@ -63,7 +63,7 @@ export default function StartupProfile() {
     setLoading(true);
     try {
       // 1. Fetch from DB
-      const response = await fetch(`https://thodakkam-backend.onrender.com/api/startup/profile/${encodeURIComponent(companyName)}`);
+      const response = await fetch(`https://thodakkam.onrender.com/api/startup/profile/${encodeURIComponent(companyName)}`);
       const data = await response.json();
       
       let dbData: any = {};
@@ -102,7 +102,7 @@ export default function StartupProfile() {
     setSaving(true);
     try {
       // 1. Save core fields to DB
-      await fetch(`https://thodakkam-backend.onrender.com/api/startup/profile/${encodeURIComponent(companyName)}`, {
+      await fetch(`https://thodakkam.onrender.com/api/startup/profile/${encodeURIComponent(companyName)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

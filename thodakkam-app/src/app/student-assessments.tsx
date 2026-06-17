@@ -94,7 +94,7 @@ export default function StudentAssessments() {
           return;
         }
 
-        const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend.onrender.com' : 'https://thodakkam-backend.onrender.com';
+        const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
         
         const response = await fetch(`${baseUrl}/api/user/${userId}`);
         const resJson = await response.json();

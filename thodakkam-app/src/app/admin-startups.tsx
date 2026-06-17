@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, TouchableOpacity,
-  SafeAreaView, TextInput, Image, Platform
+  SafeAreaView, TextInput, Image, Platform, ActivityIndicator
 } from 'react-native';
 import {
   Search, Mail, Bell, ShieldCheck, Rocket, Users,
@@ -10,6 +10,7 @@ import {
 } from 'lucide-react-native';
 import { router } from 'expo-router';
 import AdminHeader from '../components/AdminHeader';
+import StartupProfileModal from '../components/StartupProfileModal';
 
 const PRIMARY = '#5A279B'; // Deep purple matching the brand
 const BG = '#f8fafc';
@@ -19,6 +20,28 @@ const TEXT_GRAY = '#64748b';
 
 export default function AdminStartups() {
   const [activeTab, setActiveTab] = useState('Startups');
+  const [startups, setStartups] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedCompany, setSelectedCompany] = useState('');
+  const [isModalVisible, setIsModalVisible] = useState(false);
+
+  useEffect(() => {
+    const fetchStartups = async () => {
+      try {
+        const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
+        const res = await fetch(`${baseUrl}/api/admin/startups`);
+        const data = await res.json();
+        if (data.success) {
+          setStartups(data.startups);
+        }
+      } catch (err) {
+        console.error('Error fetching startups:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStartups();
+  }, []);
 
   const handleTabPress = (label: string) => {
     if (label === 'Home') {
@@ -65,7 +88,7 @@ export default function AdminStartups() {
             </View>
             <Text style={styles.statLabel}>Approved Startups</Text>
             <View style={styles.statBottom}>
-              <Text style={styles.statValue}>98</Text>
+              <Text style={styles.statValue}>{loading ? '...' : startups.length}</Text>
               <TouchableOpacity>
                 <Download size={16} color={TEXT_GRAY} />
               </TouchableOpacity>
@@ -84,7 +107,7 @@ export default function AdminStartups() {
             </View>
             <Text style={styles.statLabel}>Rejected Applications</Text>
             <View style={styles.statBottom}>
-              <Text style={styles.statValue}>12</Text>
+              <Text style={styles.statValue}>0</Text>
               <TouchableOpacity>
                 <Download size={16} color={TEXT_GRAY} />
               </TouchableOpacity>
@@ -103,7 +126,7 @@ export default function AdminStartups() {
             </View>
             <Text style={styles.statLabel}>Active Entities</Text>
             <View style={styles.statBottom}>
-              <Text style={styles.statValue}>110</Text>
+              <Text style={styles.statValue}>{loading ? '...' : startups.length}</Text>
               <TouchableOpacity>
                 <Download size={16} color={TEXT_GRAY} />
               </TouchableOpacity>
@@ -115,181 +138,87 @@ export default function AdminStartups() {
         <View style={styles.listSection}>
           <Text style={styles.listSectionTitle}>STARTUP LIST</Text>
 
-          {/* Item 1 */}
-          <View style={styles.listItem}>
-            <View style={styles.listTop}>
-              <View style={styles.logoRow}>
-                <View style={[styles.companyLogoBox, { backgroundColor: '#ede9fe' }]}>
-                  <Text style={[styles.companyLogoText, { color: '#8b5cf6' }]}>ED</Text>
-                </View>
-                <View>
-                  <Text style={styles.companyName}>EchoD</Text>
-                  <View style={styles.categoryBadge}>
-                    <Text style={styles.categoryBadgeText}>Software</Text>
+          {loading ? (
+            <ActivityIndicator size="large" color={PRIMARY} style={{ marginTop: 20 }} />
+          ) : startups.length === 0 ? (
+            <Text style={{ textAlign: 'center', marginVertical: 20, color: TEXT_GRAY }}>No startups registered yet.</Text>
+          ) : startups.map((startup) => {
+            const companyInitials = startup.companyName ? startup.companyName.substring(0, 2).toUpperCase() : 'SU';
+            let logoUrl = startup.companyLogo || startup.profilePhoto;
+            if (logoUrl && !logoUrl.startsWith('http') && !logoUrl.startsWith('data:image')) {
+              const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
+              logoUrl = `${baseUrl}/uploads/${logoUrl.split(/[/\\]/).pop()}`;
+            }
+            let founderImg = startup.founderImage;
+            if (founderImg && !founderImg.startsWith('http') && !founderImg.startsWith('data:image')) {
+              const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
+              founderImg = `${baseUrl}/uploads/${founderImg.split(/[/\\]/).pop()}`;
+            }
+
+            return (
+              <View key={startup.id} style={styles.listItem}>
+                <View style={styles.listTop}>
+                  <View style={styles.logoRow}>
+                    {logoUrl ? (
+                      <Image source={{ uri: logoUrl }} style={[styles.companyLogoBox, { backgroundColor: '#f1f5f9' }]} />
+                    ) : (
+                      <View style={[styles.companyLogoBox, { backgroundColor: '#e0e7ff' }]}>
+                        <Text style={[styles.companyLogoText, { color: '#4f46e5' }]}>{companyInitials}</Text>
+                      </View>
+                    )}
+                    <View>
+                      <Text style={styles.companyName}>{startup.companyName}</Text>
+                      <View style={styles.categoryBadge}>
+                        <Text style={styles.categoryBadgeText}>{startup.category || 'Tech'}</Text>
+                      </View>
+                    </View>
+                  </View>
+                  <View style={styles.statusBadgeBlue}>
+                    <View style={[styles.statusDot, { backgroundColor: '#4f46e5' }]} />
+                    <Text style={styles.statusBadgeBlueText}>Active</Text>
                   </View>
                 </View>
-              </View>
-              <View style={styles.statusBadgeGreen}>
-                <View style={[styles.statusDot, { backgroundColor: '#16a34a' }]} />
-                <Text style={styles.statusBadgeGreenText}>Approved</Text>
-              </View>
-            </View>
-            
-            <View style={styles.userRow}>
-              <View style={styles.userLeft}>
-                <Image source={{ uri: 'https://i.pravatar.cc/150?img=5' }} style={styles.userAvatar} />
-                <Text style={styles.userName}>Sarah Chen</Text>
-              </View>
-              <TouchableOpacity style={styles.viewBtn}>
-                <Text style={styles.viewBtnText}>View</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.actionButtons}>
-              <TouchableOpacity style={styles.btnApprove}>
-                <Text style={styles.btnApproveText}>Approve</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.btnReject}>
-                <Text style={styles.btnRejectText}>Reject</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.btnBlock}>
-                <Text style={styles.btnBlockText}>Block</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Item 2 */}
-          <View style={styles.listItem}>
-            <View style={styles.listTop}>
-              <View style={styles.logoRow}>
-                <View style={[styles.companyLogoBox, { backgroundColor: '#dcfce7' }]}>
-                  <Text style={[styles.companyLogoText, { color: '#16a34a' }]}>SU</Text>
-                </View>
-                <View>
-                  <Text style={styles.companyName}>Startup</Text>
-                  <View style={styles.categoryBadge}>
-                    <Text style={styles.categoryBadgeText}>Energy</Text>
+                
+                <View style={styles.userRow}>
+                  <View style={styles.userLeft}>
+                    {founderImg ? (
+                      <Image source={{ uri: founderImg }} style={styles.userAvatar} />
+                    ) : (
+                      <View style={[styles.userAvatar, { backgroundColor: PRIMARY, justifyContent: 'center', alignItems: 'center' }]}>
+                        <Text style={{ color: WHITE, fontSize: 10, fontWeight: 'bold' }}>{startup.founderName ? startup.founderName.charAt(0).toUpperCase() : 'F'}</Text>
+                      </View>
+                    )}
+                    <Text style={styles.userName}>{startup.founderName}</Text>
                   </View>
+                  <TouchableOpacity 
+                    style={styles.viewBtn}
+                    onPress={() => {
+                      setSelectedCompany(startup.companyName);
+                      setIsModalVisible(true);
+                    }}
+                  >
+                    <Text style={styles.viewBtnText}>View</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.actionButtons}>
+                  <TouchableOpacity style={styles.btnApprove}>
+                    <Text style={styles.btnApproveText}>Approve</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.btnReject}>
+                    <Text style={styles.btnRejectText}>Reject</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.btnBlock}>
+                    <Text style={styles.btnBlockText}>Block</Text>
+                  </TouchableOpacity>
                 </View>
               </View>
-              <View style={styles.statusBadgeOrange}>
-                <View style={[styles.statusDot, { backgroundColor: '#f59e0b' }]} />
-                <Text style={styles.statusBadgeOrangeText}>Pending</Text>
-              </View>
-            </View>
-            
-            <View style={styles.userRow}>
-              <View style={styles.userLeft}>
-                <Image source={{ uri: 'https://i.pravatar.cc/150?img=12' }} style={styles.userAvatar} />
-                <Text style={styles.userName}>John Smith</Text>
-              </View>
-              <TouchableOpacity style={styles.viewBtn}>
-                <Text style={styles.viewBtnText}>View</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.actionButtons}>
-              <TouchableOpacity style={styles.btnApprove}>
-                <Text style={styles.btnApproveText}>Approve</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.btnReject}>
-                <Text style={styles.btnRejectText}>Reject</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.btnBlock}>
-                <Text style={styles.btnBlockText}>Block</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Item 3 */}
-          <View style={styles.listItem}>
-            <View style={styles.listTop}>
-              <View style={styles.logoRow}>
-                <View style={[styles.companyLogoBox, { backgroundColor: '#e0e7ff' }]}>
-                  <Text style={[styles.companyLogoText, { color: '#4f46e5' }]}>FF</Text>
-                </View>
-                <View>
-                  <Text style={styles.companyName}>FinFlow</Text>
-                  <View style={styles.categoryBadge}>
-                    <Text style={styles.categoryBadgeText}>Fintech</Text>
-                  </View>
-                </View>
-              </View>
-              <View style={styles.statusBadgeBlue}>
-                <View style={[styles.statusDot, { backgroundColor: '#4f46e5' }]} />
-                <Text style={styles.statusBadgeBlueText}>Active</Text>
-              </View>
-            </View>
-            
-            <View style={styles.userRow}>
-              <View style={styles.userLeft}>
-                <Image source={{ uri: 'https://i.pravatar.cc/150?img=9' }} style={styles.userAvatar} />
-                <Text style={styles.userName}>Elena Rodriguez</Text>
-              </View>
-              <TouchableOpacity style={styles.viewBtn}>
-                <Text style={styles.viewBtnText}>View</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.actionButtons}>
-              <TouchableOpacity style={styles.btnApprove}>
-                <Text style={styles.btnApproveText}>Approve</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.btnReject}>
-                <Text style={styles.btnRejectText}>Reject</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.btnBlock}>
-                <Text style={styles.btnBlockText}>Block</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Item 4 */}
-          <View style={styles.listItem}>
-            <View style={styles.listTop}>
-              <View style={styles.logoRow}>
-                <View style={[styles.companyLogoBox, { backgroundColor: '#fae8ff' }]}>
-                  <Text style={[styles.companyLogoText, { color: '#c026d3' }]}>SV</Text>
-                </View>
-                <View>
-                  <Text style={styles.companyName}>SkyVault</Text>
-                  <View style={styles.categoryBadge}>
-                    <Text style={styles.categoryBadgeText}>Security</Text>
-                  </View>
-                </View>
-              </View>
-              <View style={styles.statusBadgeRed}>
-                <View style={[styles.statusDot, { backgroundColor: '#ef4444' }]} />
-                <Text style={styles.statusBadgeRedText}>Rejected</Text>
-              </View>
-            </View>
-            
-            <View style={styles.userRow}>
-              <View style={styles.userLeft}>
-                <Image source={{ uri: 'https://i.pravatar.cc/150?img=14' }} style={styles.userAvatar} />
-                <Text style={styles.userName}>Marcus Lee</Text>
-              </View>
-              <TouchableOpacity style={styles.viewBtn}>
-                <Text style={styles.viewBtnText}>View</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.actionButtons}>
-              <TouchableOpacity style={styles.btnApprove}>
-                <Text style={styles.btnApproveText}>Approve</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.btnReject}>
-                <Text style={styles.btnRejectText}>Reject</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.btnBlock}>
-                <Text style={styles.btnBlockText}>Block</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+            );
+          })}
 
           {/* Pagination */}
           <View style={styles.paginationSection}>
-            <Text style={styles.paginationText}>Showing 1 to 5 of 23 results</Text>
+            <Text style={styles.paginationText}>Showing 1 to {startups.length > 5 ? 5 : startups.length} of {startups.length} results</Text>
             <View style={styles.paginationRow}>
               <TouchableOpacity style={styles.pageBtnOutlined}>
                 <ChevronLeft size={16} color={TEXT_GRAY} />
@@ -316,6 +245,12 @@ export default function AdminStartups() {
         </View>
 
       </ScrollView>
+
+      <StartupProfileModal
+        visible={isModalVisible}
+        onClose={() => setIsModalVisible(false)}
+        companyName={selectedCompany}
+      />
 
       {/* Bottom Navigation */}
       <View style={styles.bottomNav}>

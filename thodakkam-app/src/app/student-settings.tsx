@@ -11,7 +11,7 @@ import { useAppTheme } from '../context/ThemeContext';
 
 const GREEN = '#10b981';
 
-const BACKEND_URL = Platform.OS === 'android' ? 'https://thodakkam-backend.onrender.com' : 'https://thodakkam-backend.onrender.com';
+const BACKEND_URL = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
 
 export default function StudentSettings() {
   const router = useRouter();
