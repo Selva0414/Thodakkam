@@ -145,10 +145,16 @@ export default function StudentProfile() {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [1, 1],
-      quality: 0.8,
+      quality: 0.5,
+      base64: true,
     });
     if (!result.canceled && result.assets && result.assets.length > 0) {
-      setProfile({ ...profile, profilePhoto: result.assets[0].uri });
+      if (result.assets[0].base64) {
+        const base64Img = `data:image/jpeg;base64,${result.assets[0].base64}`;
+        setProfile({ ...profile, profilePhoto: base64Img });
+      } else {
+        setProfile({ ...profile, profilePhoto: result.assets[0].uri });
+      }
     }
   };
 

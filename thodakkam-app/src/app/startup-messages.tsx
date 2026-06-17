@@ -30,6 +30,7 @@ export default function StartupMessages() {
   const [showEmojis, setShowEmojis] = useState(false);
   const [companyLogo, setCompanyLogo] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const COMMON_EMOJIS = ['😊', '😂', '❤️', '👍', '🙏', '🔥', '🎉', '🚀', '👀'];
 
   useEffect(() => {
@@ -47,13 +48,23 @@ export default function StartupMessages() {
 
   useEffect(() => {
     AsyncStorage.getItem('startupId').then(id => {
-      // We will fallback to companyName if ID is missing or use userStore
       if (id) {
         setMyUserId(id);
         fetchUsers(id);
+      } else if (companyName) {
+        fetch(`https://thodakkam.onrender.com/api/startup/profile/${encodeURIComponent(companyName)}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.success && data.startup?.id) {
+              AsyncStorage.setItem('startupId', data.startup.id);
+              setMyUserId(data.startup.id);
+              fetchUsers(data.startup.id);
+            }
+          })
+          .catch(err => console.log('Error fallback fetching ID:', err));
       }
     });
-  }, []);
+  }, [companyName]);
 
   // Real-time polling effect
   useEffect(() => {
@@ -541,11 +552,11 @@ export default function StartupMessages() {
 
             <View style={[styles.searchBar, { backgroundColor: colors.inputBg }]}>
               <Search size={18} color={colors.textSecondary} />
-              <TextInput style={[styles.searchInput, { color: colors.text }]} placeholder="Search students or startups..." placeholderTextColor={colors.textSecondary} />
+              <TextInput style={[styles.searchInput, { color: colors.text }]} placeholder="Search students or startups..." placeholderTextColor={colors.textSecondary} value={searchQuery} onChangeText={setSearchQuery} />
             </View>
 
             <ScrollView style={styles.userList}>
-              {allUsersToMessage.map(u => (
+              {allUsersToMessage.filter(u => u.name.toLowerCase().includes(searchQuery.toLowerCase())).map(u => (
                 <TouchableOpacity key={u.id} style={[styles.userListItem, { borderBottomColor: colors.border }]} onPress={() => handleStartConversation(u)}>
                   <Image source={{ uri: u.avatar }} style={styles.userListAvatar} />
                   <View style={styles.userInfo}>

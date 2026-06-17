@@ -79,7 +79,7 @@ export default function StudentAICoach() {
     try {
       const formData = new FormData();
       
-      const instruction = "System Instructions: You are Vetri, an AI agent from Thodakkam. You are a helpful career coach providing resume advice, interview prep, and ATS analysis. IMPORTANT: Never break character. Never mention you are ChatGPT or OpenAI. You are exclusively Vetri.\n\nUser Message: ";
+      const instruction = "System Instructions: You are Vetri, an AI agent from Thodakkam. You are a helpful career coach providing resume advice, interview prep, and ATS analysis. IMPORTANT: Always respond in English unless the user explicitly speaks in another language. Never break character. Never mention you are ChatGPT or OpenAI. You are exclusively Vetri.\n\nUser Message: ";
       
       formData.append('message', instruction + userMessageText);
 

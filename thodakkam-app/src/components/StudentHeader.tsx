@@ -29,7 +29,9 @@ export default function StudentHeader({ user }: { user?: { id?: string, name: st
             const data = await res.json();
             if (data.success && data.user) {
               let photo = data.user.profilePhoto;
-              if (photo && !photo.startsWith('http') && !photo.startsWith('data:image')) {
+              if (photo && photo.startsWith('file://')) {
+                photo = null; // Invalid across devices, fallback to initials
+              } else if (photo && !photo.startsWith('http') && !photo.startsWith('data:image')) {
                 photo = `${baseUrl}/uploads/${photo.split(/[/\\]/).pop()}`;
               }
               const u = {
