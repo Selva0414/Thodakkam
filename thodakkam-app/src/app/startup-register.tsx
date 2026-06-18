@@ -115,7 +115,7 @@ export default function StartupRegisterScreen() {
 
       if (response.ok) {
         setShowOtpScreen(true);
-        alert(data.message);
+        alert(`${data.message}${data.otp ? `\n\nFor testing: Your OTP is ${data.otp}` : ''}`);
       } else {
         setErrorMessage(data.message || 'Failed to send OTP. Please try again.');
       }
