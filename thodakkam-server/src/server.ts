@@ -1552,7 +1552,7 @@ app.post('/api/assessments', async (req: Request, res: Response): Promise<void> 
 // Update Assessment
 app.put('/api/assessments/:id', async (req: Request, res: Response): Promise<void> => {
   try {
-    const id = req.params.id;
+    const id = req.params.id as string;
     const { title, description, selectedRounds, selectedCandidates, mcqConfig, codingConfig, interviewConfig } = req.body;
     
     const assessment = await prisma.assessment.update({
