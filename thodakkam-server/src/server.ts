@@ -336,7 +336,6 @@ app.post('/api/user/change-password', async (req: Request, res: Response): Promi
   }
 });
 
-// Configure Nodemailer Transport
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 465,
@@ -344,6 +343,9 @@ const transporter = nodemailer.createTransport({
   auth: {
     user: 't67757535@gmail.com',
     pass: 'hhtm smwp zpnq mgjw'
+  },
+  tls: {
+    rejectUnauthorized: false
   }
 });
 
@@ -1138,6 +1140,9 @@ app.post('/api/auth/forgot-password', async (req: Request, res: Response): Promi
       auth: {
         user: 't67757535@gmail.com',
         pass: 'hhtm smwp zpnq mgjw'
+      },
+      tls: {
+        rejectUnauthorized: false
       }
     });
 
