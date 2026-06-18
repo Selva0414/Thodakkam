@@ -437,7 +437,12 @@ app.post('/api/startup/send-otp', async (req: Request, res: Response): Promise<v
         `
       };
 
-      await transporter.sendMail(mailOptions);
+      const sendPromise = transporter.sendMail(mailOptions);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('SMTP connection timed out (likely blocked by Render)')), 5000)
+      );
+      
+      await Promise.race([sendPromise, timeoutPromise]);
       emailSent = true;
       console.log(`[OTP SERVICE] Email sent successfully to ${email}`);
     } catch (mailError: any) {
@@ -1164,7 +1169,11 @@ app.post('/api/auth/forgot-password', async (req: Request, res: Response): Promi
     };
 
     try {
-      await transporter.sendMail(mailOptions);
+      const sendPromise = transporter.sendMail(mailOptions);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('SMTP connection timed out (likely blocked by Render)')), 5000)
+      );
+      await Promise.race([sendPromise, timeoutPromise]);
       console.log(`[MAIL SENT] OTP ${otp} sent successfully to ${email}`);
       res.status(200).json({ success: true, message: 'OTP sent to your email successfully.' });
     } catch (mailError) {
