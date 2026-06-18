@@ -541,7 +541,7 @@ function PostItem({ post }: { post: any }) {
             >
               {post.imageUrls?.map((img: string, idx: number) => (
                 <View key={idx} style={{ width: SCREEN_WIDTH, height: '100%', justifyContent: 'center', alignItems: 'center' }}>
-                  <Image source={{ uri: img }} style={{ width: '100%', height: '80%', backgroundColor: '#ffffff', borderRadius: 12 }} resizeMode="contain" />
+                  <Image source={{ uri: img }} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
                 </View>
               ))}
             </ScrollView>
