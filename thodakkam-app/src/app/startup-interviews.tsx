@@ -168,19 +168,18 @@ export default function StartupInterviews() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StartupHeader companyName={companyName} />
       
-      {openMenuId && (
-        <TouchableOpacity 
-          style={[StyleSheet.absoluteFill, { zIndex: 50 }]} 
-          activeOpacity={1} 
-          onPress={() => setOpenMenuId(null)} 
-        />
-      )}
-      
       <ScrollView 
         style={styles.scroll} 
         contentContainerStyle={[styles.scrollContent, { backgroundColor: colors.background }]} 
         showsVerticalScrollIndicator={false}
       >
+        {openMenuId && (
+          <TouchableOpacity 
+            style={[StyleSheet.absoluteFill, { zIndex: 50, position: 'absolute', top: 0, bottom: 0, left: 0, right: 0 }]} 
+            activeOpacity={1} 
+            onPress={() => setOpenMenuId(null)} 
+          />
+        )}
         
         {/* Page Header */}
         <View style={styles.pageHeader}>
