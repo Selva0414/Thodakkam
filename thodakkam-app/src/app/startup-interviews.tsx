@@ -99,13 +99,13 @@ export default function StartupInterviews() {
   const handleMenuAction = (action: string, item: any) => {
     switch (action) {
       case 'view':
-        Alert.alert("Coming Soon", "View functionality is under development.");
+        router.push({ pathname: '/startup-assessment-detail' as any, params: { companyName, id: item.id } });
         break;
       case 'ai_report':
         Alert.alert("AI Report", "Generating AI report for this assessment...");
         break;
       case 'edit':
-        Alert.alert("Coming Soon", "Edit functionality is under development.");
+        router.push({ pathname: '/startup-create-assessment' as any, params: { companyName, editId: item.id } });
         break;
       case 'deactivate':
         Alert.alert("Deactivate", `Are you sure you want to ${item.status === 'ACTIVE' ? 'deactivate' : 'activate'} ${item.title}?`, [

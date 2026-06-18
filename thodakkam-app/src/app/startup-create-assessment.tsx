@@ -11,6 +11,7 @@ export default function StartupCreateAssessment() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const companyName = (params.companyName as string);
+  const editId = (params.editId as string);
   const { colors, isDark } = useAppTheme();
 
   const [description, setDescription] = useState('');
@@ -26,7 +27,10 @@ export default function StartupCreateAssessment() {
     if (companyName) {
       fetchJobs();
     }
-  }, [companyName]);
+    if (editId) {
+      fetchAssessmentForEdit();
+    }
+  }, [companyName, editId]);
 
   const fetchJobs = async () => {
     try {
@@ -38,6 +42,53 @@ export default function StartupCreateAssessment() {
       }
     } catch (err) {
       console.error('Fetch Jobs Error:', err);
+    }
+  };
+
+  const fetchAssessmentForEdit = async () => {
+    try {
+      const response = await fetch(`https://thodakkam.onrender.com/api/assessments/single/${editId}`);
+      if (!response.ok) throw new Error(`Server returned ${response.status}`);
+      const data = await response.json();
+      if (data.success && data.assessment) {
+        const a = data.assessment;
+        setDescription(a.description || '');
+        setSelectedRounds(a.selectedRounds || []);
+        setSelectedJobId(a.jobId);
+        setSelectedCandidates(a.assignedCandidates || []);
+
+        if (a.mcqConfig) {
+          setMcqDuration(a.mcqConfig.durationMin?.toString() || '30');
+          setMcqPass(a.mcqConfig.passPercentage?.toString() || '60');
+          setMcqStartDate(a.mcqConfig.startDate || '');
+          setMcqStartTime(a.mcqConfig.startTime || '');
+          setMcqEndDate(a.mcqConfig.endDate || '');
+          setMcqEndTime(a.mcqConfig.endTime || '');
+          setQuestions(a.mcqConfig.questions || []);
+          setQuestionType(a.mcqConfig.questionType || 'manual');
+          if (a.mcqConfig.domainConfig) setDomainConfig(a.mcqConfig.domainConfig);
+        }
+
+        if (a.codingConfig) {
+          setCodingDuration(a.codingConfig.durationMin?.toString() || '45');
+          setCodingPass(a.codingConfig.passPercentage?.toString() || '70');
+          setCodingLang(a.codingConfig.programmingLanguage || 'JavaScript');
+          setStarterCode(a.codingConfig.starterCode || '');
+          setTestCases(a.codingConfig.testCases || [{ id: 1, input: '', output: '' }]);
+        }
+
+        if (a.interviewConfig) {
+          setInterviewDuration(a.interviewConfig.durationMin?.toString() || '30');
+          setInterviewStartDate(a.interviewConfig.startDate || '');
+          setInterviewStartTime(a.interviewConfig.startTime || '');
+          setInterviewEndDate(a.interviewConfig.endDate || '');
+          setInterviewEndTime(a.interviewConfig.endTime || '');
+          setInterviewLink(a.interviewConfig.meetingLink || '');
+          setInterviewNotes(a.interviewConfig.notes || '');
+        }
+      }
+    } catch (err) {
+      console.error('Fetch Assessment Error:', err);
     }
   };
   
@@ -138,8 +189,10 @@ export default function StartupCreateAssessment() {
     }
     
     try {
-      const response = await fetch('https://thodakkam.onrender.com/api/assessments', {
-        method: 'POST',
+      const url = editId ? `https://thodakkam.onrender.com/api/assessments/${editId}` : 'https://thodakkam.onrender.com/api/assessments';
+      const method = editId ? 'PUT' : 'POST';
+      const response = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           startupId: companyName,
@@ -197,7 +250,7 @@ export default function StartupCreateAssessment() {
           <ArrowLeft size={16} color={colors.textSecondary} />
           {!isMobile && <Text style={[styles.backBtnText, { color: colors.textSecondary }]}>Back to Assessments</Text>}
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Create Assessment</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>{editId ? 'Update Assessment' : 'Create Assessment'}</Text>
       </View>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>

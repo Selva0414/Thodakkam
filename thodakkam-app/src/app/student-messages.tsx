@@ -14,7 +14,39 @@ import StudentHeader from '../components/StudentHeader';
 import { globalNotificationStore } from '../utils/notificationStore';
 import { useAppTheme } from '../context/ThemeContext';
 
-
+function BottomTabBar() {
+  const router = useRouter();
+  const { colors } = useAppTheme();
+  const active = 'Chat';
+  const tabs = [
+    { label: 'Home', icon: LayoutDashboard, path: '/student-dashboard' },
+    { label: 'Jobs', icon: Briefcase, path: '/student-jobs' },
+    { label: 'Tests', icon: ClipboardList, path: '/student-assessments' },
+    { label: 'Chat', icon: MessageSquare, path: '/student-messages' },
+    { label: 'Feed', icon: Users, path: '/student-community' },
+  ];
+  return (
+    <View style={[tabBarStyles.container, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
+      {tabs.map(({ label, icon: Icon, path }) => {
+        const isActive = active === label;
+        return (
+          <TouchableOpacity
+            key={label}
+            style={tabBarStyles.tab}
+            onPress={() => {
+              if (path && !isActive) router.push(path as any);
+            }}
+          >
+            <View style={[{ padding: 8, borderRadius: 20 }, isActive && { backgroundColor: colors.primary + '20', transform: [{ scale: 1.1 }] }]}>
+                  <Icon size={22} color={isActive ? colors.primary : colors.textSecondary} />
+                </View>
+            <Text style={[tabBarStyles.label, { color: colors.textSecondary }, isActive && { color: colors.primary, fontWeight: '700' }]}>{label}</Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
 
 export default function StudentMessages() {
   const router = useRouter();
@@ -506,6 +538,7 @@ export default function StudentMessages() {
           </View>
         </View>
       </Modal>
+      <BottomTabBar />
     </SafeAreaView>
   );
 }
@@ -564,3 +597,13 @@ const styles = StyleSheet.create({
   userType: { fontSize: 12, marginTop: 2 },
 });
 
+const tabBarStyles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    borderTopWidth: 1,
+    paddingBottom: Platform.OS === 'ios' ? 30 : 24,
+    paddingTop: 10,
+  },
+  tab: { flex: 1, alignItems: 'center', gap: 4 },
+  label: { fontSize: 10, fontWeight: '500' },
+});

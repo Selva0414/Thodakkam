@@ -1549,6 +1549,39 @@ app.post('/api/assessments', async (req: Request, res: Response): Promise<void> 
   }
 });
 
+// Update Assessment
+app.put('/api/assessments/:id', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = req.params.id;
+    const { title, description, selectedRounds, selectedCandidates, mcqConfig, codingConfig, interviewConfig } = req.body;
+    
+    const assessment = await prisma.assessment.update({
+      where: { id },
+      data: {
+        title,
+        description,
+        selectedRounds,
+        assignedCandidates: selectedCandidates || [],
+        mcqConfig: mcqConfig || undefined,
+        codingConfig: codingConfig || undefined,
+        interviewConfig: interviewConfig || undefined
+      }
+    });
+
+    if (selectedCandidates && selectedCandidates.length > 0) {
+      await prisma.application.updateMany({
+        where: { id: { in: selectedCandidates } },
+        data: { status: 'ASSESSMENT SCHEDULED' }
+      });
+    }
+
+    res.json({ success: true, assessment });
+  } catch (error) {
+    console.error('Error updating assessment:', error);
+    res.status(500).json({ success: false, message: 'Server error updating assessment' });
+  }
+});
+
 // Get Assessments by User
 app.get('/api/assessments/user/:userId', async (req: Request, res: Response): Promise<void> => {
   try {
