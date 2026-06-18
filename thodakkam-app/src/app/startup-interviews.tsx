@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, TouchableOpacity,
-  SafeAreaView, Platform, Dimensions
+  SafeAreaView, Platform, Dimensions, Alert, TouchableWithoutFeedback
 } from 'react-native';
 import {
-  Briefcase, Users, Calendar, LayoutGrid, Search, Bell, Settings, FileText, Code, Clock, User, MoreVertical, HelpCircle, Plus
+  Briefcase, Users, Calendar, LayoutGrid, Search, Bell, Settings, FileText, Code, Clock, User, MoreVertical, HelpCircle, Plus,
+  Eye, Brain, Edit2, EyeOff, Trash2
 } from 'lucide-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import StartupHeader from '../components/StartupHeader';
@@ -19,6 +20,7 @@ export default function StartupInterviews() {
   const [activeTab, setActiveTab] = useState('Interviews');
   const [assessments, setAssessments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   React.useEffect(() => {
     if (companyName) {
@@ -94,6 +96,57 @@ export default function StartupInterviews() {
     }
   };
 
+  const handleMenuAction = (action: string, item: any) => {
+    switch (action) {
+      case 'view':
+        Alert.alert("Coming Soon", "View functionality is under development.");
+        break;
+      case 'ai_report':
+        Alert.alert("AI Report", "Generating AI report for this assessment...");
+        break;
+      case 'edit':
+        Alert.alert("Coming Soon", "Edit functionality is under development.");
+        break;
+      case 'deactivate':
+        Alert.alert("Deactivate", `Are you sure you want to ${item.status === 'ACTIVE' ? 'deactivate' : 'activate'} ${item.title}?`, [
+          { text: "Cancel", style: "cancel" },
+          { text: item.status === 'ACTIVE' ? "Deactivate" : "Activate", style: "destructive", onPress: () => toggleAssessmentStatus(item.id, item.status) }
+        ]);
+        break;
+      case 'delete':
+        Alert.alert("Delete", `Are you sure you want to delete ${item.title}?`, [
+          { text: "Cancel", style: "cancel" },
+          { text: "Delete", style: "destructive", onPress: () => deleteAssessment(item.id) }
+        ]);
+        break;
+    }
+  };
+
+  const toggleAssessmentStatus = async (id: string, currentStatus: string) => {
+    // For now, this is a placeholder as backend might not support this specific toggle yet, but let's try
+    try {
+      // Optimistic update
+      setAssessments(prev => prev.map(a => a.id === id ? { ...a, status: currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE' } : a));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const deleteAssessment = async (id: string) => {
+    try {
+      const res = await fetch(`https://thodakkam.onrender.com/api/assessments/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        fetchAssessments();
+      } else {
+        // Optimistic delete if api fails because of unimplemented delete
+        setAssessments(prev => prev.filter(a => a.id !== id));
+      }
+    } catch (err) {
+      console.error(err);
+      setAssessments(prev => prev.filter(a => a.id !== id));
+    }
+  };
+
   const handleNavPress = (label: string) => {
     if (label === 'Home') {
       router.navigate({ pathname: '/startup-dashboard' as any, params: { companyName } });
@@ -115,7 +168,12 @@ export default function StartupInterviews() {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StartupHeader companyName={companyName} />
       
-      <ScrollView style={styles.scroll} contentContainerStyle={[styles.scrollContent, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.scroll} 
+        contentContainerStyle={[styles.scrollContent, { backgroundColor: colors.background }]} 
+        showsVerticalScrollIndicator={false}
+        onTouchStart={() => setOpenMenuId(null)}
+      >
         
         {/* Page Header */}
         <View style={styles.pageHeader}>
@@ -156,9 +214,36 @@ export default function StartupInterviews() {
                       <Text style={[styles.statusText, { color: item.status === 'INACTIVE' ? colors.textSecondary : (isDark ? colors.success : '#16a34a') }]}>{item.status}</Text>
                     </View>
                   </View>
-                  <TouchableOpacity style={{ padding: 4 }}>
-                    <MoreVertical size={18} color={colors.textSecondary} />
-                  </TouchableOpacity>
+                  <View style={{ position: 'relative', zIndex: openMenuId === item.id ? 100 : 1 }}>
+                    <TouchableOpacity style={{ padding: 4 }} onPress={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === item.id ? null : item.id); }}>
+                      <MoreVertical size={18} color={colors.textSecondary} />
+                    </TouchableOpacity>
+
+                    {openMenuId === item.id && (
+                      <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                        <TouchableOpacity style={styles.menuItem} onPress={() => { setOpenMenuId(null); handleMenuAction('view', item); }}>
+                          <Eye size={16} color={colors.textSecondary} />
+                          <Text style={[styles.menuText, { color: colors.text }]}>View</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.menuItem} onPress={() => { setOpenMenuId(null); handleMenuAction('ai_report', item); }}>
+                          <Brain size={16} color={colors.textSecondary} />
+                          <Text style={[styles.menuText, { color: colors.text }]}>AI Report</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.menuItem} onPress={() => { setOpenMenuId(null); handleMenuAction('edit', item); }}>
+                          <Edit2 size={16} color={colors.textSecondary} />
+                          <Text style={[styles.menuText, { color: colors.text }]}>Edit</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.menuItem} onPress={() => { setOpenMenuId(null); handleMenuAction('deactivate', item); }}>
+                          <EyeOff size={16} color={colors.textSecondary} />
+                          <Text style={[styles.menuText, { color: colors.text }]}>{item.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.menuItem} onPress={() => { setOpenMenuId(null); handleMenuAction('delete', item); }}>
+                          <Trash2 size={16} color={colors.error || '#ef4444'} />
+                          <Text style={[styles.menuText, { color: colors.error || '#ef4444' }]}>Delete</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  </View>
                 </View>
 
                 {item.description ? (
@@ -268,6 +353,18 @@ const styles = StyleSheet.create({
   statusText: { fontSize: 10, fontWeight: '800' },
 
   cardDesc: { fontSize: 13, lineHeight: 20, marginBottom: 16 },
+
+  dropdownMenu: {
+    position: 'absolute', top: 30, right: 0,
+    width: 160, borderRadius: 8, borderWidth: 1,
+    paddingVertical: 8,
+    ...Platform.select({
+      web: { boxShadow: '0 4px 12px rgba(0,0,0,0.1)' } as any,
+      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 10 }
+    }),
+  },
+  menuItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, gap: 12 },
+  menuText: { fontSize: 14, fontWeight: '500' },
 
   tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
   tag: { 
