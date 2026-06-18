@@ -238,8 +238,8 @@ export default function StartupInterviews() {
                           <Text style={[styles.menuText, { color: colors.text }]}>{item.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.menuItem} onPress={() => { setOpenMenuId(null); handleMenuAction('delete', item); }}>
-                          <Trash2 size={16} color={colors.error || '#ef4444'} />
-                          <Text style={[styles.menuText, { color: colors.error || '#ef4444' }]}>Delete</Text>
+                          <Trash2 size={16} color={colors.danger || '#ef4444'} />
+                          <Text style={[styles.menuText, { color: colors.danger || '#ef4444' }]}>Delete</Text>
                         </TouchableOpacity>
                       </View>
                     )}
