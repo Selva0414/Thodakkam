@@ -343,8 +343,8 @@ const transporter = nodemailer.createTransport({
   secure: false,
   requireTLS: true,
   auth: {
-    user: process.env.EMAIL_USER || '',
-    pass: process.env.EMAIL_PASS || ''
+    user: 't67757535@gmail.com',
+    pass: 'hhtm smwp zpnq mgjw'
   }
 });
 
@@ -376,78 +376,72 @@ app.post('/api/startup/send-otp', async (req: Request, res: Response): Promise<v
     console.log(`==========================================\n`);
 
     let emailSent = false;
-    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-      try {
-        const companyLabel = companyName || 'Thodakkam';
-        const userLabel = founderName || 'User';
-        
-        // Generate initials (e.g. Echo Digital -> ED)
-        const words = companyLabel.split(' ').filter((w: string) => w.length > 0);
-        let initials = 'SU';
-        if (words.length >= 2) {
-          initials = (words[0][0] + words[1][0]).toUpperCase();
-        } else if (words.length === 1 && words[0].length >= 2) {
-          initials = words[0].substring(0, 2).toUpperCase();
-        }
-
-        const mailOptions = {
-          from: `"Start Up Portal" <${process.env.EMAIL_USER}>`,
-          to: email,
-          subject: 'Your Start Up Portal Verification Code',
-          html: `
-            <div style="font-family: Arial, sans-serif; padding: 40px 20px; color: #334155; max-width: 500px; margin: auto; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
-              
-              <!-- Top Logo Area -->
-              <div style="text-align: center; margin-bottom: 24px;">
-                <div style="display: inline-block; background-color: #5A279B; color: #ffffff; width: 48px; height: 48px; line-height: 48px; border-radius: 12px; font-weight: bold; font-size: 16px; margin-bottom: 16px;">
-                  ${initials}
-                </div>
-                <h2 style="color: #5A279B; margin: 0 0 8px 0; font-size: 22px;">Verify Your Email</h2>
-                <p style="color: #64748b; margin: 0; font-size: 14px;">Secure access to your account</p>
-              </div>
-
-              <!-- Message Body -->
-              <div style="font-size: 14px; line-height: 1.6; color: #334155; margin-bottom: 32px;">
-                <p>Hello ${userLabel},</p>
-                <p>Use the One-Time Password (OTP) below to complete your email verification. This ensures secure access to your account.</p>
-              </div>
-
-              <!-- OTP Box -->
-              <div style="text-align: center; margin-bottom: 32px;">
-                <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #5A279B; margin-bottom: 8px;">
-                  ${otp}
-                </div>
-                <p style="color: #94a3b8; font-size: 12px; margin: 0;">Valid for 5 minutes</p>
-              </div>
-
-              <!-- Warning Box -->
-              <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; font-size: 13px; color: #475569; margin-bottom: 40px;">
-                <p style="margin: 0 0 8px 0;">🔒 Never share your OTP with anyone.</p>
-                <p style="margin: 0;">⚠️ If you didn't request this, you can ignore this email.</p>
-              </div>
-
-              <!-- Footer -->
-              <div style="text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 24px;">
-                <p style="font-weight: bold; color: #64748b; margin: 0 0 4px 0;">${companyLabel}</p>
-                <p style="margin: 0 0 4px 0;">Startup • Student • Admin Platform</p>
-                <p style="margin: 0 0 16px 0;">${email}</p>
-                <p style="margin: 0;">© 2026 ${companyLabel}. All rights reserved.</p>
-              </div>
-            </div>
-          `
-        };
-
-        await transporter.sendMail(mailOptions);
-        emailSent = true;
-        console.log(`[OTP SERVICE] Email sent successfully to ${email}`);
-      } catch (mailError: any) {
-        console.error('[OTP SERVICE] Nodemailer Error:', mailError.message);
-        res.status(500).json({ success: false, message: `Failed to send email: ${mailError.message}` });
-        return;
+    try {
+      const companyLabel = companyName || 'Thodakkam';
+      const userLabel = founderName || 'User';
+      
+      // Generate initials (e.g. Echo Digital -> ED)
+      const words = companyLabel.split(' ').filter((w: string) => w.length > 0);
+      let initials = 'SU';
+      if (words.length >= 2) {
+        initials = (words[0][0] + words[1][0]).toUpperCase();
+      } else if (words.length === 1 && words[0].length >= 2) {
+        initials = words[0].substring(0, 2).toUpperCase();
       }
-    } else {
-      console.error('[OTP SERVICE] Missing EMAIL_USER or EMAIL_PASS environment variables.');
-      res.status(500).json({ success: false, message: 'Server email credentials are not configured.' });
+
+      const mailOptions = {
+        from: `"Start Up Portal" <t67757535@gmail.com>`,
+        to: email,
+        subject: 'Your Start Up Portal Verification Code',
+        html: `
+          <div style="font-family: Arial, sans-serif; padding: 40px 20px; color: #334155; max-width: 500px; margin: auto; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+            
+            <!-- Top Logo Area -->
+            <div style="text-align: center; margin-bottom: 24px;">
+              <div style="display: inline-block; background-color: #5A279B; color: #ffffff; width: 48px; height: 48px; line-height: 48px; border-radius: 12px; font-weight: bold; font-size: 16px; margin-bottom: 16px;">
+                ${initials}
+              </div>
+              <h2 style="color: #5A279B; margin: 0 0 8px 0; font-size: 22px;">Verify Your Email</h2>
+              <p style="color: #64748b; margin: 0; font-size: 14px;">Secure access to your account</p>
+            </div>
+
+            <!-- Message Body -->
+            <div style="font-size: 14px; line-height: 1.6; color: #334155; margin-bottom: 32px;">
+              <p>Hello ${userLabel},</p>
+              <p>Use the One-Time Password (OTP) below to complete your email verification. This ensures secure access to your account.</p>
+            </div>
+
+            <!-- OTP Box -->
+            <div style="text-align: center; margin-bottom: 32px;">
+              <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #5A279B; margin-bottom: 8px;">
+                ${otp}
+              </div>
+              <p style="color: #94a3b8; font-size: 12px; margin: 0;">Valid for 5 minutes</p>
+            </div>
+
+            <!-- Warning Box -->
+            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; font-size: 13px; color: #475569; margin-bottom: 40px;">
+              <p style="margin: 0 0 8px 0;">🔒 Never share your OTP with anyone.</p>
+              <p style="margin: 0;">⚠️ If you didn't request this, you can ignore this email.</p>
+            </div>
+
+            <!-- Footer -->
+            <div style="text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 24px;">
+              <p style="font-weight: bold; color: #64748b; margin: 0 0 4px 0;">${companyLabel}</p>
+              <p style="margin: 0 0 4px 0;">Startup • Student • Admin Platform</p>
+              <p style="margin: 0 0 16px 0;">${email}</p>
+              <p style="margin: 0;">© 2026 ${companyLabel}. All rights reserved.</p>
+            </div>
+          </div>
+        `
+      };
+
+      await transporter.sendMail(mailOptions);
+      emailSent = true;
+      console.log(`[OTP SERVICE] Email sent successfully to ${email}`);
+    } catch (mailError: any) {
+      console.error('[OTP SERVICE] Nodemailer Error:', mailError.message);
+      res.status(500).json({ success: false, message: `Failed to send email: ${mailError.message}` });
       return;
     }
 
@@ -1144,8 +1138,8 @@ app.post('/api/auth/forgot-password', async (req: Request, res: Response): Promi
       secure: false,
       requireTLS: true,
       auth: {
-        user: process.env.EMAIL_USER || '',
-        pass: process.env.EMAIL_PASS || ''
+        user: 't67757535@gmail.com',
+        pass: 'hhtm smwp zpnq mgjw'
       }
     });
 
