@@ -346,7 +346,10 @@ const transporter = nodemailer.createTransport({
   },
   tls: {
     rejectUnauthorized: false
-  }
+  },
+  connectionTimeout: 5000,
+  greetingTimeout: 5000,
+  socketTimeout: 5000
 });
 
 // 3. Startup OTP Generation & Sending
@@ -437,12 +440,7 @@ app.post('/api/startup/send-otp', async (req: Request, res: Response): Promise<v
         `
       };
 
-      const sendPromise = transporter.sendMail(mailOptions);
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('SMTP connection timed out (likely blocked by Render)')), 5000)
-      );
-      
-      await Promise.race([sendPromise, timeoutPromise]);
+      await transporter.sendMail(mailOptions);
       emailSent = true;
       console.log(`[OTP SERVICE] Email sent successfully to ${email}`);
     } catch (mailError: any) {
@@ -456,8 +454,9 @@ app.post('/api/startup/send-otp', async (req: Request, res: Response): Promise<v
       message: 'Verification code sent to your email address.' 
     });
 
-  } catch (err) {
+  } catch (err: any) {
     console.error('Send OTP error:', err);
+    require('fs').writeFileSync('otp_error.txt', err.stack || err.toString());
     res.status(500).json({ success: false, message: 'Server error while generating OTP' });
   }
 });
@@ -1148,7 +1147,10 @@ app.post('/api/auth/forgot-password', async (req: Request, res: Response): Promi
       },
       tls: {
         rejectUnauthorized: false
-      }
+      },
+      connectionTimeout: 5000,
+      greetingTimeout: 5000,
+      socketTimeout: 5000
     });
 
     const mailOptions = {
@@ -1169,11 +1171,7 @@ app.post('/api/auth/forgot-password', async (req: Request, res: Response): Promi
     };
 
     try {
-      const sendPromise = transporter.sendMail(mailOptions);
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('SMTP connection timed out (likely blocked by Render)')), 5000)
-      );
-      await Promise.race([sendPromise, timeoutPromise]);
+      await transporter.sendMail(mailOptions);
       console.log(`[MAIL SENT] OTP ${otp} sent successfully to ${email}`);
       res.status(200).json({ success: true, message: 'OTP sent to your email successfully.' });
     } catch (mailError) {
