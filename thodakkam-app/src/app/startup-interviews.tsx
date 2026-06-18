@@ -345,8 +345,7 @@ const styles = StyleSheet.create({
   gridWide: { flexDirection: 'row', flexWrap: 'wrap' },
   
   card: { 
-    borderRadius: 12, padding: 20,
-    borderWidth: 1,
+    padding: 20, borderRadius: 12, borderWidth: 1, position: 'relative',
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2,
     minHeight: 180
   },
