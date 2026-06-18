@@ -441,8 +441,14 @@ app.post('/api/startup/send-otp', async (req: Request, res: Response): Promise<v
         emailSent = true;
         console.log(`[OTP SERVICE] Email sent successfully to ${email}`);
       } catch (mailError: any) {
-        console.error('[OTP SERVICE] Nodemailer Error (falling back to terminal log):', mailError.message);
+        console.error('[OTP SERVICE] Nodemailer Error:', mailError.message);
+        res.status(500).json({ success: false, message: `Failed to send email: ${mailError.message}` });
+        return;
       }
+    } else {
+      console.error('[OTP SERVICE] Missing EMAIL_USER or EMAIL_PASS environment variables.');
+      res.status(500).json({ success: false, message: 'Server email credentials are not configured.' });
+      return;
     }
 
     res.status(200).json({ 
