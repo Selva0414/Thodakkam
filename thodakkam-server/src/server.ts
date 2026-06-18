@@ -339,9 +339,8 @@ app.post('/api/user/change-password', async (req: Request, res: Response): Promi
 // Configure Nodemailer Transport
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
-  port: 587,
-  secure: false,
-  requireTLS: true,
+  port: 465,
+  secure: true,
   auth: {
     user: 't67757535@gmail.com',
     pass: 'hhtm smwp zpnq mgjw'
@@ -1134,9 +1133,8 @@ app.post('/api/auth/forgot-password', async (req: Request, res: Response): Promi
     // Send email via nodemailer
     const transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
-      port: 587,
-      secure: false,
-      requireTLS: true,
+      port: 465,
+      secure: true,
       auth: {
         user: 't67757535@gmail.com',
         pass: 'hhtm smwp zpnq mgjw'
