@@ -206,7 +206,7 @@ export default function StartupInterviews() {
         ) : (
           <View style={[styles.grid, isWide && styles.gridWide]}>
             {assessments.map((item) => (
-              <View key={item.id} style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }, isWide && styles.cardWide]}>
+              <View key={item.id} style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }, isWide && styles.cardWide, openMenuId === item.id && { zIndex: 100, elevation: 100 }]}>
                 <View style={styles.cardHeader}>
                   <View style={styles.titleRow}>
                     <Text style={[styles.cardTitle, { color: colors.text }]}>{item.title}</Text>
@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
   },
   cardWide: { width: '31%', minWidth: 300 },
   
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12, zIndex: 10, elevation: 10 },
   titleRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, flex: 1, paddingRight: 8 },
   cardTitle: { fontSize: 16, fontWeight: '700' },
   statusBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
@@ -358,9 +358,11 @@ const styles = StyleSheet.create({
     position: 'absolute', top: 30, right: 0,
     width: 160, borderRadius: 8, borderWidth: 1,
     paddingVertical: 8,
+    zIndex: 1000,
+    elevation: 20,
     ...Platform.select({
       web: { boxShadow: '0 4px 12px rgba(0,0,0,0.1)' } as any,
-      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 10 }
+      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12 }
     }),
   },
   menuItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, gap: 12 },
