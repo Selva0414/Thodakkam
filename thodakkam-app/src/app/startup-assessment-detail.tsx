@@ -24,16 +24,26 @@ export default function StartupAssessmentDetail() {
     }
   }, [id]);
 
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
   const fetchAssessment = async () => {
     try {
-      const response = await fetch(`https://thodakkam.onrender.com/api/assessments/single/${id}`);
+      const response = await fetch(`https://thodakkam.onrender.com/api/assessments/${encodeURIComponent(companyName)}`);
       if (!response.ok) throw new Error(`Server returned ${response.status}`);
       const data = await response.json();
-      if (data.success && data.assessment) {
-        setAssessment(data.assessment);
+      if (data.success && data.assessments) {
+        const found = data.assessments.find((a: any) => a.id === id);
+        if (found) {
+          setAssessment(found);
+        } else {
+          setErrorMsg('Assessment not found in list.');
+        }
+      } else {
+        setErrorMsg('Failed to load assessments.');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Fetch Assessment Error:', err);
+      setErrorMsg(err.message);
     } finally {
       setLoading(false);
     }
@@ -54,8 +64,8 @@ export default function StartupAssessmentDetail() {
     return (
       <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
         <StartupHeader companyName={companyName} />
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <Text style={{ color: colors.textSecondary }}>Assessment not found</Text>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+          <Text style={{ color: colors.danger || 'red', textAlign: 'center' }}>{errorMsg || 'Assessment not found'}</Text>
         </View>
       </SafeAreaView>
     );
