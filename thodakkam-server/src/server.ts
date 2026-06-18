@@ -336,30 +336,30 @@ app.post('/api/user/change-password', async (req: Request, res: Response): Promi
   }
 });
 
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
-  auth: {
-    user: 't67757535@gmail.com',
-    pass: 'hhtm smwp zpnq mgjw'
-  },
-  tls: {
-    rejectUnauthorized: false
-  },
-  connectionTimeout: 5000,
-  greetingTimeout: 5000,
-  socketTimeout: 5000
-});
-
 // 3. Startup OTP Generation & Sending
 app.post('/api/startup/send-otp', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, founderName, companyName } = req.body;
+    const { email, founderName, companyName, senderEmail, senderPassword } = req.body;
     if (!email) {
       res.status(400).json({ success: false, message: 'Email address is required' });
       return;
     }
+
+    const transporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
+      auth: {
+        user: senderEmail || 't67757535@gmail.com',
+        pass: senderPassword || 'hhtm smwp zpnq mgjw'
+      },
+      tls: {
+        rejectUnauthorized: false
+      },
+      connectionTimeout: 5000,
+      greetingTimeout: 5000,
+      socketTimeout: 5000
+    });
 
     const existingStartup = await prisma.startup.findUnique({ where: { email } });
     if (existingStartup) {
