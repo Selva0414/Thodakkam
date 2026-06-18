@@ -607,6 +607,7 @@ const styles = StyleSheet.create({
 
   postText: { fontSize: 13, lineHeight: 20, marginBottom: 12 },
   postImage: { width: '100%', height: 220, borderRadius: 12, marginBottom: 12 },
+  imageGridContainer: { width: '100%' },
 
   postFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12 },
   footerAction: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 8, paddingVertical: 8, borderRadius: 20 },
