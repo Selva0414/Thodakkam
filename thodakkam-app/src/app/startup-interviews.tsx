@@ -99,13 +99,13 @@ export default function StartupInterviews() {
   const handleMenuAction = (action: string, item: any) => {
     switch (action) {
       case 'view':
-        router.push(`/startup-assessment-detail?companyName=${encodeURIComponent(companyName)}&id=${encodeURIComponent(item.id)}` as any);
+        router.push({ pathname: '/startup-assessment-detail' as any, params: { companyName, id: item.id } });
         break;
       case 'ai_report':
         Alert.alert("AI Report", "Generating AI report for this assessment...");
         break;
       case 'edit':
-        router.push(`/startup-create-assessment?companyName=${encodeURIComponent(companyName)}&editId=${encodeURIComponent(item.id)}` as any);
+        router.push({ pathname: '/startup-create-assessment' as any, params: { companyName, editId: item.id } });
         break;
       case 'deactivate':
         Alert.alert("Deactivate", `Are you sure you want to ${item.status === 'ACTIVE' ? 'deactivate' : 'activate'} ${item.title}?`, [
@@ -172,14 +172,8 @@ export default function StartupInterviews() {
         style={styles.scroll} 
         contentContainerStyle={[styles.scrollContent, { backgroundColor: colors.background }]} 
         showsVerticalScrollIndicator={false}
+        onTouchStart={() => setOpenMenuId(null)}
       >
-        {openMenuId && (
-          <TouchableOpacity 
-            style={[StyleSheet.absoluteFill, { zIndex: 50, position: 'absolute', top: 0, bottom: 0, left: 0, right: 0 }]} 
-            activeOpacity={1} 
-            onPress={() => setOpenMenuId(null)} 
-          />
-        )}
         
         {/* Page Header */}
         <View style={styles.pageHeader}>
@@ -345,7 +339,8 @@ const styles = StyleSheet.create({
   gridWide: { flexDirection: 'row', flexWrap: 'wrap' },
   
   card: { 
-    padding: 20, borderRadius: 12, borderWidth: 1, position: 'relative',
+    borderRadius: 12, padding: 20,
+    borderWidth: 1,
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2,
     minHeight: 180
   },

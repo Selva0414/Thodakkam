@@ -198,7 +198,7 @@ export default function StudentCommunity() {
 
 function PostItem({ post }: { post: any }) {
   const { colors, isDark } = useAppTheme();
-  const initialLikes = post.likes ? post.likes.length : 0;
+  const initialLikes = post.likesCount ?? (post.likes ? post.likes.length : 0);
   const initiallyLiked = post.likes ? post.likes.some((l: any) => l.user?.email === userStore.email) : false;
   
   const initialReposts = post.reposts ? post.reposts.length : 0;
@@ -266,10 +266,10 @@ function PostItem({ post }: { post: any }) {
     }
   };
 
-  const authorName = post.user?.fullName || post.startup?.companyName || 'Anonymous User';
+  const authorName = post.authorType === 'startup' ? (post.startup?.companyName || 'Startup') : (post.user?.fullName || post.user?.email || 'Student');
   const authorInitial = authorName.charAt(0).toUpperCase();
-  const authorRole = post.user ? 'Student' : (post.startup ? 'Startup' : 'Member');
-  const profilePhoto = post.user?.profilePhoto || post.startup?.profilePhoto || post.startup?.companyLogo;
+  const authorRole = post.authorType === 'startup' ? 'Startup' : (post.authorType === 'admin' ? 'Admin' : 'Student');
+  const profilePhoto = post.authorType === 'startup' ? (post.startup?.profilePhoto || post.startup?.companyLogo) : (post.user?.profilePhoto);
 
   const handleShare = async () => {
     try {
@@ -353,6 +353,11 @@ function PostItem({ post }: { post: any }) {
             <Text style={[styles.badgeText, { color: isDark ? colors.primary : '#6a1b9a' }]}>{post.category.toUpperCase()}</Text>
           </View>
         )}
+        {post.tags && post.tags.length > 0 && post.tags.map((tag: string, index: number) => (
+          <View key={index} style={[styles.badgeWrap, { backgroundColor: isDark ? colors.card : '#e2e8f0', marginLeft: 4 }]}>
+            <Text style={[styles.badgeText, { color: colors.textSecondary }]}>#{tag}</Text>
+          </View>
+        ))}
         <TouchableOpacity style={{ marginLeft: 8 }}>
           <Text style={{ color: colors.textSecondary, fontSize: 18, fontWeight: 'bold' }}>···</Text>
         </TouchableOpacity>
@@ -427,7 +432,7 @@ function PostItem({ post }: { post: any }) {
           onPress={() => setShowComments(!showComments)}
         >
           <MessageSquare size={20} color={showComments ? colors.primary : colors.textSecondary} />
-          <Text style={[styles.footerActionText, { color: colors.textSecondary }, showComments && { color: colors.primary }]}>{comments.length}</Text>
+          <Text style={[styles.footerActionText, { color: colors.textSecondary }, showComments && { color: colors.primary }]}>{Math.max(comments.length, post.commentsCount || 0)}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.footerAction} onPress={handleRepost} disabled={isReposting}>

@@ -130,15 +130,34 @@ export default function StudentExam() {
       await AsyncStorage.setItem(`assessment_completed_${assessmentId}`, 'true');
       
       const userStr = await AsyncStorage.getItem('userData');
-      if (userStr && assessment.jobId) {
+      if (userStr) {
          const user = JSON.parse(userStr);
-         const resultObj = {
-           roundType: 'MCQ_ROUND',
-           score: percent,
-           status: percent >= (assessment.mcqConfig?.passPercentage || 60) ? 'PASSED' : 'FAILED',
-           completedAt: new Date().toISOString()
-         };
-         await AsyncStorage.setItem(`mock_assessment_result_${user.id}_${assessment.jobId}`, JSON.stringify([resultObj]));
+         
+         // Submit to real database endpoint
+         try {
+            const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
+            await fetch(`${baseUrl}/api/mcq/submit`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                studentId: user.id,
+                score,
+                totalQuestions: questions.length,
+                category: assessment.title
+              })
+            });
+         } catch(e) { console.error('Error submitting result', e); }
+
+         // Backwards compatibility for UI dashboards
+         if (assessment.jobId) {
+           const resultObj = {
+             roundType: 'MCQ_ROUND',
+             score: percent,
+             status: percent >= (assessment.mcqConfig?.passPercentage || 60) ? 'PASSED' : 'FAILED',
+             completedAt: new Date().toISOString()
+           };
+           await AsyncStorage.setItem(`mock_assessment_result_${user.id}_${assessment.jobId}`, JSON.stringify([resultObj]));
+         }
       }
     }
   };

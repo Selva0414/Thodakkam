@@ -223,15 +223,50 @@ app.get('/api/users/all', async (req: Request, res: Response): Promise<void> => 
 // POST send a message
 app.post('/api/messages', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { senderId, receiverId, text } = req.body;
+    const { senderId, senderType = 'student', receiverId, receiverType = 'student', text, messageType = 'text', fileUrl, fileName, fileSize, attachmentMimeType } = req.body;
     if (!senderId || !receiverId || !text) {
       res.status(400).json({ success: false, message: 'Missing fields' });
       return;
     }
-    const message = await (prisma as any).message.create({
-      data: { senderId, receiverId, text }
+
+    // Determine user1 and user2 for Conversation uniqueness (ordered)
+    const [user1Id, user2Id] = senderId < receiverId ? [senderId, receiverId] : [receiverId, senderId];
+    const [user1Type, user2Type] = senderId < receiverId ? [senderType, receiverType] : [receiverType, senderType];
+
+    // Find or create Conversation
+    let conversation = await (prisma as any).conversation.findFirst({
+      where: { user1Id, user1Type, user2Id, user2Type }
     });
-    res.status(201).json({ success: true, message });
+
+    if (!conversation) {
+      conversation = await (prisma as any).conversation.create({
+        data: { user1Id, user1Type, user2Id, user2Type }
+      });
+    }
+
+    // Create the message
+    const message = await (prisma as any).message.create({
+      data: { 
+        senderId, senderType, receiverId, receiverType, message: text, messageType, 
+        fileUrl, fileName, fileSize, attachmentMimeType, status: 'sent',
+        conversationId: conversation.id
+      }
+    });
+
+    // Update conversation
+    const isUser1Sender = senderId === user1Id;
+    await (prisma as any).conversation.update({
+      where: { id: conversation.id },
+      data: {
+        lastMessageId: message.id,
+        lastMessagePreview: text.substring(0, 50),
+        lastMessageTime: new Date(),
+        unreadCountUser1: isUser1Sender ? undefined : { increment: 1 },
+        unreadCountUser2: isUser1Sender ? { increment: 1 } : undefined,
+      }
+    });
+
+    res.status(201).json({ success: true, message, conversationId: conversation.id });
   } catch (err) {
     console.error('Send message error:', err);
     res.status(500).json({ success: false, message: 'Server error sending message' });
@@ -242,16 +277,32 @@ app.post('/api/messages', async (req: Request, res: Response): Promise<void> => 
 app.get('/api/messages/:user1/:user2', async (req: Request, res: Response): Promise<void> => {
   try {
     const { user1, user2 } = req.params;
-    const messages = await (prisma as any).message.findMany({
-      where: {
-        OR: [
-          { senderId: user1, receiverId: user2 },
-          { senderId: user2, receiverId: user1 }
-        ]
-      },
-      orderBy: { createdAt: 'asc' }
+    
+    // Ordered users
+    const [user1Id, user2Id] = user1 < user2 ? [user1, user2] : [user2, user1];
+
+    const conversation = await (prisma as any).conversation.findFirst({
+      where: { user1Id, user2Id },
+      include: {
+        messages: {
+          orderBy: { createdAt: 'asc' }
+        }
+      }
     });
-    res.status(200).json({ success: true, messages });
+
+    // Fallback: Return empty messages if no conversation
+    if (!conversation) {
+      res.status(200).json({ success: true, messages: [] });
+      return;
+    }
+
+    // Convert new message schema to old format for backwards compatibility where needed
+    const formattedMessages = conversation.messages.map((m: any) => ({
+      ...m,
+      text: m.message,
+    }));
+
+    res.status(200).json({ success: true, messages: formattedMessages, conversationId: conversation.id });
   } catch (err) {
     console.error('Fetch messages error:', err);
     res.status(500).json({ success: false, message: 'Server error fetching messages' });
@@ -262,20 +313,105 @@ app.get('/api/messages/:user1/:user2', async (req: Request, res: Response): Prom
 app.get('/api/messages/conversations/:userId', async (req: Request, res: Response): Promise<void> => {
   try {
     const { userId } = req.params;
-    const messages = await (prisma as any).message.findMany({
+    const conversations = await (prisma as any).conversation.findMany({
       where: {
-        OR: [ { senderId: userId }, { receiverId: userId } ]
+        OR: [ { user1Id: userId }, { user2Id: userId } ]
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { updatedAt: 'desc' }
     });
+    
     const uniqueIds = new Set<string>();
-    messages.forEach((m: any) => {
-      uniqueIds.add(m.senderId === userId ? m.receiverId : m.senderId);
+    conversations.forEach((c: any) => {
+      uniqueIds.add(c.user1Id === userId ? c.user2Id : c.user1Id);
     });
-    res.status(200).json({ success: true, conversationIds: Array.from(uniqueIds) });
+    res.status(200).json({ success: true, conversationIds: Array.from(uniqueIds), conversations });
   } catch (err) {
     console.error('Fetch conversations error:', err);
     res.status(500).json({ success: false, message: 'Server error fetching conversations' });
+  }
+});
+
+// PUT mark messages as read
+app.put('/api/messages/read', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { conversationId, userId } = req.body;
+    if (!conversationId || !userId) {
+      res.status(400).json({ success: false, message: 'Missing fields' });
+      return;
+    }
+    const conversation = await (prisma as any).conversation.findUnique({ where: { id: conversationId } });
+    if (!conversation) return;
+
+    const isUser1 = conversation.user1Id === userId;
+    await (prisma as any).conversation.update({
+      where: { id: conversationId },
+      data: { ...(isUser1 ? { unreadCountUser1: 0 } : { unreadCountUser2: 0 }) }
+    });
+
+    await (prisma as any).message.updateMany({
+      where: { conversationId, receiverId: userId, status: { in: ['sent', 'delivered'] } },
+      data: { status: 'seen', seenAt: new Date(), isRead: true }
+    });
+
+    res.status(200).json({ success: true });
+  } catch (err) {
+    console.error('Mark read error:', err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// DELETE unsend message
+app.delete('/api/messages/:id', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const message = await (prisma as any).message.findUnique({ where: { id } });
+    if (!message) {
+      res.status(404).json({ success: false, message: 'Not found' });
+      return;
+    }
+    await (prisma as any).message.update({
+      where: { id },
+      data: {
+        isDeleted: true,
+        originalMessage: message.message,
+        message: 'This message was unsent',
+        deletedAt: new Date()
+      }
+    });
+    res.status(200).json({ success: true });
+  } catch (err) {
+    console.error('Delete message error:', err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// PUT update presence (lastSeen, isOnline)
+app.put('/api/presence/:userId', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { userId } = req.params;
+    const { isOnline, role = 'student' } = req.body;
+
+    if (role === 'startup') {
+      await (prisma as any).startup.update({
+        where: { id: userId },
+        data: { isOnline: isOnline === true, lastSeen: new Date() }
+      });
+    } else if (role === 'admin') {
+      await (prisma as any).admin.update({
+        where: { id: userId },
+        data: { lastSeen: new Date() }
+      });
+    } else {
+      await (prisma as any).user.update({
+        where: { id: userId },
+        data: { isOnline: isOnline === true, lastSeen: new Date() }
+      });
+    }
+
+    res.status(200).json({ success: true });
+  } catch (err) {
+    console.error('Update presence error:', err);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 
@@ -1270,7 +1406,9 @@ app.post('/api/posts', async (req: Request, res: Response): Promise<void> => {
         imageUrl: finalImageUrl,
         category: category || 'Project',
         userId: userId || undefined,
-        startupId: startupId || undefined
+        startupId: startupId || undefined,
+        authorType: req.body.authorType || (startupId ? 'startup' : 'student'),
+        tags: req.body.tags || []
       }
     });
     res.status(201).json({ success: true, post });
@@ -1309,12 +1447,14 @@ app.post('/api/posts/:id/like', async (req: Request, res: Response): Promise<voi
     if (existingLike) {
       // @ts-ignore
       await prisma.like.delete({ where: { id: existingLike.id } });
+      await prisma.post.update({ where: { id }, data: { likesCount: { decrement: 1 } } });
       res.status(200).json({ success: true, message: 'Unliked', liked: false });
     } else {
       // @ts-ignore
       await prisma.like.create({
         data: { postId: id, userId, startupId }
       });
+      await prisma.post.update({ where: { id }, data: { likesCount: { increment: 1 } } });
       res.status(200).json({ success: true, message: 'Liked', liked: true });
     }
   } catch (err) {
@@ -1479,6 +1619,8 @@ app.post('/api/posts/:id/comment', async (req: Request, res: Response): Promise<
       data: { text, postId: id, userId, startupId }
     });
     
+    await prisma.post.update({ where: { id }, data: { commentsCount: { increment: 1 } } });
+    
     // @ts-ignore
     const populatedComment = await prisma.comment.findUnique({
       where: { id: comment.id },
@@ -1489,6 +1631,81 @@ app.post('/api/posts/:id/comment', async (req: Request, res: Response): Promise<
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Server error creating comment' });
+  }
+});
+
+// ─── MCQ Routes ─────────────────────────────────────────────────────────────
+app.get('/api/mcq', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { category, difficulty } = req.query;
+    const filter: any = {};
+    if (category) filter.category = category as string;
+    if (difficulty) filter.difficulty = difficulty as string;
+    
+    const questions = await prisma.mcqQuestion.findMany({
+      where: filter,
+      orderBy: { createdAt: 'desc' }
+    });
+    res.status(200).json({ success: true, questions });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error fetching MCQ questions' });
+  }
+});
+
+app.post('/api/mcq', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { question, options, correctOptionIndex, category, difficulty } = req.body;
+    if (!question || !options || correctOptionIndex === undefined) {
+      res.status(400).json({ success: false, message: 'Missing required fields' });
+      return;
+    }
+    
+    const newQuestion = await prisma.mcqQuestion.create({
+      data: {
+        question,
+        options,
+        correctOptionIndex,
+        category,
+        difficulty
+      }
+    });
+    res.status(201).json({ success: true, question: newQuestion });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error creating MCQ question' });
+  }
+});
+
+app.post('/api/mcq/submit', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { studentId, score, totalQuestions, category } = req.body;
+    if (!studentId || score === undefined || !totalQuestions) {
+      res.status(400).json({ success: false, message: 'Missing required fields' });
+      return;
+    }
+    
+    const result = await prisma.mcqResult.create({
+      data: { studentId, score, totalQuestions, category }
+    });
+    res.status(201).json({ success: true, result });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error submitting MCQ result' });
+  }
+});
+
+app.get('/api/mcq/results/:studentId', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const studentId = req.params.studentId as string;
+    const results = await prisma.mcqResult.findMany({
+      where: { studentId },
+      orderBy: { completedAt: 'desc' }
+    });
+    res.status(200).json({ success: true, results });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error fetching MCQ results' });
   }
 });
 
@@ -1535,6 +1752,23 @@ app.post('/api/assessments', async (req: Request, res: Response): Promise<void> 
         interviewConfig
       }
     });
+
+    // Also populate McqQuestion table with these custom questions for future use
+    if (mcqConfig && mcqConfig.questions && Array.isArray(mcqConfig.questions)) {
+      for (const q of mcqConfig.questions) {
+        if (q.question && q.optionA) {
+           await prisma.mcqQuestion.create({
+             data: {
+               question: q.question,
+               options: [q.optionA, q.optionB, q.optionC, q.optionD].filter(Boolean),
+               correctOptionIndex: q.correctOption === 'A' ? 0 : q.correctOption === 'B' ? 1 : q.correctOption === 'C' ? 2 : 3,
+               category: title,
+               difficulty: q.difficulty || 'Medium'
+             }
+           }).catch((e: any) => console.error("Could not save MCQ question to database", e));
+        }
+      }
+    }
     if (selectedCandidates && selectedCandidates.length > 0) {
       await prisma.application.updateMany({
         where: { id: { in: selectedCandidates } },
@@ -1823,5 +2057,5 @@ app.get('/api/jobs/my-jobs/:identifier', async (req: Request, res: Response): Pr
 
 // Start Server
 app.listen(PORT, () => {
-  console.log(`Thodakkam backend server running on http://localhost:${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });

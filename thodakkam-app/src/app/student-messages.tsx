@@ -5,7 +5,7 @@ import {
   SafeAreaView, Platform, TextInput, Image, KeyboardAvoidingView, Modal, Animated, Alert, Linking
 } from 'react-native';
 import {
-  Menu, Search, Plus, Smile, Send, Briefcase, Users, LayoutDashboard, ClipboardList, MessageSquare, X, FileText, Image as LucideImage, Paperclip, Download
+  Menu, Search, Plus, Smile, Send, Briefcase, Users, LayoutDashboard, ClipboardList, MessageSquare, X, FileText, Image as LucideImage, Paperclip, Download, Check, CheckCheck
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -141,7 +141,14 @@ export default function StudentMessages() {
           const allIds = new Set<string>([...pinnedIds, ...(convData.conversationIds || [])]);
           const activeStartups = Array.from(allIds).map((id: string) => {
             const u = formattedUsers.find(u => u.id === id);
-            return u ? { id: u.id, name: u.name, active: false, avatar: u.avatar } : null;
+            const conv = convData.conversations?.find((c: any) => c.user1Id === id || c.user2Id === id);
+            const unreadCount = conv ? (conv.user1Id === userId ? conv.unreadCountUser1 : conv.unreadCountUser2) : 0;
+            const lastMessagePreview = conv?.lastMessagePreview;
+
+            return u ? { 
+              id: u.id, name: u.name, active: false, avatar: u.avatar,
+              unreadCount, lastMessagePreview 
+            } : null;
           }).filter(Boolean);
 
           if (activeStartups.length > 0 && activeStartups[0]) {
@@ -218,11 +225,22 @@ export default function StudentMessages() {
         if (data.success) {
           const formattedMsgs = data.messages.map((m: any) => ({
             id: m.id,
-            text: m.text,
+            text: m.text || m.message,
             isSentByMe: m.senderId === myUserId,
-            time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            status: m.status,
+            isDeleted: m.isDeleted,
+            conversationId: data.conversationId
           }));
           setChatMessages(prev => ({ ...prev, [startupId]: formattedMsgs }));
+
+          if (data.conversationId) {
+            fetch('https://thodakkam.onrender.com/api/messages/read', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ conversationId: data.conversationId, userId: uid })
+            }).catch(e => console.log('Read mark error', e));
+          }
         }
       }
     } catch (err) {
@@ -251,11 +269,19 @@ export default function StudentMessages() {
     });
 
     try {
-      await fetch('https://thodakkam.onrender.com/api/messages', {
+      const res = await fetch('https://thodakkam.onrender.com/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ senderId: myUserId, receiverId: activeChatId, text: msgText })
+        body: JSON.stringify({ senderId: myUserId, senderType: 'student', receiverId: activeChatId, receiverType: 'startup', text: msgText })
       });
+      const data = await res.json();
+      if (data.success && data.message) {
+        setChatMessages(prev => {
+           const msgs = prev[activeChatId] || [];
+           const updated = msgs.map(m => m.id === tempId ? { ...m, id: data.message.id, status: data.message.status } : m);
+           return { ...prev, [activeChatId]: updated };
+        });
+      }
 
       globalNotificationStore.addNotification({
         title: 'New Message',
@@ -332,7 +358,12 @@ export default function StudentMessages() {
                 <TouchableOpacity key={startup.id} style={styles.startupItem} onPress={() => handleSelectChat(startup.id)}>
                   <View style={styles.avatarContainer}>
                     <Image source={{ uri: startup.avatar }} style={[styles.startupAvatar, startup.active && { opacity: 1, borderWidth: 2, borderColor: colors.primary }]} />
-                    {startup.active && <View style={[styles.activeDot, { borderColor: colors.card }]} />}
+                    {startup.active && <View style={[styles.activeDot, { borderColor: colors.card, backgroundColor: isDark ? colors.success : '#22c55e' }]} />}
+                    {startup.unreadCount > 0 && (
+                      <View style={{ position: 'absolute', top: -5, right: -5, backgroundColor: colors.danger, borderRadius: 10, width: 20, height: 20, justifyContent: 'center', alignItems: 'center' }}>
+                        <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>{startup.unreadCount}</Text>
+                      </View>
+                    )}
                   </View>
                   <Text style={[styles.startupName, { color: colors.textSecondary }, startup.active && { color: colors.text, fontWeight: '700' }]}>{startup.name}</Text>
                 </TouchableOpacity>
@@ -412,7 +443,12 @@ export default function StudentMessages() {
                             </TouchableOpacity>
                           </View>
                         ) : (
-                          <Text style={msg.isSentByMe ? [styles.messageTextSent, { color: '#ffffff' }] : [styles.messageTextReceived, { color: colors.text }]}>{msg.text}</Text>
+                          <Text style={[msg.isSentByMe ? [styles.messageTextSent, { color: '#ffffff' }] : [styles.messageTextReceived, { color: colors.text }], msg.isDeleted && { fontStyle: 'italic', opacity: 0.8 }]}>{msg.text}</Text>
+                        )}
+                        {msg.isSentByMe && (
+                          <View style={{ alignSelf: 'flex-end', marginTop: 4 }}>
+                            {msg.status === 'seen' ? <CheckCheck size={14} color="#38bdf8" /> : msg.status === 'delivered' ? <CheckCheck size={14} color="rgba(255,255,255,0.7)" /> : <Check size={14} color="rgba(255,255,255,0.7)" />}
+                          </View>
                         )}
                       </View>
                     </View>

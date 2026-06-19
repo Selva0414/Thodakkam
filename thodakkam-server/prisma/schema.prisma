@@ -7,31 +7,35 @@ datasource db {
 }
 
 model Startup {
-  id             String   @id @default(uuid())
+  id             String               @id @default(uuid())
   founderName    String
   companyName    String
   registrationId String
-  email          String   @unique
+  email          String               @unique
   password       String
   category       String
   profilePhoto   String?
   founderImage   String?
   companyLogo    String?
-  role           String?  @default("Super Admin")
+  role           String?              @default("Super Admin")
   timezone       String?
   bio            String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  jobs               Job[]
-  posts              Post[]
-  followingUsers     StartupFollowsUser[]
-  followers          UserFollowsStartup[]
-  likes              Like[]
-  comments           Comment[]
-  assessments        Assessment[]
-  reposts            Repost[]
-  savedPosts         SavedPost[]
-  savedJobs          SavedJob[]
+  linkedinUrl    String?
+  twitterUrl     String?
+  lastSeen       DateTime?            @default(now())
+  isOnline       Boolean              @default(false)
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  jobs           Job[]
+  posts          Post[]
+  followingUsers StartupFollowsUser[]
+  followers      UserFollowsStartup[]
+  likes          Like[]
+  comments       Comment[]
+  assessments    Assessment[]
+  reposts        Repost[]
+  savedPosts     SavedPost[]
+  savedJobs      SavedJob[]
 }
 
 model Otp {
@@ -42,32 +46,36 @@ model Otp {
 }
 
 model User {
-  id           String   @id @default(uuid())
-  fullName     String
-  email        String   @unique
-  password     String
-  phone        String?
-  location     String?
-  profilePhoto String?
-  resumeFile   String?
-  skills       String[]
-  education    Json?
-  experience   Json?
-  portfolioUrl String?
-  githubUrl    String?
-  linkedinUrl  String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  applications       Application[]
-  posts              Post[]
-  followedStartups   UserFollowsStartup[]
-  startupFollowers   StartupFollowsUser[]
-  likes              Like[]
-  comments           Comment[]
-  assessmentResults  AssessmentResult[]
-  reposts            Repost[]
-  savedPosts         SavedPost[]
-  savedJobs          SavedJob[]
+  id                String               @id @default(uuid())
+  fullName          String
+  email             String               @unique
+  password          String
+  phone             String?
+  location          String?
+  profilePhoto      String?
+  resumeFile        String?
+  skills            String[]
+  education         Json?
+  experience        Json?
+  portfolioUrl      String?
+  githubUrl         String?
+  linkedinUrl       String?
+  username          String?              @unique
+  lastSeen          DateTime?            @default(now())
+  isOnline          Boolean              @default(false)
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  applications      Application[]
+  posts             Post[]
+  followedStartups  UserFollowsStartup[]
+  startupFollowers  StartupFollowsUser[]
+  likes             Like[]
+  comments          Comment[]
+  assessmentResults AssessmentResult[]
+  reposts           Repost[]
+  savedPosts        SavedPost[]
+  savedJobs         SavedJob[]
+  mcqResults        McqResult[]
 }
 
 model StartupFollowsUser {
@@ -77,6 +85,7 @@ model StartupFollowsUser {
   userId    String
   user      User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
+
   @@unique([startupId, userId])
 }
 
@@ -87,24 +96,29 @@ model UserFollowsStartup {
   startupId String
   startup   Startup  @relation(fields: [startupId], references: [id])
   createdAt DateTime @default(now())
+
   @@unique([userId, startupId])
 }
 
 model Post {
-  id        String   @id @default(uuid())
-  text      String
-  imageUrl  String?
-  category  String   @default("Project")
-  userId    String?
-  user      User?    @relation(fields: [userId], references: [id])
-  startupId String?
-  startup   Startup? @relation(fields: [startupId], references: [id])
-  likes     Like[]
-  comments  Comment[]
-  reposts   Repost[]
-  savedBy   SavedPost[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String      @id @default(uuid())
+  text          String
+  imageUrl      String?
+  category      String      @default("Project")
+  userId        String?
+  user          User?       @relation(fields: [userId], references: [id])
+  startupId     String?
+  startup       Startup?    @relation(fields: [startupId], references: [id])
+  authorType    String      @default("student")
+  tags          String[]
+  likesCount    Int         @default(0)
+  commentsCount Int         @default(0)
+  likes         Like[]
+  comments      Comment[]
+  reposts       Repost[]
+  savedBy       SavedPost[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 }
 
 model SavedPost {
@@ -116,7 +130,7 @@ model SavedPost {
   startupId String?
   startup   Startup? @relation(fields: [startupId], references: [id])
   createdAt DateTime @default(now())
-  
+
   @@unique([postId, userId])
   @@unique([postId, startupId])
 }
@@ -133,19 +147,20 @@ model Repost {
 }
 
 model Admin {
-  id        String   @id @default(uuid())
-  email     String   @unique
+  id        String    @id @default(uuid())
+  email     String    @unique
   password  String
-  role      String   @default("master")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  role      String    @default("master")
+  lastSeen  DateTime? @default(now())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 model Job {
-  id           String   @id @default(uuid())
-  title        String
-  location     String
-  type              String   @default("Full-time")
+  id                String        @id @default(uuid())
+  title             String
+  location          String
+  type              String        @default("Full-time")
   salary            String?
   description       String
   requirements      String[]
@@ -156,26 +171,26 @@ model Job {
   openings          String?
   deadline          String?
   applicationMethod String?
-  status       String   @default("ACTIVE")
-  startupId    String
-  startup      Startup  @relation(fields: [startupId], references: [id])
-  applications Application[]
-  assessments  Assessment[]
-  savedBy      SavedJob[]
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  status            String        @default("ACTIVE")
+  startupId         String
+  startup           Startup       @relation(fields: [startupId], references: [id])
+  applications      Application[]
+  assessments       Assessment[]
+  savedBy           SavedJob[]
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 }
 
 model Application {
-  id        String   @id @default(uuid())
-  jobId     String
-  job       Job      @relation(fields: [jobId], references: [id])
-  userId    String?
-  user      User?    @relation(fields: [userId], references: [id])
-  fullName  String?
-  email     String?
-  phone     String?
-  resumeUrl String?
+  id            String   @id @default(uuid())
+  jobId         String
+  job           Job      @relation(fields: [jobId], references: [id])
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id])
+  fullName      String?
+  email         String?
+  phone         String?
+  resumeUrl     String?
   status        String   @default("PENDING")
   interviewDate String?
   interviewTime String?
@@ -184,37 +199,37 @@ model Application {
 }
 
 model Assessment {
-  id              String   @id @default(uuid())
-  startupId       String
-  startup         Startup  @relation(fields: [startupId], references: [id])
-  jobId           String?
-  job             Job?     @relation(fields: [jobId], references: [id])
-  title           String
-  description     String?
-  selectedRounds  String[]
-  assignedCandidates String[] @default([])
-  mcqConfig       Json?
-  codingConfig    Json?
-  interviewConfig Json?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  results         AssessmentResult[]
+  id                 String             @id @default(uuid())
+  startupId          String
+  startup            Startup            @relation(fields: [startupId], references: [id])
+  jobId              String?
+  job                Job?               @relation(fields: [jobId], references: [id])
+  title              String
+  description        String?
+  selectedRounds     String[]
+  assignedCandidates String[]           @default([])
+  mcqConfig          Json?
+  codingConfig       Json?
+  interviewConfig    Json?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  results            AssessmentResult[]
 }
 
 model AssessmentResult {
-  id              String     @id @default(uuid())
-  assessmentId    String
-  assessment      Assessment @relation(fields: [assessmentId], references: [id])
-  userId          String
-  user            User       @relation(fields: [userId], references: [id])
-  jobId           String?
-  roundType       String     // e.g., "MCQ_ROUND", "CODING_ROUND", "INTERVIEW"
-  score           Float?
-  status          String     @default("PENDING") // "PENDING", "PASSED", "FAILED"
-  completedAt     DateTime?
-  details         Json?      // Store extra data like code output or answers
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  id           String     @id @default(uuid())
+  assessmentId String
+  assessment   Assessment @relation(fields: [assessmentId], references: [id])
+  userId       String
+  user         User       @relation(fields: [userId], references: [id])
+  jobId        String?
+  roundType    String // e.g., "MCQ_ROUND", "CODING_ROUND", "INTERVIEW"
+  score        Float?
+  status       String     @default("PENDING") // "PENDING", "PASSED", "FAILED"
+  completedAt  DateTime?
+  details      Json? // Store extra data like code output or answers
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 }
 
 model SavedJob {
@@ -231,13 +246,73 @@ model SavedJob {
   @@unique([jobId, startupId])
 }
 
+model Conversation {
+  id                 String    @id @default(uuid())
+  user1Id            String
+  user1Type          String
+  user2Id            String
+  user2Type          String
+  lastMessageId      String?
+  lastMessagePreview String?
+  lastMessageTime    DateTime?
+  unreadCountUser1   Int       @default(0)
+  unreadCountUser2   Int       @default(0)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  messages           Message[]
+
+  @@unique([user1Id, user1Type, user2Id, user2Type])
+}
 
 model Message {
-  id         String   @id @default(uuid())
-  senderId   String
-  receiverId String
-  text       String
-  createdAt  DateTime @default(now())
+  id                 String        @id @default(uuid())
+  senderId           String
+  senderType         String        @default("student")
+  receiverId         String
+  receiverType       String        @default("student")
+  message            String
+  messageType        String        @default("text")
+  fileUrl            String?
+  fileName           String?
+  fileSize           Int?
+  attachmentData     Bytes?
+  attachmentMimeType String?
+  isRead             Boolean       @default(false)
+  isDeleted          Boolean       @default(false)
+  deletedFor         String[]      @default([])
+  deletedBySender    Boolean       @default(false)
+  deletedByReceiver  Boolean       @default(false)
+  deletedAt          DateTime?
+  isEdited           Boolean       @default(false)
+  editedAt           DateTime?
+  originalMessage    String?
+  replyToMessageId   String?
+  deliveredAt        DateTime?
+  seenAt             DateTime?
+  status             String        @default("sent")
+  conversationId     String?
+  conversation       Conversation? @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  createdAt          DateTime      @default(now())
+}
+
+model McqQuestion {
+  id                 String   @id @default(uuid())
+  question           String
+  options            Json
+  correctOptionIndex Int
+  category           String?
+  difficulty         String?
+  createdAt          DateTime @default(now())
+}
+
+model McqResult {
+  id             String   @id @default(uuid())
+  studentId      String
+  student        User     @relation(fields: [studentId], references: [id])
+  score          Int
+  totalQuestions Int
+  category       String?
+  completedAt    DateTime @default(now())
 }
 
 model Like {
