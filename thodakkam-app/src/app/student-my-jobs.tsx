@@ -16,12 +16,12 @@ function BottomTabBar() {
   const { colors } = useAppTheme();
   const tabs = [
     { label: 'Home', icon: LayoutDashboard, path: '/student-dashboard' },
-    { label: 'Jobs', icon: Briefcase, path: '/student-jobs' },
-    { label: 'Tests', icon: ClipboardList, path: '/student-assessments' },
+    { label: 'Job', icon: Briefcase, path: '/student-jobs' },
+    { label: 'Test', icon: ClipboardList, path: '/student-assessments' },
     { label: 'Chat', icon: MessageSquare, path: '/student-messages' },
-    { label: 'Feed', icon: Users, path: '/student-community' },
+    { label: 'Feed', icon: Users, path: '/student-community' }
   ];
-  const active = 'Jobs'; // Or whatever active logic you use here
+  const active = 'Job'; // Or whatever active logic you use here
   return (
     <View style={[tabBarStyles.container, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
       {tabs.map(({ label, icon: Icon, path }) => {
@@ -56,7 +56,7 @@ export default function StudentMyJobs() {
 
   const fetchMyJobs = async () => {
     try {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
+      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend-47rn.onrender.com' : 'https://thodakkam-backend-47rn.onrender.com';
       const response = await fetch(`${baseUrl}/api/jobs/my-jobs/${encodeURIComponent(userStore.email)}`);
       const data = await response.json();
       if (data.success) {
@@ -72,7 +72,7 @@ export default function StudentMyJobs() {
 
   const handleUnsave = async (jobId: string) => {
     try {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
+      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend-47rn.onrender.com' : 'https://thodakkam-backend-47rn.onrender.com';
       const res = await fetch(`${baseUrl}/api/jobs/${jobId}/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -119,7 +119,7 @@ export default function StudentMyJobs() {
     return list.map((job: any) => {
       let startupPhoto = job.startup?.companyLogo || job.startup?.profilePhoto;
       if (startupPhoto && !startupPhoto.startsWith('http') && !startupPhoto.startsWith('data:')) {
-        const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
+        const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend-47rn.onrender.com' : 'https://thodakkam-backend-47rn.onrender.com';
         startupPhoto = `${baseUrl}/uploads/${startupPhoto.split(/[/\\]/).pop()}`;
       }
 

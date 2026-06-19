@@ -6,7 +6,7 @@ import {
 import {
   Briefcase, Users, Calendar, LayoutGrid, Search, Bell, Settings, FileText, Code, Clock, User, MoreVertical, HelpCircle, Plus,
   Eye, Brain, Edit2, EyeOff, Trash2
-} from 'lucide-react-native';
+, MessageSquare} from 'lucide-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import StartupHeader from '../components/StartupHeader';
 import { useAppTheme } from '../context/ThemeContext';
@@ -30,7 +30,7 @@ export default function StartupInterviews() {
 
   const fetchAssessments = async () => {
     try {
-      const res = await fetch(`https://thodakkam.onrender.com/api/assessments/${encodeURIComponent(companyName)}`);
+      const res = await fetch(`https://thodakkam-backend-47rn.onrender.com/api/assessments/${encodeURIComponent(companyName)}`);
       const data = await res.json();
       if (data.success && data.assessments) {
         const mapped = data.assessments.map((a: any) => {
@@ -134,7 +134,7 @@ export default function StartupInterviews() {
 
   const deleteAssessment = async (id: string) => {
     try {
-      const res = await fetch(`https://thodakkam.onrender.com/api/assessments/${id}`, { method: 'DELETE' });
+      const res = await fetch(`https://thodakkam-backend-47rn.onrender.com/api/assessments/${id}`, { method: 'DELETE' });
       if (res.ok) {
         fetchAssessments();
       } else {
@@ -148,7 +148,7 @@ export default function StartupInterviews() {
   };
 
   const handleNavPress = (label: string) => {
-    if (label === 'Home') {
+    if (label === 'Dashboard') {
       router.navigate({ pathname: '/startup-dashboard' as any, params: { companyName } });
     } else if (label === 'Jobs') {
       router.navigate({ pathname: '/startup-jobs' as any, params: { companyName } });
@@ -289,12 +289,12 @@ export default function StartupInterviews() {
       {!isWide && (
         <View style={[styles.bottomNav, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
           {[
-            { label: 'Home', icon: LayoutGrid },
-            { label: 'Jobs', icon: Briefcase },
-            { label: 'Candidates', icon: Users },
-            { label: 'Interviews', icon: Calendar },
-            { label: 'Feed', icon: Users }
-          ].map(item => {
+          { label: 'Dashboard', icon: LayoutGrid },
+          { label: 'Jobs', icon: Briefcase },
+          { label: 'Candidates', icon: Users },
+          { label: 'Interviews', icon: Calendar },
+          { label: 'Feed', icon: MessageSquare }
+        ].map(item => {
             const isActive = activeTab === item.label;
             const Icon = item.icon;
             return (

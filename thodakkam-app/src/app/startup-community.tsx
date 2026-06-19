@@ -30,7 +30,7 @@ export default function StartupCommunity() {
 
   useEffect(() => {
     if (companyName) {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
+      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend-47rn.onrender.com' : 'https://thodakkam-backend-47rn.onrender.com';
       fetch(`${baseUrl}/api/startup/profile/${encodeURIComponent(companyName)}`)
         .then(res => res.json())
         .then(data => {
@@ -62,7 +62,7 @@ export default function StartupCommunity() {
 
   const fetchPosts = async () => {
     try {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
+      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend-47rn.onrender.com' : 'https://thodakkam-backend-47rn.onrender.com';
       const res = await fetch(`${baseUrl}/api/posts`);
       const data = await res.json();
       if (data.success) {
@@ -121,7 +121,7 @@ export default function StartupCommunity() {
   );
 
   const handleNavPress = (label: string) => {
-    if (label === 'Home') {
+    if (label === 'Dashboard') {
       router.navigate({ pathname: '/startup-dashboard' as any, params: { companyName } });
     } else if (label === 'Jobs') {
       router.navigate({ pathname: '/startup-jobs' as any, params: { companyName } });
@@ -189,11 +189,11 @@ export default function StartupCommunity() {
       {/* Bottom Navigation */}
       <View style={[styles.bottomNav, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
         {[
-          { label: 'Home', icon: LayoutGrid },
+          { label: 'Dashboard', icon: LayoutGrid },
           { label: 'Jobs', icon: Briefcase },
           { label: 'Candidates', icon: Users },
           { label: 'Interviews', icon: Calendar },
-          { label: 'Feed', icon: Users }
+          { label: 'Feed', icon: MessageSquare }
         ].map(item => {
           const isActive = activeTab === item.label;
           const Icon = item.icon;
@@ -253,7 +253,7 @@ function PostItem({ post, companyName, companyLogo, colors, isDark }: { post: an
     setLikesCount((prev: number) => newLikedState ? prev + 1 : prev - 1);
     
     try {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
+      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend-47rn.onrender.com' : 'https://thodakkam-backend-47rn.onrender.com';
       await fetch(`${baseUrl}/api/posts/${post.id}/like`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -272,7 +272,7 @@ function PostItem({ post, companyName, companyLogo, colors, isDark }: { post: an
     setIsCommenting(true);
     
     try {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
+      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend-47rn.onrender.com' : 'https://thodakkam-backend-47rn.onrender.com';
       const res = await fetch(`${baseUrl}/api/posts/${post.id}/comment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -330,7 +330,7 @@ function PostItem({ post, companyName, companyLogo, colors, isDark }: { post: an
     setIsReposting(true);
     
     try {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
+      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend-47rn.onrender.com' : 'https://thodakkam-backend-47rn.onrender.com';
       const res = await fetch(`${baseUrl}/api/posts/${post.id}/repost`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -359,7 +359,7 @@ function PostItem({ post, companyName, companyLogo, colors, isDark }: { post: an
     setIsSaving(true);
     
     try {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
+      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend-47rn.onrender.com' : 'https://thodakkam-backend-47rn.onrender.com';
       const res = await fetch(`${baseUrl}/api/posts/${post.id}/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

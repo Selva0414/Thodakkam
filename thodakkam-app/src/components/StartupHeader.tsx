@@ -44,7 +44,7 @@ export default function StartupHeader({ companyName = 'Echo Digital' }: { compan
 
   useEffect(() => {
     if (companyName) {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
+      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend-47rn.onrender.com' : 'https://thodakkam-backend-47rn.onrender.com';
       fetch(`${baseUrl}/api/startup/profile/${encodeURIComponent(companyName)}`)
         .then(res => res.json())
         .then(data => {
@@ -71,8 +71,12 @@ export default function StartupHeader({ companyName = 'Echo Digital' }: { compan
     <View style={[styles.headerCard, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
       <View style={styles.headerTop}>
         <View style={styles.adminInfo}>
-          <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', borderWidth: 1.5, borderColor: colors.primary, marginRight: 12 }}>
-            <Image source={require('../../assets/images/Thodakkam-circle.png')} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+          <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: colors.inputBg, justifyContent: 'center', alignItems: 'center', overflow: 'hidden', borderWidth: 1.5, borderColor: colors.primary, marginRight: 12 }}>
+            {companyLogo ? (
+              <Image source={{ uri: companyLogo }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+            ) : (
+              <Text style={{ fontSize: 16, fontWeight: '700', color: colors.textSecondary }}>{companyInitials}</Text>
+            )}
           </View>
           <View>
             <Text style={[styles.companyTitle, { color: colors.text }]}>{companyName}</Text>
@@ -86,14 +90,8 @@ export default function StartupHeader({ companyName = 'Echo Digital' }: { compan
           <TouchableOpacity style={styles.actionIcon} onPress={() => setShowNotifications(true)}>
             <Bell size={20} color={colors.textSecondary} />
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionIcon, { padding: 0 }]} onPress={openMenu}>
-            <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: colors.inputBg, justifyContent: 'center', alignItems: 'center', overflow: 'hidden', borderWidth: 1, borderColor: colors.border }}>
-              {companyLogo ? (
-                <Image source={{ uri: companyLogo }} style={{ width: '100%', height: '100%', resizeMode: 'cover' }} />
-              ) : (
-                <Text style={{ fontSize: 12, fontWeight: '700', color: colors.textSecondary }}>{companyInitials}</Text>
-              )}
-            </View>
+          <TouchableOpacity style={styles.actionIcon} onPress={openMenu}>
+            <Menu size={20} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
       </View>
@@ -150,6 +148,9 @@ export default function StartupHeader({ companyName = 'Echo Digital' }: { compan
               </TouchableOpacity>
               <TouchableOpacity style={styles.drawerMenuItem} onPress={() => { closeMenu(); router.push({ pathname: '/saved-posts' as any, params: { role: 'startup', identifier: companyName } }); }}>
                 <Text style={[styles.drawerMenuText, { color: colors.text }]}>Saved posts</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.drawerMenuItem} onPress={() => { closeMenu(); router.push({ pathname: '/startup-jobs' as any, params: { companyName, mode: 'Tracking' } }); }}>
+                <Text style={[styles.drawerMenuText, { color: colors.text }]}>Tracking</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.drawerMenuItem} onPress={() => { closeMenu(); setShowNetworkModal(true); }}>
                 <Text style={[styles.drawerMenuText, { color: colors.text }]}>My Network</Text>

@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import {
   Bell, Search, Mail, Settings, LayoutDashboard, Briefcase,
-  MessageSquare, Users, CloudUpload, Send, ArrowLeft, UploadCloud, CheckCircle, AlertCircle
+  MessageSquare, Users, CloudUpload, Send, ArrowLeft, UploadCloud, CheckCircle, AlertCircle, ClipboardList
 } from 'lucide-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
@@ -18,12 +18,13 @@ import { useAppTheme } from '../context/ThemeContext';
 function BottomTabBar() {
   const router = useRouter();
   const { colors } = useAppTheme();
-  const active = 'Jobs';
+  const active = 'Job';
   const tabs = [
     { label: 'Home', icon: LayoutDashboard, path: '/student-dashboard' },
-    { label: 'Jobs', icon: Briefcase, path: '/student-jobs' },
+    { label: 'Job', icon: Briefcase, path: '/student-jobs' },
+    { label: 'Test', icon: ClipboardList, path: '/student-assessments' },
     { label: 'Chat', icon: MessageSquare, path: '/student-messages' },
-    { label: 'Feed', icon: Users, path: '/student-community' },
+    { label: 'Feed', icon: Users, path: '/student-community' }
   ];
   return (
     <View style={[tabBarStyles.container, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
@@ -67,35 +68,59 @@ export default function StudentApply() {
   const [alreadyApplied, setAlreadyApplied] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
 
-  React.useEffect(() => {
-    const checkApplication = async () => {
+    React.useEffect(() => {
+    const initData = async () => {
       try {
-        const jId = jobId || "mock-job-id";
-        const email = userStore.email || form.email;
-        if (!email) {
-          setIsChecking(false);
-          return;
+        const fallbackId = await AsyncStorage.getItem('studentUserId');
+        const finalUserId = userStore.id || fallbackId;
+        const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend-47rn.onrender.com' : 'https://thodakkam-backend-47rn.onrender.com';
+        
+        let fetchedEmail = userStore.email || form.email;
+
+        // Fetch User Data to prefill form
+        if (finalUserId) {
+           const userRes = await fetch(`${baseUrl}/api/user/${finalUserId}`);
+           const userJson = await userRes.json();
+           if (userJson.success && userJson.user) {
+             const u = userJson.user;
+             let resumeName = '';
+             if (u.resumeFile) {
+                if (u.resumeFile.startsWith('data:')) {
+                  resumeName = 'Saved_Resume.pdf';
+                } else {
+                  resumeName = u.resumeFile.split(/[/\\]/).pop() || 'resume.pdf';
+                }
+             }
+             setForm(prev => ({
+               ...prev,
+               fullName: u.fullName || prev.fullName,
+               email: u.email || prev.email,
+               phone: u.phone || prev.phone,
+               resumeName: resumeName || prev.resumeName,
+               resumeUri: u.resumeFile || prev.resumeUri
+             }));
+             if (u.email) fetchedEmail = u.email;
+           }
         }
 
-        const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
-        const response = await fetch(`${baseUrl}/api/apply/check?jobId=${jId}&email=${email}`);
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const resJson = await response.json();
-        
-        if (resJson.success && resJson.applied) {
-          setAlreadyApplied(true);
+        // Check Application Status
+        if (fetchedEmail) {
+           const jId = jobId || "mock-job-id";
+           const response = await fetch(`${baseUrl}/api/apply/check?jobId=${jId}&email=${fetchedEmail}`);
+           if (response.ok) {
+             const resJson = await response.json();
+             if (resJson.success && resJson.applied) {
+               setAlreadyApplied(true);
+             }
+           }
         }
       } catch (err) {
-        console.warn("Failed to check application status:", err);
+        console.warn("Init data failed:", err);
       } finally {
         setIsChecking(false);
       }
     };
-    checkApplication();
+    initData();
   }, [jobId]);
 
   const handleSubmit = async () => {
@@ -106,7 +131,7 @@ export default function StudentApply() {
 
     setLoading(true);
     try {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
+      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend-47rn.onrender.com' : 'https://thodakkam-backend-47rn.onrender.com';
       const fallbackId = await AsyncStorage.getItem('studentUserId');
       const finalUserId = userStore.id || fallbackId;
 
@@ -249,7 +274,7 @@ export default function StudentApply() {
                 <CloudUpload size={20} color={isDark ? colors.primary : colors.text} />
               </View>
               {form.resumeName ? (
-                <Text style={[styles.uploadText, { color: colors.primary, fontWeight: '600' }]}>{form.resumeName}</Text>
+                <Text style={[styles.uploadText, { color: colors.primary, fontWeight: '600', paddingHorizontal: 10, textAlign: 'center' }]} numberOfLines={1} ellipsizeMode="middle">{form.resumeName}</Text>
               ) : (
                 <Text style={[styles.uploadText, { color: colors.text }]}>Click to upload or drag and drop</Text>
               )}

@@ -17,10 +17,10 @@ function BottomTabBar({ activeTab }: { activeTab: string }) {
   const { colors } = useAppTheme();
   const tabs = [
     { label: 'Home', icon: LayoutDashboard, path: '/student-dashboard' },
-    { label: 'Jobs Board', icon: Briefcase, path: '/student-jobs' },
-    { label: 'Tests', icon: ClipboardList, path: '/student-assessments' },
+    { label: 'Job', icon: Briefcase, path: '/student-jobs' },
+    { label: 'Test', icon: ClipboardList, path: '/student-assessments' },
     { label: 'Chat', icon: MessageSquare, path: '/student-messages' },
-    { label: 'Feed', icon: Users, path: '/student-community' },
+    { label: 'Feed', icon: Users, path: '/student-community' }
   ];
   return (
     <View style={[tabBarStyles.container, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
@@ -28,7 +28,7 @@ function BottomTabBar({ activeTab }: { activeTab: string }) {
         const isActive = activeTab === label;
         return (
           <TouchableOpacity key={label} style={tabBarStyles.tab} onPress={() => {
-            if (path && path !== '/student-assessments' && activeTab === 'Tests') {
+            if (path && path !== '/student-assessments' && activeTab === 'Test') {
                router.push(path as any);
             } else if (path && !isActive) {
                router.push(path as any);
@@ -94,7 +94,7 @@ export default function StudentAssessments() {
           return;
         }
 
-        const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
+        const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend-47rn.onrender.com' : 'https://thodakkam-backend-47rn.onrender.com';
         
         const response = await fetch(`${baseUrl}/api/user/${userId}`);
         const resJson = await response.json();
@@ -314,7 +314,7 @@ export default function StudentAssessments() {
         </Animated.View>
       </ScrollView>
 
-      <BottomTabBar activeTab="Tests" />
+      <BottomTabBar activeTab="Test" />
     </SafeAreaView>
   );
 }
@@ -322,7 +322,7 @@ export default function StudentAssessments() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   scroll: { flex: 1 },
-  scrollContent: { padding: 24, paddingBottom: 100 },
+  scrollContent: { padding: 24, paddingBottom: 32 },
   
   header: { marginBottom: 32 },
   title: { fontSize: 28, fontWeight: '800', marginBottom: 8 },
@@ -351,7 +351,12 @@ const styles = StyleSheet.create({
 });
 
 const tabBarStyles = StyleSheet.create({
-  container: { position: 'absolute', bottom: 0, left: 0, right: 0, height: Platform.OS === 'ios' ? 80 : 70, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', paddingBottom: Platform.OS === 'ios' ? 20 : 0, borderTopWidth: 1 },
-  tab: { alignItems: 'center', justifyContent: 'center', flex: 1, height: '100%' },
-  label: { fontSize: 10, marginTop: 4, fontWeight: '500' },
+  container: {
+    flexDirection: 'row',
+    borderTopWidth: 1,
+    paddingBottom: Platform.OS === 'ios' ? 30 : 24,
+    paddingTop: 10,
+  },
+  tab: { flex: 1, alignItems: 'center', gap: 4 },
+  label: { fontSize: 10, fontWeight: '500' },
 });

@@ -21,7 +21,7 @@ export default function StartupJobs() {
   const { colors, isDark } = useAppTheme();
   const [activeTab, setActiveTab] = useState('Jobs');
   const [jobFilter, setJobFilter] = useState('All Jobs');
-  const [viewMode, setViewMode] = useState<'List' | 'Analytics' | 'Tracking' | 'CandidateDetail'>('List');
+  const [viewMode, setViewMode] = useState<'List' | 'Analytics' | 'Tracking' | 'CandidateDetail'>((params.mode as any) || 'List');
   const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedJob, setSelectedJob] = useState<any>(null);
@@ -47,7 +47,7 @@ export default function StartupJobs() {
   const fetchJobs = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`https://thodakkam.onrender.com/api/jobs/startup/${companyName}`);
+      const response = await fetch(`https://thodakkam-backend-47rn.onrender.com/api/jobs/startup/${companyName}`);
       
       if (!response.ok) {
         throw new Error(`Server returned ${response.status}`);
@@ -58,7 +58,7 @@ export default function StartupJobs() {
         setJobs(data.jobs);
       }
 
-      const profileRes = await fetch(`https://thodakkam.onrender.com/api/startup/profile/${encodeURIComponent(companyName)}`);
+      const profileRes = await fetch(`https://thodakkam-backend-47rn.onrender.com/api/startup/profile/${encodeURIComponent(companyName)}`);
       if (profileRes.ok) {
         const profileData = await profileRes.json();
         if (profileData.success && profileData.startup?.companyLogo) {
@@ -81,7 +81,7 @@ export default function StartupJobs() {
     
     try {
       const payload = targetJob ? { ...targetJob, status: newStatus } : { status: newStatus };
-      const res = await fetch(`https://thodakkam.onrender.com/api/jobs/${jobId}`, {
+      const res = await fetch(`https://thodakkam-backend-47rn.onrender.com/api/jobs/${jobId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -100,7 +100,7 @@ export default function StartupJobs() {
     setJobs(prevJobs => prevJobs.filter(j => j.id !== jobId));
 
     try {
-      const res = await fetch(`https://thodakkam.onrender.com/api/jobs/${jobId}`, {
+      const res = await fetch(`https://thodakkam-backend-47rn.onrender.com/api/jobs/${jobId}`, {
         method: 'DELETE'
       });
       if (res.ok) {
@@ -139,7 +139,7 @@ export default function StartupJobs() {
       
       // Fetch assessment results for this candidate
       if (selectedCandidate.userId && jobToTrack?.id) {
-        fetch(`https://thodakkam.onrender.com/api/assessment-results/${selectedCandidate.userId}/${jobToTrack.id}`)
+        fetch(`https://thodakkam-backend-47rn.onrender.com/api/assessment-results/${selectedCandidate.userId}/${jobToTrack.id}`)
           .then(async res => {
             if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
             const contentType = res.headers.get("content-type");
@@ -169,7 +169,7 @@ export default function StartupJobs() {
   const handleUpdateApplicationStatus = async (newStatus: string) => {
     if (!selectedCandidate) return;
     try {
-      const res = await fetch(`https://thodakkam.onrender.com/api/applications/${selectedCandidate.id}`, {
+      const res = await fetch(`https://thodakkam-backend-47rn.onrender.com/api/applications/${selectedCandidate.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
@@ -198,7 +198,7 @@ export default function StartupJobs() {
       router.navigate({ pathname: '/startup-candidates' as any, params: { companyName } });
     } else if (label === 'Interviews') {
       router.navigate({ pathname: '/startup-interviews' as any, params: { companyName } });
-    } else if (label === 'Community') {
+    } else if (label === 'Feed') {
       router.navigate({ pathname: '/startup-community' as any, params: { companyName } });
     }
   };
@@ -293,7 +293,7 @@ export default function StartupJobs() {
     }
     // Final fallback: try to load it from the backend uploads folder
     if (app?.resumeUrl) {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
+      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend-47rn.onrender.com' : 'https://thodakkam-backend-47rn.onrender.com';
       const fullUrl = app.resumeUrl.startsWith('http') ? app.resumeUrl : `${baseUrl}/uploads/${app.resumeUrl.split(/[/\\]/).pop()}`;
       Linking.openURL(fullUrl).catch(err => console.error("Couldn't load page", err));
     } else {
@@ -340,24 +340,8 @@ export default function StartupJobs() {
         {/* Conditional Content based on View Mode */}
         {viewMode === 'List' ? (
           <>
-            {/* Sub-bar (View toggles and sort) */}
-            <View style={styles.subBar}>
-              <View style={[styles.viewToggles, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <TouchableOpacity 
-                  style={[styles.viewBtn, styles.viewBtnActive, { backgroundColor: colors.inputBg }]}
-                  onPress={() => setViewMode('List')}
-                >
-                  <ListIcon size={14} color={colors.text} style={{ marginRight: 6 }} />
-                  <Text style={[styles.viewBtnText, styles.viewBtnTextActive, { color: colors.text }]}>List</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={styles.viewBtn}
-                  onPress={() => setViewMode('Tracking')}
-                >
-                  <BarChart2 size={14} color={colors.textSecondary} style={{ marginRight: 6 }} />
-                  <Text style={[styles.viewBtnText, { color: colors.textSecondary }]}>Tracking</Text>
-                </TouchableOpacity>
-              </View>
+            {/* Sub-bar (sort) */}
+            <View style={[styles.subBar, { justifyContent: 'flex-end' }]}>
               <Text style={[styles.sortText, { color: colors.textSecondary }]}>Sorted by: <Text style={[styles.sortTextBold, { color: colors.text }]}>Recently Added</Text></Text>
             </View>
 
@@ -890,7 +874,7 @@ export default function StartupJobs() {
           { label: 'Jobs', icon: Briefcase },
           { label: 'Candidates', icon: Users },
           { label: 'Interviews', icon: Calendar },
-          { label: 'Community', icon: Users }
+          { label: 'Feed', icon: MessageSquare }
         ].map(item => {
           const isActive = activeTab === item.label;
           const Icon = item.icon;

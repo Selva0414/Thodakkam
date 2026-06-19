@@ -14,7 +14,7 @@ const TEXT_GRAY = '#6b7280';
 const BORDER_COLOR = '#e5e7eb';
 const BG_LIGHT = '#f9fafb';
 
-const BASE_URL = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
+const BASE_URL = Platform.OS === 'android' ? 'https://thodakkam-backend-47rn.onrender.com' : 'https://thodakkam-backend-47rn.onrender.com';
 
 export default function StartupLoginScreen() {
   const router = useRouter();

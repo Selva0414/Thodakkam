@@ -18,7 +18,7 @@ export default function StartupDashboard() {
   const router = useRouter();
   const { colors, isDark } = useAppTheme();
   const params = useLocalSearchParams();
-  const [activeTab, setActiveTab] = useState('Home');
+  const [activeTab, setActiveTab] = useState('Dashboard');
   const companyName = (params.companyName as string) || 'Echo Digital';
   
   const [applications, setApplications] = useState<any[]>([]);
@@ -30,7 +30,7 @@ export default function StartupDashboard() {
 
   useFocusEffect(
     useCallback(() => {
-      setActiveTab('Home');
+      setActiveTab('Dashboard');
       const onBackPress = () => {
         BackHandler.exitApp();
         return true;
@@ -43,7 +43,7 @@ export default function StartupDashboard() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
+        const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend-47rn.onrender.com' : 'https://thodakkam-backend-47rn.onrender.com';
         const res = await fetch(`${baseUrl}/api/applications/startup/${encodeURIComponent(companyName)}`);
         const data = await res.json();
         if (data.success && data.applications) {
@@ -297,11 +297,11 @@ export default function StartupDashboard() {
       {/* Bottom Navigation */}
       <View style={[styles.bottomNav, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
         {[
-          { label: 'Home', icon: LayoutGrid },
+          { label: 'Dashboard', icon: LayoutGrid },
           { label: 'Jobs', icon: Briefcase },
           { label: 'Candidates', icon: Users },
           { label: 'Interviews', icon: Calendar },
-          { label: 'Feed', icon: Users }
+          { label: 'Feed', icon: MessageSquare }
         ].map(item => {
           const isActive = activeTab === item.label;
           const Icon = item.icon;
@@ -310,8 +310,8 @@ export default function StartupDashboard() {
               key={item.label} 
               style={styles.navItem}
               onPress={() => {
-                if (item.label === 'Home') {
-                  setActiveTab('Home');
+                if (item.label === 'Dashboard') {
+                  setActiveTab('Dashboard');
                 } else if (item.label === 'Jobs') {
                   router.navigate({ pathname: '/startup-jobs' as any, params: { companyName } });
                 } else if (item.label === 'Candidates') {

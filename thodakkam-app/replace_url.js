@@ -3,7 +3,7 @@ const path = require('path');
 
 const directoryPath = path.join(__dirname, 'src');
 const searchString = 'https://thodakkam.onrender.com';
-const replacementString = 'http://10.222.93.90:5000';
+const replacementString = 'https://thodakkam-backend-47rn.onrender.com';
 
 function walkAndReplace(dir) {
   const files = fs.readdirSync(dir);

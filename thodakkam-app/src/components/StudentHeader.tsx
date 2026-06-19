@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, Image, Platform, Modal, ScrollView } from 'react-native';
-import { Bell, Search, Mail, Settings, LogOut } from 'lucide-react-native';
+import { Bell, Search, Mail, Settings, LogOut, Menu } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NotificationModal from './NotificationModal';
@@ -24,7 +24,7 @@ export default function StudentHeader({ user }: { user?: { id?: string, name: st
         const storedId = await AsyncStorage.getItem('studentUserId');
         if (storedId) {
           try {
-            const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
+            const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend-47rn.onrender.com' : 'https://thodakkam-backend-47rn.onrender.com';
             const res = await fetch(`${baseUrl}/api/user/${storedId}`);
             const data = await res.json();
             if (data.success && data.user) {
@@ -62,8 +62,12 @@ export default function StudentHeader({ user }: { user?: { id?: string, name: st
     <View style={[navStyles.headerContainer, { backgroundColor: colors.card }]}>
       <View style={navStyles.headerTop}>
         <View style={navStyles.logoRow}>
-          <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', borderWidth: 1.5, borderColor: colors.primary, marginRight: 8 }}>
-            <Image source={require('../../assets/images/Thodakkam-circle.png')} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+          <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center', overflow: 'hidden', borderWidth: 1.5, borderColor: colors.primary, marginRight: 8 }}>
+            {localUser.profilePhoto ? (
+              <Image source={{ uri: localUser.profilePhoto }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+            ) : (
+              <Text style={{ fontSize: 18, fontWeight: '700', color: '#fff' }}>{firstLetter}</Text>
+            )}
           </View>
           <Text style={[navStyles.logoText, { color: colors.text }]}>Student Portal</Text>
         </View>
@@ -72,12 +76,8 @@ export default function StudentHeader({ user }: { user?: { id?: string, name: st
             <Bell size={18} color={colors.text} />
             <View style={[navStyles.bellDot, { borderColor: colors.card }]} />
           </TouchableOpacity>
-          <TouchableOpacity style={[navStyles.avatar, { backgroundColor: colors.primary }]} onPress={() => setShowProfileDropdown(!showProfileDropdown)}>
-            {localUser.profilePhoto ? (
-              <Image source={{ uri: localUser.profilePhoto }} style={navStyles.avatarImage} />
-            ) : (
-              <Text style={navStyles.avatarText}>{firstLetter}</Text>
-            )}
+          <TouchableOpacity style={{ padding: 4, marginLeft: 8 }} onPress={() => setShowProfileDropdown(!showProfileDropdown)}>
+            <Menu size={24} color={colors.text} />
           </TouchableOpacity>
         </View>
       </View>

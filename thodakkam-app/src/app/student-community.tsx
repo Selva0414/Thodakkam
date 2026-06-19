@@ -23,10 +23,10 @@ function BottomTabBar() {
   const active = 'Feed';
   const tabs = [
     { label: 'Home', icon: LayoutDashboard, path: '/student-dashboard' },
-    { label: 'Jobs', icon: Briefcase, path: '/student-jobs' },
-    { label: 'Tests', icon: ClipboardList, path: '/student-assessments' },
+    { label: 'Job', icon: Briefcase, path: '/student-jobs' },
+    { label: 'Test', icon: ClipboardList, path: '/student-assessments' },
     { label: 'Chat', icon: MessageSquare, path: '/student-messages' },
-    { label: 'Feed', icon: Users, path: '/student-community' },
+    { label: 'Feed', icon: Users, path: '/student-community' }
   ];
   return (
     <View style={[tabBarStyles.container, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
@@ -78,7 +78,7 @@ export default function StudentCommunity() {
 
   const fetchPosts = async () => {
     try {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
+      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend-47rn.onrender.com' : 'https://thodakkam-backend-47rn.onrender.com';
       const res = await fetch(`${baseUrl}/api/posts`);
       const data = await res.json();
       if (data.success) {
@@ -230,7 +230,7 @@ function PostItem({ post }: { post: any }) {
     setLikesCount((prev: number) => newLikedState ? prev + 1 : prev - 1);
     
     try {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
+      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend-47rn.onrender.com' : 'https://thodakkam-backend-47rn.onrender.com';
       await fetch(`${baseUrl}/api/posts/${post.id}/like`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -248,7 +248,7 @@ function PostItem({ post }: { post: any }) {
     setIsCommenting(true);
     
     try {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
+      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend-47rn.onrender.com' : 'https://thodakkam-backend-47rn.onrender.com';
       const res = await fetch(`${baseUrl}/api/posts/${post.id}/comment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -289,7 +289,7 @@ function PostItem({ post }: { post: any }) {
     setIsReposting(true);
     
     try {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
+      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend-47rn.onrender.com' : 'https://thodakkam-backend-47rn.onrender.com';
       const res = await fetch(`${baseUrl}/api/posts/${post.id}/repost`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -316,7 +316,7 @@ function PostItem({ post }: { post: any }) {
     setIsSaving(true);
     
     try {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
+      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend-47rn.onrender.com' : 'https://thodakkam-backend-47rn.onrender.com';
       const res = await fetch(`${baseUrl}/api/posts/${post.id}/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -545,7 +545,7 @@ function PostItem({ post }: { post: any }) {
                 </View>
               ))}
             </ScrollView>
-            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: 20, gap: 8 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingTop: 20, paddingBottom: 100, gap: 8 }}>
               {post.imageUrls?.map((_: any, idx: number) => (
                 <View key={idx} style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: viewerIndex === idx ? '#fff' : 'rgba(255,255,255,0.3)' }} />
               ))}

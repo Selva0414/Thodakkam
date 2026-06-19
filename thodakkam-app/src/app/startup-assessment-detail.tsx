@@ -26,7 +26,7 @@ export default function StartupAssessmentDetail() {
 
   const fetchAssessment = async () => {
     try {
-      const response = await fetch(`https://thodakkam.onrender.com/api/assessments/single/${id}`);
+      const response = await fetch(`https://thodakkam-backend-47rn.onrender.com/api/assessments/single/${id}`);
       if (!response.ok) throw new Error(`Server returned ${response.status}`);
       const data = await response.json();
       if (data.success && data.assessment) {

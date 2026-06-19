@@ -20,7 +20,7 @@ export default function StartupAiAnalyzer() {
   const [activeTab, setActiveTab] = useState('Candidates');
 
   const handleNavPress = (label: string) => {
-    if (label === 'Home') router.navigate({ pathname: '/startup-dashboard' as any, params: { companyName } });
+    if (label === 'Dashboard') router.navigate({ pathname: '/startup-dashboard' as any, params: { companyName } });
     else if (label === 'Jobs') router.navigate({ pathname: '/startup-jobs' as any, params: { companyName } });
     else if (label === 'Candidates') router.navigate({ pathname: '/startup-candidates' as any, params: { companyName } });
     else if (label === 'Interviews') router.navigate({ pathname: '/startup-interviews' as any, params: { companyName } });
@@ -214,11 +214,11 @@ export default function StartupAiAnalyzer() {
       {/* Bottom Navigation */}
       <View style={[styles.bottomNav, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
         {[
-          { label: 'Home', icon: LayoutGrid },
+          { label: 'Dashboard', icon: LayoutGrid },
           { label: 'Jobs', icon: Briefcase },
           { label: 'Candidates', icon: Users },
           { label: 'Interviews', icon: Calendar },
-          { label: 'Feed', icon: Users }
+          { label: 'Feed', icon: MessageSquare }
         ].map(item => {
           const isActive = activeTab === item.label;
           const Icon = item.icon;

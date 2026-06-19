@@ -352,10 +352,10 @@ function BottomTabBar() {
   const [active, setActive] = useState('Home');
   const tabs = [
     { label: 'Home', icon: LayoutDashboard },
-    { label: 'Jobs Board', icon: Briefcase, path: '/student-jobs' as any },
-    { label: 'Tests', icon: ClipboardList, path: '/student-assessments' as any },
+    { label: 'Job', icon: Briefcase, path: '/student-jobs' as any },
+    { label: 'Test', icon: ClipboardList, path: '/student-assessments' as any },
     { label: 'Chat', icon: MessageSquare, path: '/student-messages' },
-    { label: 'Feed', icon: Users, path: '/student-community' },
+    { label: 'Feed', icon: Users, path: '/student-community' }
   ];
   return (
     <View style={[tabBarStyles.container, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
@@ -444,7 +444,7 @@ export default function StudentDashboard() {
           return;
         }
 
-        const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
+        const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend-47rn.onrender.com' : 'https://thodakkam-backend-47rn.onrender.com';
         const response = await fetch(`${baseUrl}/api/user/${userId}`);
         const resJson = await response.json();
 
@@ -477,7 +477,7 @@ export default function StudentDashboard() {
       
       if (userIdToFetch) {
         try {
-          const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
+          const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend-47rn.onrender.com' : 'https://thodakkam-backend-47rn.onrender.com';
           const appRes = await fetch(`${baseUrl}/api/applications/user/${userIdToFetch}`);
           const appJson = await appRes.json();
           if (appJson.success && appJson.applications) {

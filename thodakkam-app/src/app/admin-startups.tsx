@@ -28,7 +28,7 @@ export default function AdminStartups() {
   useEffect(() => {
     const fetchStartups = async () => {
       try {
-        const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
+        const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend-47rn.onrender.com' : 'https://thodakkam-backend-47rn.onrender.com';
         const res = await fetch(`${baseUrl}/api/admin/startups`);
         const data = await res.json();
         if (data.success) {
@@ -146,12 +146,12 @@ export default function AdminStartups() {
             const companyInitials = startup.companyName ? startup.companyName.substring(0, 2).toUpperCase() : 'SU';
             let logoUrl = startup.companyLogo || startup.profilePhoto;
             if (logoUrl && !logoUrl.startsWith('http') && !logoUrl.startsWith('data:image')) {
-              const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
+              const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend-47rn.onrender.com' : 'https://thodakkam-backend-47rn.onrender.com';
               logoUrl = `${baseUrl}/uploads/${logoUrl.split(/[/\\]/).pop()}`;
             }
             let founderImg = startup.founderImage;
             if (founderImg && !founderImg.startsWith('http') && !founderImg.startsWith('data:image')) {
-              const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
+              const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend-47rn.onrender.com' : 'https://thodakkam-backend-47rn.onrender.com';
               founderImg = `${baseUrl}/uploads/${founderImg.split(/[/\\]/).pop()}`;
             }
 

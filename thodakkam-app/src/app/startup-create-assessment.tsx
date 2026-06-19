@@ -34,7 +34,7 @@ export default function StartupCreateAssessment() {
 
   const fetchJobs = async () => {
     try {
-      const response = await fetch(`https://thodakkam.onrender.com/api/jobs/startup/${companyName}`);
+      const response = await fetch(`https://thodakkam-backend-47rn.onrender.com/api/jobs/startup/${companyName}`);
       if (!response.ok) throw new Error(`Server returned ${response.status}`);
       const data = await response.json();
       if (data.success) {
@@ -47,7 +47,7 @@ export default function StartupCreateAssessment() {
 
   const fetchAssessmentForEdit = async () => {
     try {
-      const response = await fetch(`https://thodakkam.onrender.com/api/assessments/single/${editId}`);
+      const response = await fetch(`https://thodakkam-backend-47rn.onrender.com/api/assessments/single/${editId}`);
       if (!response.ok) throw new Error(`Server returned ${response.status}`);
       const data = await response.json();
       if (data.success && data.assessment) {
@@ -130,6 +130,47 @@ export default function StartupCreateAssessment() {
   const [interviewLink, setInterviewLink] = useState('');
   const [interviewNotes, setInterviewNotes] = useState('');
 
+  // Auto-calculate MCQ End Time
+  React.useEffect(() => {
+    if (mcqStartDate && mcqStartTime && mcqDuration) {
+      try {
+        const start = new Date(`${mcqStartDate}T${mcqStartTime}`);
+        if (!isNaN(start.getTime())) {
+          const end = new Date(start.getTime() + Number(mcqDuration) * 60000);
+          const y = end.getFullYear();
+          const m = String(end.getMonth() + 1).padStart(2, '0');
+          const d = String(end.getDate()).padStart(2, '0');
+          const hh = String(end.getHours()).padStart(2, '0');
+          const mm = String(end.getMinutes()).padStart(2, '0');
+          
+          setMcqEndDate(`${y}-${m}-${d}`);
+          setMcqEndTime(`${hh}:${mm}`);
+        }
+      } catch (e) {}
+    }
+  }, [mcqStartDate, mcqStartTime, mcqDuration]);
+
+  // Auto-calculate Interview End Time
+  React.useEffect(() => {
+    if (interviewStartDate && interviewStartTime && interviewDuration) {
+      try {
+        const start = new Date(`${interviewStartDate}T${interviewStartTime}`);
+        if (!isNaN(start.getTime())) {
+          const end = new Date(start.getTime() + Number(interviewDuration) * 60000);
+          const y = end.getFullYear();
+          const m = String(end.getMonth() + 1).padStart(2, '0');
+          const d = String(end.getDate()).padStart(2, '0');
+          const hh = String(end.getHours()).padStart(2, '0');
+          const mm = String(end.getMinutes()).padStart(2, '0');
+          
+          setInterviewEndDate(`${y}-${m}-${d}`);
+          setInterviewEndTime(`${hh}:${mm}`);
+        }
+      } catch (e) {}
+    }
+  }, [interviewStartDate, interviewStartTime, interviewDuration]);
+
+
   const addTestCase = () => setTestCases([...testCases, { id: Date.now(), input: '', output: '' }]);
 
   const addQuestion = () => {
@@ -189,7 +230,7 @@ export default function StartupCreateAssessment() {
     }
     
     try {
-      const url = editId ? `https://thodakkam.onrender.com/api/assessments/${editId}` : 'https://thodakkam.onrender.com/api/assessments';
+      const url = editId ? `https://thodakkam-backend-47rn.onrender.com/api/assessments/${editId}` : 'https://thodakkam-backend-47rn.onrender.com/api/assessments';
       const method = editId ? 'PUT' : 'POST';
       const response = await fetch(url, {
         method,
@@ -363,7 +404,7 @@ export default function StartupCreateAssessment() {
                       
                       <View style={styles.candidateInfo}>
                         {app.user?.profilePhoto || app.profilePhoto ? (
-                          <Image source={{ uri: (app.user?.profilePhoto || app.profilePhoto)?.startsWith('data:') ? (app.user?.profilePhoto || app.profilePhoto) : `https://thodakkam.onrender.com/${app.user?.profilePhoto || app.profilePhoto}` }} style={styles.candidateAvatar} />
+                          <Image source={{ uri: (app.user?.profilePhoto || app.profilePhoto)?.startsWith('data:') ? (app.user?.profilePhoto || app.profilePhoto) : `https://thodakkam-backend-47rn.onrender.com/${app.user?.profilePhoto || app.profilePhoto}` }} style={styles.candidateAvatar} />
                         ) : (
                           <View style={[styles.candidateAvatarPlaceholder, { backgroundColor: colors.inputBg }]}>
                             <Text style={[styles.candidateInitials, { color: colors.textSecondary }]}>{(app.fullName || app.user?.fullName || 'U').substring(0, 2).toUpperCase()}</Text>

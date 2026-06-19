@@ -11,7 +11,7 @@ const BG_COLOR = '#f8f9fa';
 const BG_LIGHT = '#ffffff';
 const TEXT_DARK = '#1e293b';
 const BORDER_COLOR = '#e2e8f0';
-const BACKEND_URL = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
+const BACKEND_URL = Platform.OS === 'android' ? 'https://thodakkam-backend-47rn.onrender.com' : 'https://thodakkam-backend-47rn.onrender.com';
 
 export default function ForgotPassword() {
   const router = useRouter();

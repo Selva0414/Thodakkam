@@ -99,7 +99,7 @@ export default function StartupAddJob() {
 
     setLoading(true);
     try {
-      const response = await fetch('https://thodakkam.onrender.com/api/jobs', {
+      const response = await fetch('https://thodakkam-backend-47rn.onrender.com/api/jobs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -40,7 +40,7 @@ export default function StartupCandidates() {
   const fetchApplications = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`https://thodakkam.onrender.com/api/applications/startup/${companyName}`);
+      const response = await fetch(`https://thodakkam-backend-47rn.onrender.com/api/applications/startup/${companyName}`);
       if (!response.ok) throw new Error(`Server returned ${response.status}`);
       const data = await response.json();
       if (data.success) {
@@ -65,7 +65,7 @@ export default function StartupCandidates() {
   };
 
   const handleNavPress = (label: string) => {
-    if (label === 'Home') {
+    if (label === 'Dashboard') {
       router.navigate({ pathname: '/startup-dashboard' as any, params: { companyName } });
     } else if (label === 'Jobs') {
       router.navigate({ pathname: '/startup-jobs' as any, params: { companyName } });
@@ -379,11 +379,11 @@ export default function StartupCandidates() {
       {/* Bottom Navigation */}
       <View style={[styles.bottomNav, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
         {[
-          { label: 'Home', icon: LayoutGrid },
+          { label: 'Dashboard', icon: LayoutGrid },
           { label: 'Jobs', icon: Briefcase },
           { label: 'Candidates', icon: Users },
           { label: 'Interviews', icon: Calendar },
-          { label: 'Feed', icon: Users }
+          { label: 'Feed', icon: MessageSquare }
         ].map(item => {
           const isActive = activeTab === item.label;
           const Icon = item.icon;

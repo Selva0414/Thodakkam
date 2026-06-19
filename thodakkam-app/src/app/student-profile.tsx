@@ -67,7 +67,7 @@ export default function StudentProfile() {
       if (!id) id = '8bbe6fc3-2716-4821-b967-35b0689cbf11';
 
       setUserId(id);
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
+      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend-47rn.onrender.com' : 'https://thodakkam-backend-47rn.onrender.com';
       const response = await fetch(`${baseUrl}/api/user/${id}`);
       const json = await response.json();
 
@@ -101,7 +101,7 @@ export default function StudentProfile() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam.onrender.com' : 'https://thodakkam.onrender.com';
+      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend-47rn.onrender.com' : 'https://thodakkam-backend-47rn.onrender.com';
       const res = await fetch(`${baseUrl}/api/user/${userId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
