@@ -17,7 +17,6 @@ export default function StudentAddPost() {
   const [text, setText] = useState('');
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [category, setCategory] = useState('Project');
-  const [tagsStr, setTagsStr] = useState('');
   const [loading, setLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
 
@@ -51,7 +50,6 @@ export default function StudentAddPost() {
           text,
           imageUrl: imageUrls.length > 0 ? JSON.stringify(imageUrls) : null,
           category,
-          tags: tagsStr.split(',').map(t => t.trim()).filter(Boolean),
           email: userStore.email
         })
       });
@@ -119,18 +117,6 @@ export default function StudentAddPost() {
               )}
               <View style={[styles.purpleDot, { backgroundColor: colors.primary }]} />
             </View>
-          </View>
-
-          {/* Tags Input */}
-          <View style={{ marginBottom: 16 }}>
-            <Text style={{ fontSize: 13, color: colors.textSecondary, marginBottom: 6, fontWeight: '600' }}>Tags (comma separated)</Text>
-            <TextInput
-              style={[{ backgroundColor: colors.inputBg, color: colors.text, borderRadius: 8, paddingHorizontal: 12, height: 40, borderWidth: 1, borderColor: colors.border }]}
-              placeholder="e.g. project, hackathon, open-source"
-              placeholderTextColor={colors.textSecondary}
-              value={tagsStr}
-              onChangeText={setTagsStr}
-            />
           </View>
 
           <View style={[styles.divider, { backgroundColor: colors.border }]} />

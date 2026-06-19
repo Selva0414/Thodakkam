@@ -21,7 +21,6 @@ export default function StartupAddPost() {
   const [text, setText] = useState('');
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [category, setCategory] = useState('Update');
-  const [tagsStr, setTagsStr] = useState('');
   const [loading, setLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
 
@@ -55,7 +54,6 @@ export default function StartupAddPost() {
           text,
           imageUrl: imageUrls.length > 0 ? JSON.stringify(imageUrls) : null,
           category,
-          tags: tagsStr.split(',').map(t => t.trim()).filter(Boolean),
           email: userStore.email || 'startup@example.com',
           companyName: companyName
         })
@@ -122,18 +120,6 @@ export default function StartupAddPost() {
               )}
               <View style={[styles.purpleDot, { backgroundColor: colors.primary }]} />
             </View>
-          </View>
-
-          {/* Tags Input */}
-          <View style={{ marginBottom: 16 }}>
-            <Text style={{ fontSize: 13, color: colors.textSecondary, marginBottom: 6, fontWeight: '600' }}>Tags (comma separated)</Text>
-            <TextInput
-              style={[{ backgroundColor: colors.inputBg, color: colors.text, borderRadius: 8, paddingHorizontal: 12, height: 40, borderWidth: 1, borderColor: colors.border }]}
-              placeholder="e.g. hiring, funding, milestone"
-              placeholderTextColor={colors.textSecondary}
-              value={tagsStr}
-              onChangeText={setTagsStr}
-            />
           </View>
 
           <View style={[styles.divider, { backgroundColor: colors.border }]} />

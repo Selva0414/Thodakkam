@@ -1406,9 +1406,7 @@ app.post('/api/posts', async (req: Request, res: Response): Promise<void> => {
         imageUrl: finalImageUrl,
         category: category || 'Project',
         userId: userId || undefined,
-        startupId: startupId || undefined,
-        authorType: req.body.authorType || (startupId ? 'startup' : 'student'),
-        tags: req.body.tags || []
+        startupId: startupId || undefined
       }
     });
     res.status(201).json({ success: true, post });
@@ -1447,14 +1445,12 @@ app.post('/api/posts/:id/like', async (req: Request, res: Response): Promise<voi
     if (existingLike) {
       // @ts-ignore
       await prisma.like.delete({ where: { id: existingLike.id } });
-      await prisma.post.update({ where: { id }, data: { likesCount: { decrement: 1 } } });
       res.status(200).json({ success: true, message: 'Unliked', liked: false });
     } else {
       // @ts-ignore
       await prisma.like.create({
         data: { postId: id, userId, startupId }
       });
-      await prisma.post.update({ where: { id }, data: { likesCount: { increment: 1 } } });
       res.status(200).json({ success: true, message: 'Liked', liked: true });
     }
   } catch (err) {
@@ -1619,8 +1615,6 @@ app.post('/api/posts/:id/comment', async (req: Request, res: Response): Promise<
       data: { text, postId: id, userId, startupId }
     });
     
-    await prisma.post.update({ where: { id }, data: { commentsCount: { increment: 1 } } });
-    
     // @ts-ignore
     const populatedComment = await prisma.comment.findUnique({
       where: { id: comment.id },
@@ -1631,81 +1625,6 @@ app.post('/api/posts/:id/comment', async (req: Request, res: Response): Promise<
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Server error creating comment' });
-  }
-});
-
-// ─── MCQ Routes ─────────────────────────────────────────────────────────────
-app.get('/api/mcq', async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { category, difficulty } = req.query;
-    const filter: any = {};
-    if (category) filter.category = category as string;
-    if (difficulty) filter.difficulty = difficulty as string;
-    
-    const questions = await prisma.mcqQuestion.findMany({
-      where: filter,
-      orderBy: { createdAt: 'desc' }
-    });
-    res.status(200).json({ success: true, questions });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: 'Server error fetching MCQ questions' });
-  }
-});
-
-app.post('/api/mcq', async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { question, options, correctOptionIndex, category, difficulty } = req.body;
-    if (!question || !options || correctOptionIndex === undefined) {
-      res.status(400).json({ success: false, message: 'Missing required fields' });
-      return;
-    }
-    
-    const newQuestion = await prisma.mcqQuestion.create({
-      data: {
-        question,
-        options,
-        correctOptionIndex,
-        category,
-        difficulty
-      }
-    });
-    res.status(201).json({ success: true, question: newQuestion });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: 'Server error creating MCQ question' });
-  }
-});
-
-app.post('/api/mcq/submit', async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { studentId, score, totalQuestions, category } = req.body;
-    if (!studentId || score === undefined || !totalQuestions) {
-      res.status(400).json({ success: false, message: 'Missing required fields' });
-      return;
-    }
-    
-    const result = await prisma.mcqResult.create({
-      data: { studentId, score, totalQuestions, category }
-    });
-    res.status(201).json({ success: true, result });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: 'Server error submitting MCQ result' });
-  }
-});
-
-app.get('/api/mcq/results/:studentId', async (req: Request, res: Response): Promise<void> => {
-  try {
-    const studentId = req.params.studentId as string;
-    const results = await prisma.mcqResult.findMany({
-      where: { studentId },
-      orderBy: { completedAt: 'desc' }
-    });
-    res.status(200).json({ success: true, results });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: 'Server error fetching MCQ results' });
   }
 });
 
@@ -1752,23 +1671,6 @@ app.post('/api/assessments', async (req: Request, res: Response): Promise<void> 
         interviewConfig
       }
     });
-
-    // Also populate McqQuestion table with these custom questions for future use
-    if (mcqConfig && mcqConfig.questions && Array.isArray(mcqConfig.questions)) {
-      for (const q of mcqConfig.questions) {
-        if (q.question && q.optionA) {
-           await prisma.mcqQuestion.create({
-             data: {
-               question: q.question,
-               options: [q.optionA, q.optionB, q.optionC, q.optionD].filter(Boolean),
-               correctOptionIndex: q.correctOption === 'A' ? 0 : q.correctOption === 'B' ? 1 : q.correctOption === 'C' ? 2 : 3,
-               category: title,
-               difficulty: q.difficulty || 'Medium'
-             }
-           }).catch((e: any) => console.error("Could not save MCQ question to database", e));
-        }
-      }
-    }
     if (selectedCandidates && selectedCandidates.length > 0) {
       await prisma.application.updateMany({
         where: { id: { in: selectedCandidates } },
@@ -2057,5 +1959,5 @@ app.get('/api/jobs/my-jobs/:identifier', async (req: Request, res: Response): Pr
 
 // Start Server
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`Thodakkam backend server running on http://localhost:${PORT}`);
 });
