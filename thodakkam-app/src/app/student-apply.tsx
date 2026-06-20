@@ -73,7 +73,7 @@ export default function StudentApply() {
       try {
         const fallbackId = await AsyncStorage.getItem('studentUserId');
         const finalUserId = userStore.id || fallbackId;
-        const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend-47rn.onrender.com' : 'https://thodakkam-backend-47rn.onrender.com';
+        const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
         
         let fetchedEmail = userStore.email || form.email;
 
@@ -131,7 +131,7 @@ export default function StudentApply() {
 
     setLoading(true);
     try {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend-47rn.onrender.com' : 'https://thodakkam-backend-47rn.onrender.com';
+      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
       const fallbackId = await AsyncStorage.getItem('studentUserId');
       const finalUserId = userStore.id || fallbackId;
 

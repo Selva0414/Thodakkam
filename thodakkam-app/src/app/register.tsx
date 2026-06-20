@@ -230,7 +230,7 @@ export default function RegisterScreen() {
         }
       }
 
-      const BACKEND_URL = Platform.OS === 'web' ? 'https://thodakkam-backend-47rn.onrender.com' : 'https://thodakkam-backend-47rn.onrender.com';
+      const BACKEND_URL = Platform.OS === 'web' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
       const response = await fetch(`${BACKEND_URL}/api/register`, {
         method: 'POST',
         body: formData,

@@ -24,7 +24,7 @@ export default function StudentHeader({ user }: { user?: { id?: string, name: st
         const storedId = await AsyncStorage.getItem('studentUserId');
         if (storedId) {
           try {
-            const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-backend-47rn.onrender.com' : 'https://thodakkam-backend-47rn.onrender.com';
+            const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
             const res = await fetch(`${baseUrl}/api/user/${storedId}`);
             const data = await res.json();
             if (data.success && data.user) {

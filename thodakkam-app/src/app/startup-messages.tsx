@@ -35,7 +35,7 @@ export default function StartupMessages() {
 
   useEffect(() => {
     if (companyName) {
-      fetch(`https://thodakkam-backend-47rn.onrender.com/api/startup/profile/${encodeURIComponent(companyName)}`)
+      fetch(`https://thodakkam-1.onrender.com/api/startup/profile/${encodeURIComponent(companyName)}`)
         .then(res => res.json())
         .then(data => {
           if (data.success && data.startup?.companyLogo) {
@@ -52,7 +52,7 @@ export default function StartupMessages() {
         setMyUserId(id);
         fetchUsers(id);
       } else if (companyName) {
-        fetch(`https://thodakkam-backend-47rn.onrender.com/api/startup/profile/${encodeURIComponent(companyName)}`)
+        fetch(`https://thodakkam-1.onrender.com/api/startup/profile/${encodeURIComponent(companyName)}`)
           .then(res => res.json())
           .then(data => {
             if (data.success && data.startup?.id) {
@@ -81,7 +81,7 @@ export default function StartupMessages() {
 
   const fetchUsers = async (userId: string) => {
     try {
-      const res = await fetch('https://thodakkam-backend-47rn.onrender.com/api/users/all');
+      const res = await fetch('https://thodakkam-1.onrender.com/api/users/all');
       if (!res.ok) {
         console.warn('API /api/users/all returned ' + res.status);
         return;
@@ -105,7 +105,7 @@ export default function StartupMessages() {
       }
 
       // Fetch active conversations
-      const convRes = await fetch(`https://thodakkam-backend-47rn.onrender.com/api/messages/conversations/${userId}`);
+      const convRes = await fetch(`https://thodakkam-1.onrender.com/api/messages/conversations/${userId}`);
       if (convRes.ok) {
         const convData = await convRes.json();
         const pinnedStr = await AsyncStorage.getItem(`pinned_candidates_${userId}`);
@@ -169,7 +169,7 @@ export default function StartupMessages() {
     if (!myUserId) return;
 
     try {
-      const res = await fetch(`https://thodakkam-backend-47rn.onrender.com/api/messages/${myUserId}/${user.id}`);
+      const res = await fetch(`https://thodakkam-1.onrender.com/api/messages/${myUserId}/${user.id}`);
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
@@ -196,7 +196,7 @@ export default function StartupMessages() {
     const uid = overrideUserId || myUserId;
     if (!uid) return;
     try {
-      const res = await fetch(`https://thodakkam-backend-47rn.onrender.com/api/messages/${uid}/${candidateId}`);
+      const res = await fetch(`https://thodakkam-1.onrender.com/api/messages/${uid}/${candidateId}`);
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
@@ -213,7 +213,7 @@ export default function StartupMessages() {
 
           // Mark as read
           if (data.conversationId) {
-            fetch('https://thodakkam-backend-47rn.onrender.com/api/messages/read', {
+            fetch('https://thodakkam-1.onrender.com/api/messages/read', {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ conversationId: data.conversationId, userId: uid })
@@ -247,7 +247,7 @@ export default function StartupMessages() {
     });
 
     try {
-      const res = await fetch('https://thodakkam-backend-47rn.onrender.com/api/messages', {
+      const res = await fetch('https://thodakkam-1.onrender.com/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ senderId: myUserId, senderType: 'startup', receiverId: activeChatId, receiverType: 'student', text: msgText })

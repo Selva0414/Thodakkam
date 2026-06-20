@@ -34,7 +34,7 @@ export default function StartupCreateAssessment() {
 
   const fetchJobs = async () => {
     try {
-      const response = await fetch(`https://thodakkam-backend-47rn.onrender.com/api/jobs/startup/${companyName}`);
+      const response = await fetch(`https://thodakkam-1.onrender.com/api/jobs/startup/${companyName}`);
       if (!response.ok) throw new Error(`Server returned ${response.status}`);
       const data = await response.json();
       if (data.success) {
@@ -47,7 +47,7 @@ export default function StartupCreateAssessment() {
 
   const fetchAssessmentForEdit = async () => {
     try {
-      const response = await fetch(`https://thodakkam-backend-47rn.onrender.com/api/assessments/single/${editId}`);
+      const response = await fetch(`https://thodakkam-1.onrender.com/api/assessments/single/${editId}`);
       if (!response.ok) throw new Error(`Server returned ${response.status}`);
       const data = await response.json();
       if (data.success && data.assessment) {
@@ -255,7 +255,7 @@ export default function StartupCreateAssessment() {
     }
     
     try {
-      const url = editId ? `https://thodakkam-backend-47rn.onrender.com/api/assessments/${editId}` : 'https://thodakkam-backend-47rn.onrender.com/api/assessments';
+      const url = editId ? `https://thodakkam-1.onrender.com/api/assessments/${editId}` : 'https://thodakkam-1.onrender.com/api/assessments';
       const method = editId ? 'PUT' : 'POST';
       const response = await fetch(url, {
         method,
@@ -492,7 +492,7 @@ The array should be in this exact format:
                       
                       <View style={styles.candidateInfo}>
                         {app.user?.profilePhoto || app.profilePhoto ? (
-                          <Image source={{ uri: (app.user?.profilePhoto || app.profilePhoto)?.startsWith('data:') ? (app.user?.profilePhoto || app.profilePhoto) : `https://thodakkam-backend-47rn.onrender.com/${app.user?.profilePhoto || app.profilePhoto}` }} style={styles.candidateAvatar} />
+                          <Image source={{ uri: (app.user?.profilePhoto || app.profilePhoto)?.startsWith('data:') ? (app.user?.profilePhoto || app.profilePhoto) : `https://thodakkam-1.onrender.com/${app.user?.profilePhoto || app.profilePhoto}` }} style={styles.candidateAvatar} />
                         ) : (
                           <View style={[styles.candidateAvatarPlaceholder, { backgroundColor: colors.inputBg }]}>
                             <Text style={[styles.candidateInitials, { color: colors.textSecondary }]}>{(app.fullName || app.user?.fullName || 'U').substring(0, 2).toUpperCase()}</Text>
