@@ -1554,6 +1554,31 @@ app.post('/api/assessments', async (req, res) => {
                 interviewConfig
             }
         });
+        // Save MCQ questions to the DB
+        if (mcqConfig && Array.isArray(mcqConfig.questions)) {
+            for (const q of mcqConfig.questions) {
+                let correctOptionIndex = 0;
+                if (q.correctOption === 'B')
+                    correctOptionIndex = 1;
+                if (q.correctOption === 'C')
+                    correctOptionIndex = 2;
+                if (q.correctOption === 'D')
+                    correctOptionIndex = 3;
+                await prisma.mcqQuestion.create({
+                    data: {
+                        question: q.question,
+                        options: {
+                            A: q.optionA,
+                            B: q.optionB,
+                            C: q.optionC,
+                            D: q.optionD
+                        },
+                        correctOptionIndex,
+                        category: assessment.id // Linking to Assessment ID via category
+                    }
+                });
+            }
+        }
         if (selectedCandidates && selectedCandidates.length > 0) {
             await prisma.application.updateMany({
                 where: { id: { in: selectedCandidates } },
@@ -1565,6 +1590,43 @@ app.post('/api/assessments', async (req, res) => {
     catch (error) {
         console.error('Error creating assessment:', error);
         res.status(500).json({ success: false, message: 'Server error creating assessment' });
+    }
+});
+// Submit MCQ Result
+app.post('/api/assessments/:id/submit-mcq', async (req, res) => {
+    try {
+        const id = req.params.id;
+        const { studentId, jobId, score, totalQuestions, status, percent } = req.body;
+        if (!studentId) {
+            res.status(400).json({ success: false, message: 'studentId is required' });
+            return;
+        }
+        // Save in McqResult using category as assessment ID link
+        await prisma.mcqResult.create({
+            data: {
+                studentId,
+                score: score || 0,
+                totalQuestions: totalQuestions || 0,
+                category: id
+            }
+        });
+        // Save in AssessmentResult table
+        await prisma.assessmentResult.create({
+            data: {
+                assessmentId: id,
+                studentId,
+                jobId: jobId || null,
+                roundType: 'MCQ_ROUND',
+                score: percent || 0,
+                status: status || (percent >= 60 ? 'PASSED' : 'FAILED'),
+                completedAt: new Date()
+            }
+        });
+        res.status(200).json({ success: true, message: 'Assessment submitted successfully' });
+    }
+    catch (error) {
+        console.error('Error submitting assessment:', error);
+        res.status(500).json({ success: false, message: 'Server error submitting assessment' });
     }
 });
 // Update Assessment

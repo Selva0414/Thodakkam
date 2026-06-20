@@ -1,7 +1,7 @@
 import React, { useState, useEffect, createElement } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, TouchableOpacity,
-  SafeAreaView, Platform, TextInput, useWindowDimensions, Image
+  SafeAreaView, Platform, TextInput, useWindowDimensions, Image, ActivityIndicator
 } from 'react-native';
 import { ArrowLeft, ChevronDown, FileText, Code, Users, Briefcase, Upload, Download, Save, Clock, Trash2, Calendar, HelpCircle, Sparkles, Plus, Check, ChevronUp, Info, Zap } from 'lucide-react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -73,6 +73,10 @@ export default function StartupCreateAssessment() {
           setCodingDuration(a.codingConfig.durationMin?.toString() || '45');
           setCodingPass(a.codingConfig.passPercentage?.toString() || '70');
           setCodingLang(a.codingConfig.programmingLanguage || 'JavaScript');
+          setCodingStartDate(a.codingConfig.startDate || '');
+          setCodingStartTime(a.codingConfig.startTime || '');
+          setCodingEndDate(a.codingConfig.endDate || '');
+          setCodingEndTime(a.codingConfig.endTime || '');
           setStarterCode(a.codingConfig.starterCode || '');
           setTestCases(a.codingConfig.testCases || [{ id: 1, input: '', output: '' }]);
         }
@@ -108,6 +112,7 @@ export default function StartupCreateAssessment() {
   
   // Coding State
   const [testCases, setTestCases] = useState([{ id: 1, input: '', output: '' }]);
+  const [isGeneratingStarterCode, setIsGeneratingStarterCode] = useState(false);
   const [codingLang, setCodingLang] = useState('JavaScript');
   const [openCodingLang, setOpenCodingLang] = useState(false);
   const [starterCode, setStarterCode] = useState(`// Write your solution here\nfunction solution(input) {\n  // Your code here\n  return result;\n}`);
@@ -122,6 +127,10 @@ export default function StartupCreateAssessment() {
 
   const [codingDuration, setCodingDuration] = useState('60');
   const [codingPass, setCodingPass] = useState('60');
+  const [codingStartDate, setCodingStartDate] = useState('');
+  const [codingStartTime, setCodingStartTime] = useState('');
+  const [codingEndDate, setCodingEndDate] = useState('');
+  const [codingEndTime, setCodingEndTime] = useState('');
 
   const [interviewDuration, setInterviewDuration] = useState('45');
   const [interviewStartDate, setInterviewStartDate] = useState('');
@@ -162,6 +171,62 @@ export default function StartupCreateAssessment() {
       } catch (e) {}
     }
   }, [mcqStartDate, mcqStartTime, mcqDuration]);
+
+      const handleCodingLangChange = async (lang: string) => {
+    setCodingLang(lang);
+    setOpenCodingLang(false);
+    setIsGeneratingStarterCode(true);
+
+    try {
+      const formData = new FormData();
+      const prompt = `System Instructions: You are a coding assistant. Provide ONLY the raw starter code template for ${lang}. Do not use markdown backticks, do not explain, just return the code. Ensure the function signature is generic.
+
+User Message: Give me a starter code template for ${lang}`;
+      
+      formData.append('message', prompt);
+
+      const response = await fetch('https://ai-agent-v01.onrender.com/chat', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error('Failed to fetch');
+      const data = await response.json();
+      
+      const aiResponse = data.reply || data.response || data.message || data.text || data.answer || data.result;
+      if (aiResponse) {
+        setStarterCode(aiResponse.trim());
+      }
+    } catch (err) {
+      console.error('Error generating starter code:', err);
+    } finally {
+      setIsGeneratingStarterCode(false);
+    }
+  };
+
+  // Auto-calculate Coding End Time
+  React.useEffect(() => {
+    if (codingStartDate && !codingEndDate) {
+      setCodingEndDate(codingStartDate);
+    }
+    if (codingStartTime && codingDuration) {
+      const dummyDate = codingStartDate || new Date().toISOString().split('T')[0];
+      const timePart = codingStartTime.length === 5 ? codingStartTime + ':00' : codingStartTime;
+      const start = new Date(`${dummyDate}T${timePart}`);
+      if (!isNaN(start.getTime())) {
+        const end = new Date(start.getTime() + Number(codingDuration) * 60000);
+        if (codingStartDate) {
+          const y = end.getFullYear();
+          const m = String(end.getMonth() + 1).padStart(2, '0');
+          const d = String(end.getDate()).padStart(2, '0');
+          setCodingEndDate(`${y}-${m}-${d}`);
+        }
+        const hh = String(end.getHours()).padStart(2, '0');
+        const mm = String(end.getMinutes()).padStart(2, '0');
+        setCodingEndTime(`${hh}:${mm}`);
+      }
+    }
+  }, [codingStartDate, codingStartTime, codingDuration]);
 
   // Auto-calculate Interview End Time
   React.useEffect(() => {
@@ -951,7 +1016,7 @@ The array should be in this exact format:
                             <TouchableOpacity 
                               key={lang}
                               style={[styles.difficultyMenuItem, { borderBottomColor: colors.border }, codingLang === lang && { backgroundColor: isDark ? colors.primary : '#1d4ed8' }]}
-                              onPress={() => { setCodingLang(lang); setOpenCodingLang(false); }}
+                              onPress={() => handleCodingLangChange(lang)}
                             >
                               <Text style={[styles.difficultyMenuText, { color: colors.text }, codingLang === lang && { color: '#ffffff' }]}>{lang}</Text>
                             </TouchableOpacity>
@@ -965,6 +1030,8 @@ The array should be in this exact format:
                         <View style={{ flexDirection: 'row', gap: 8 }}>
                           {createElement('input', {
                             type: 'date',
+                            value: codingStartDate,
+                            onChange: (e: any) => setCodingStartDate(e.target.value),
                             style: {
                               flex: 1, height: '48px', borderRadius: '8px', borderWidth: '1px', borderStyle: 'solid',
                               borderColor: colors.border, padding: '0 12px', backgroundColor: colors.card, color: colors.text,
@@ -973,6 +1040,8 @@ The array should be in this exact format:
                           })}
                           {createElement('input', {
                             type: 'time',
+                            value: codingStartTime,
+                            onChange: (e: any) => setCodingStartTime(e.target.value),
                             style: {
                               width: '120px', height: '48px', borderRadius: '8px', borderWidth: '1px', borderStyle: 'solid',
                               borderColor: colors.border, padding: '0 12px', backgroundColor: colors.card, color: colors.text,
@@ -993,6 +1062,8 @@ The array should be in this exact format:
                         <View style={{ flexDirection: 'row', gap: 8 }}>
                           {createElement('input', {
                             type: 'date',
+                            value: codingEndDate,
+                            onChange: (e: any) => setCodingEndDate(e.target.value),
                             style: {
                               flex: 1, height: '48px', borderRadius: '8px', borderWidth: '1px', borderStyle: 'solid',
                               borderColor: colors.border, padding: '0 12px', backgroundColor: colors.card, color: colors.text,
@@ -1001,6 +1072,8 @@ The array should be in this exact format:
                           })}
                           {createElement('input', {
                             type: 'time',
+                            value: codingEndTime,
+                            onChange: (e: any) => setCodingEndTime(e.target.value),
                             style: {
                               width: '120px', height: '48px', borderRadius: '8px', borderWidth: '1px', borderStyle: 'solid',
                               borderColor: colors.border, padding: '0 12px', backgroundColor: colors.card, color: colors.text,
@@ -1018,7 +1091,10 @@ The array should be in this exact format:
                   </View>
 
                   <View style={styles.inputGroup}>
-                    <Text style={[styles.label, { color: colors.textSecondary }]}>Starter Code Template</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                      <Text style={[styles.label, { color: colors.textSecondary, marginBottom: 0 }]}>Starter Code Template</Text>
+                      {isGeneratingStarterCode && <ActivityIndicator size="small" color={colors.primary} />}
+                    </View>
                     <TextInput
                       style={styles.codeEditorInput}
                       multiline
@@ -1121,6 +1197,8 @@ The array should be in this exact format:
                         <View style={{ flexDirection: 'row', gap: 8 }}>
                           {createElement('input', {
                             type: 'date',
+                            value: interviewStartDate,
+                            onChange: (e: any) => setInterviewStartDate(e.target.value),
                             style: {
                               flex: 1, height: '48px', borderRadius: '8px', borderWidth: '1px', borderStyle: 'solid',
                               borderColor: colors.border, padding: '0 12px', backgroundColor: colors.card, color: colors.text,
@@ -1129,6 +1207,8 @@ The array should be in this exact format:
                           })}
                           {createElement('input', {
                             type: 'time',
+                            value: interviewStartTime,
+                            onChange: (e: any) => setInterviewStartTime(e.target.value),
                             style: {
                               width: '120px', height: '48px', borderRadius: '8px', borderWidth: '1px', borderStyle: 'solid',
                               borderColor: colors.border, padding: '0 12px', backgroundColor: colors.card, color: colors.text,
@@ -1152,6 +1232,8 @@ The array should be in this exact format:
                         <View style={{ flexDirection: 'row', gap: 8 }}>
                           {createElement('input', {
                             type: 'date',
+                            value: interviewEndDate,
+                            onChange: (e: any) => setInterviewEndDate(e.target.value),
                             style: {
                               flex: 1, height: '48px', borderRadius: '8px', borderWidth: '1px', borderStyle: 'solid',
                               borderColor: colors.border, padding: '0 12px', backgroundColor: colors.card, color: colors.text,
@@ -1160,6 +1242,8 @@ The array should be in this exact format:
                           })}
                           {createElement('input', {
                             type: 'time',
+                            value: interviewEndTime,
+                            onChange: (e: any) => setInterviewEndTime(e.target.value),
                             style: {
                               width: '120px', height: '48px', borderRadius: '8px', borderWidth: '1px', borderStyle: 'solid',
                               borderColor: colors.border, padding: '0 12px', backgroundColor: colors.card, color: colors.text,
