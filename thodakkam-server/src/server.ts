@@ -761,14 +761,14 @@ app.get('/api/startup/network/:companyName', async (req: Request, res: Response)
       return photo;
     };
 
-    const followersRaw = await prisma.userFollowsStartup.findMany({
+    const followersRaw = await prisma.studentFollowsStartup.findMany({
       where: { startupId: startup.id },
-      include: { user: true }
+      include: { student: true }
     });
     
-    const followingRaw = await prisma.startupFollowsUser.findMany({
+    const followingRaw = await prisma.startupFollowsStudent.findMany({
       where: { startupId: startup.id },
-      include: { user: true }
+      include: { student: true }
     });
 
     const followers = followersRaw.map((f: any) => ({
@@ -812,13 +812,13 @@ app.post('/api/startup/network/:companyName/follow', async (req: Request, res: R
     const startup = await prisma.startup.findFirst({ where: { companyName } });
     if (!startup) { res.status(404).json({ success: false, message: 'Startup not found' }); return; }
 
-    const existing = await prisma.startupFollowsUser.findFirst({
-      where: { startupId: startup.id, userId }
+    const existing = await prisma.startupFollowsStudent.findFirst({
+      where: { startupId: startup.id, studentId: userId }
     });
 
     if (!existing) {
-      await prisma.startupFollowsUser.create({
-        data: { startupId: startup.id, userId }
+      await prisma.startupFollowsStudent.create({
+        data: { startupId: startup.id, studentId: userId }
       });
     }
 
@@ -837,8 +837,8 @@ app.post('/api/startup/network/:companyName/unfollow', async (req: Request, res:
     const startup = await prisma.startup.findFirst({ where: { companyName } });
     if (!startup) { res.status(404).json({ success: false, message: 'Startup not found' }); return; }
 
-    await prisma.startupFollowsUser.deleteMany({
-      where: { startupId: startup.id, userId }
+    await prisma.startupFollowsStudent.deleteMany({
+      where: { startupId: startup.id, studentId: userId }
     });
 
     res.status(200).json({ success: true, message: 'Unfollowed user' });
@@ -1053,7 +1053,7 @@ app.get('/api/jobs/startup/:companyName', async (req: Request, res: Response): P
           orderBy: { createdAt: 'desc' },
           include: { 
             applications: {
-              include: { user: true }
+              include: { student: true }
             }
           }
         }
@@ -1118,7 +1118,7 @@ app.post('/api/apply', async (req: Request, res: Response): Promise<void> => {
     const application = await prisma.application.create({
       data: {
         jobId,
-        userId: userId || null, // Optional if user isn't logged in with ID
+        studentId: userId || null, // Optional if user isn't logged in with ID
         fullName,
         email,
         phone,
@@ -1166,7 +1166,7 @@ app.get('/api/applications/startup/:companyName', async (req: Request, res: Resp
         jobs: {
           include: {
             applications: {
-              include: { user: true }
+              include: { student: true }
             }
           }
         }
@@ -1206,7 +1206,7 @@ app.get('/api/applications/user/:userId', async (req: Request, res: Response): P
   try {
     const { userId } = req.params;
     const applications = await prisma.application.findMany({
-      where: { userId: userId as string },
+      where: { studentId: userId as string },
       include: {
         job: {
           include: {
@@ -1358,12 +1358,12 @@ app.get('/api/posts', async (req: Request, res: Response): Promise<void> => {
   try {
     const posts = await prisma.post.findMany({
       include: { 
-        user: true, 
+        student: true, 
         startup: true,
-        likes: { include: { user: true, startup: true } },
-        comments: { include: { user: true, startup: true } },
-        reposts: { include: { user: true, startup: true } },
-        savedBy: { include: { user: true, startup: true } }
+        likes: { include: { student: true, startup: true } },
+        comments: { include: { student: true, startup: true } },
+        reposts: { include: { student: true, startup: true } },
+        savedBy: { include: { student: true, startup: true } }
       } as any,
       orderBy: { createdAt: 'desc' }
     });
@@ -1405,7 +1405,7 @@ app.post('/api/posts', async (req: Request, res: Response): Promise<void> => {
         text,
         imageUrl: finalImageUrl,
         category: category || 'Project',
-        userId: userId || undefined,
+        studentId: userId || undefined,
         startupId: startupId || undefined
       }
     });
@@ -1439,7 +1439,7 @@ app.post('/api/posts/:id/like', async (req: Request, res: Response): Promise<voi
 
     // @ts-ignore
     const existingLike = await prisma.like.findFirst({
-      where: { postId: id, OR: [ { userId: userId || undefined }, { startupId: startupId || undefined } ] }
+      where: { postId: id, OR: [ { studentId: userId || undefined }, { startupId: startupId || undefined } ] }
     });
 
     if (existingLike) {
@@ -1482,7 +1482,7 @@ app.post('/api/posts/:id/repost', async (req: Request, res: Response): Promise<v
 
     // @ts-ignore
     const existingRepost = await prisma.repost.findFirst({
-      where: { postId: id, OR: [ { userId: userId || undefined }, { startupId: startupId || undefined } ] }
+      where: { postId: id, OR: [ { studentId: userId || undefined }, { startupId: startupId || undefined } ] }
     });
 
     if (existingRepost) {
@@ -1525,7 +1525,7 @@ app.post('/api/posts/:id/save', async (req: Request, res: Response): Promise<voi
 
     // @ts-ignore
     const existingSave = await prisma.savedPost.findFirst({
-      where: { postId: id, OR: [ { userId: userId || undefined }, { startupId: startupId || undefined } ] }
+      where: { postId: id, OR: [ { studentId: userId || undefined }, { startupId: startupId || undefined } ] }
     });
 
     if (existingSave) {
@@ -1565,16 +1565,16 @@ app.get('/api/posts/saved/:identifier', async (req: Request, res: Response): Pro
 
     // @ts-ignore
     const savedPostsRelations = await prisma.savedPost.findMany({
-      where: { OR: [ { userId: userId || undefined }, { startupId: startupId || undefined } ] },
+      where: { OR: [ { studentId: userId || undefined }, { startupId: startupId || undefined } ] },
       include: {
         post: {
           include: { 
-            user: true, 
+            student: true, 
             startup: true,
-            likes: { include: { user: true, startup: true } },
-            comments: { include: { user: true, startup: true } },
-            reposts: { include: { user: true, startup: true } },
-            savedBy: { include: { user: true, startup: true } }
+            likes: { include: { student: true, startup: true } },
+            comments: { include: { student: true, startup: true } },
+            reposts: { include: { student: true, startup: true } },
+            savedBy: { include: { student: true, startup: true } }
           }
         }
       },
@@ -1618,7 +1618,7 @@ app.post('/api/posts/:id/comment', async (req: Request, res: Response): Promise<
     // @ts-ignore
     const populatedComment = await prisma.comment.findUnique({
       where: { id: comment.id },
-      include: { user: true, startup: true }
+      include: { student: true, startup: true }
     });
     
     res.status(201).json({ success: true, comment: populatedComment });
@@ -1894,7 +1894,7 @@ app.post('/api/jobs/:id/save', async (req: Request, res: Response): Promise<void
     // @ts-ignore
     const existingSave = await prisma.savedJob.findUnique({
       where: {
-        jobId_userId: { jobId, userId: user.id }
+        jobId_studentId: { jobId, studentId: user.id }
       }
     });
 
@@ -1905,7 +1905,7 @@ app.post('/api/jobs/:id/save', async (req: Request, res: Response): Promise<void
     } else {
       // @ts-ignore
       await prisma.savedJob.create({
-        data: { jobId, userId: user.id }
+        data: { jobId, studentId: user.id }
       });
       res.status(200).json({ success: true, message: 'Job Saved', saved: true });
     }
@@ -1927,7 +1927,7 @@ app.get('/api/jobs/my-jobs/:identifier', async (req: Request, res: Response): Pr
 
     // @ts-ignore
     const savedJobsRelations = await prisma.savedJob.findMany({
-      where: { userId: user.id },
+      where: { studentId: user.id },
       include: {
         job: {
           include: { startup: true }
@@ -1937,7 +1937,7 @@ app.get('/api/jobs/my-jobs/:identifier', async (req: Request, res: Response): Pr
     });
 
     const applications = await prisma.application.findMany({
-      where: { userId: user.id },
+      where: { studentId: user.id },
       include: {
         job: {
           include: { startup: true }
