@@ -15,9 +15,9 @@ async function main() {
     const text = "test";
     const imageUrl = null;
     const generatedEmail = `${companyName.replace(/\s+/g, '').toLowerCase()}@startup.local`;
-    let startupUser = await prisma.user.findFirst({ where: { email: generatedEmail } });
+    let startupUser = await prisma.student.findFirst({ where: { email: generatedEmail } });
     if (!startupUser) {
-      startupUser = await prisma.user.create({
+      startupUser = await prisma.student.create({
         data: {
           fullName: companyName,
           email: generatedEmail,

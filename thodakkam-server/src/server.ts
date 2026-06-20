@@ -59,7 +59,7 @@ app.post('/api/register', uploadFields, async (req: Request, res: Response): Pro
     } = req.body;
 
     // Check if email already exists
-    const existingUser = await prisma.user.findUnique({ where: { email } });
+    const existingUser = await prisma.student.findUnique({ where: { email } });
     if (existingUser) {
       res.status(400).json({ success: false, message: 'Email address already registered' });
       return;
@@ -85,7 +85,7 @@ app.post('/api/register', uploadFields, async (req: Request, res: Response): Pro
       skillsArray = Array.isArray(skills) ? skills : skills.split(',').map((s: string) => s.trim());
     }
 
-    const newUser = await prisma.user.create({
+    const newUser = await prisma.student.create({
       data: {
         fullName,
         email,
@@ -137,7 +137,7 @@ app.post('/api/login', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.student.findUnique({ where: { email } });
     if (!user) {
       res.status(400).json({ success: false, message: 'Invalid email or password' });
       return;
@@ -169,7 +169,7 @@ app.post('/api/login', async (req: Request, res: Response): Promise<void> => {
 app.get('/api/user/:id', async (req: Request, res: Response): Promise<void> => {
   try {
     const id = req.params.id as string;
-    const user = await prisma.user.findUnique({ where: { id } });
+    const user = await prisma.student.findUnique({ where: { id } });
     if (!user) {
       res.status(404).json({ success: false, message: 'User not found' });
       return;
@@ -201,7 +201,7 @@ app.get('/api/user/:id', async (req: Request, res: Response): Promise<void> => {
 // GET all users for messaging directory
 app.get('/api/users/all', async (req: Request, res: Response): Promise<void> => {
   try {
-    const rawUsers = await prisma.user.findMany({
+    const rawUsers = await prisma.student.findMany({
       select: { id: true, fullName: true, email: true, profilePhoto: true }
     });
     const rawStartups = await prisma.startup.findMany({
@@ -424,7 +424,7 @@ app.put('/api/user/:id', async (req: Request, res: Response): Promise<void> => {
       skills, education, experience, portfolioUrl, githubUrl, linkedinUrl 
     } = req.body;
 
-    const updatedUser = await prisma.user.update({
+    const updatedUser = await prisma.student.update({
       where: { id },
       data: {
         fullName, phone, location, profilePhoto, resumeFile,
@@ -449,7 +449,7 @@ app.post('/api/user/change-password', async (req: Request, res: Response): Promi
       return;
     }
 
-    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const user = await prisma.student.findUnique({ where: { id: userId } });
     if (!user) {
       res.status(404).json({ success: false, message: 'User not found' });
       return;
@@ -460,7 +460,7 @@ app.post('/api/user/change-password', async (req: Request, res: Response): Promi
       return;
     }
 
-    await prisma.user.update({
+    await prisma.student.update({
       where: { id: userId },
       data: { password: newPassword }
     });
@@ -787,7 +787,7 @@ app.get('/api/startup/network/:companyName', async (req: Request, res: Response)
       following: true
     }));
 
-    const allUsers = await prisma.user.findMany({ take: 10 });
+    const allUsers = await prisma.student.findMany({ take: 10 });
     const suggestions = allUsers
       .filter((u: any) => !followingRaw.some((fw: any) => fw.userId === u.id))
       .slice(0, 5)
@@ -888,7 +888,7 @@ app.post('/api/admin/login', async (req: Request, res: Response): Promise<void> 
 // 7. Admin Stats Dashboard
 app.get('/api/admin/stats', async (req: Request, res: Response): Promise<void> => {
   try {
-    const totalStudents = await prisma.user.count();
+    const totalStudents = await prisma.student.count();
     const totalStartups = await prisma.startup.count();
     
     // As there is no "status" field for pending approvals in the current DB schema yet, 
@@ -1249,7 +1249,7 @@ app.post('/api/auth/forgot-password', async (req: Request, res: Response): Promi
 
     let userExists = false;
     if (role === 'student') {
-      userExists = !!(await prisma.user.findUnique({ where: { email } }));
+      userExists = !!(await prisma.student.findUnique({ where: { email } }));
     } else if (role === 'startup') {
       userExists = !!(await prisma.startup.findUnique({ where: { email } }));
     } else if (role === 'admin') {
@@ -1337,7 +1337,7 @@ app.post('/api/auth/reset-password', async (req: Request, res: Response): Promis
     if (!email || !newPassword || !role) { res.status(400).json({ success: false, message: 'Missing fields' }); return; }
 
     if (role === 'student') {
-      await prisma.user.update({ where: { email }, data: { password: newPassword } });
+      await prisma.student.update({ where: { email }, data: { password: newPassword } });
     } else if (role === 'startup') {
       await prisma.startup.update({ where: { email }, data: { password: newPassword } });
     } else if (role === 'admin') {
@@ -1386,7 +1386,7 @@ app.post('/api/posts', async (req: Request, res: Response): Promise<void> => {
         startupId = startup.id;
       }
     } else if (email) {
-      const user = await prisma.user.findUnique({ where: { email } });
+      const user = await prisma.student.findUnique({ where: { email } });
       if (user) userId = user.id;
     }
     
@@ -1426,7 +1426,7 @@ app.post('/api/posts/:id/like', async (req: Request, res: Response): Promise<voi
     let startupId = null;
 
     if (email) {
-      const user = await prisma.user.findUnique({ where: { email } });
+      const user = await prisma.student.findUnique({ where: { email } });
       if (user) userId = user.id;
     }
     
@@ -1469,7 +1469,7 @@ app.post('/api/posts/:id/repost', async (req: Request, res: Response): Promise<v
     let startupId = null;
 
     if (email) {
-      const user = await prisma.user.findUnique({ where: { email } });
+      const user = await prisma.student.findUnique({ where: { email } });
       if (user) userId = user.id;
     }
     
@@ -1512,7 +1512,7 @@ app.post('/api/posts/:id/save', async (req: Request, res: Response): Promise<voi
     let startupId = null;
 
     if (email) {
-      const user = await prisma.user.findUnique({ where: { email } });
+      const user = await prisma.student.findUnique({ where: { email } });
       if (user) userId = user.id;
     }
     
@@ -1557,7 +1557,7 @@ app.get('/api/posts/saved/:identifier', async (req: Request, res: Response): Pro
       const startup = await prisma.startup.findFirst({ where: { companyName: identifier } });
       if (startup) startupId = startup.id;
     } else {
-      const user = await prisma.user.findUnique({ where: { email: identifier } });
+      const user = await prisma.student.findUnique({ where: { email: identifier } });
       if (user) userId = user.id;
     }
 
@@ -1599,7 +1599,7 @@ app.post('/api/posts/:id/comment', async (req: Request, res: Response): Promise<
     let startupId = null;
 
     if (email) {
-      const user = await prisma.user.findUnique({ where: { email } });
+      const user = await prisma.student.findUnique({ where: { email } });
       if (user) userId = user.id;
     }
     
@@ -1724,7 +1724,7 @@ app.get('/api/assessments/user/:userId', async (req: Request, res: Response): Pr
     const userId = req.params.userId as string;
     
     // Fetch user to get email for broader application matching
-    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const user = await prisma.student.findUnique({ where: { id: userId } });
     if (!user) {
       res.status(404).json({ success: false, message: 'User not found' });
       return;
@@ -1885,7 +1885,7 @@ app.post('/api/jobs/:id/save', async (req: Request, res: Response): Promise<void
       return;
     }
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.student.findUnique({ where: { email } });
     if (!user) {
       res.status(404).json({ success: false, message: 'User not found' });
       return;
@@ -1919,7 +1919,7 @@ app.get('/api/jobs/my-jobs/:identifier', async (req: Request, res: Response): Pr
   try {
     const identifier = req.params.identifier as string;
     
-    const user = await prisma.user.findUnique({ where: { email: identifier } });
+    const user = await prisma.student.findUnique({ where: { email: identifier } });
     if (!user) {
       res.status(404).json({ success: false, message: 'User not found' });
       return;

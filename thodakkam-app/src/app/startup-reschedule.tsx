@@ -27,6 +27,36 @@ export default function StartupReschedule() {
     fetchRequests();
   }, []);
 
+    // Auto-calculate logic
+  useEffect(() => {
+    if (newStartDate && !newEndDate) {
+      setNewEndDate(newStartDate);
+    }
+    
+    if (newStartTime) {
+      try {
+        const dummyDate = newStartDate || new Date().toISOString().split('T')[0];
+        const timePart = newStartTime.length === 5 ? newStartTime + ':00' : newStartTime;
+        
+        const start = new Date(`${dummyDate}T${timePart}`);
+        if (!isNaN(start.getTime())) {
+          const end = new Date(start.getTime() + 30 * 60000); // 30 mins default
+          
+          if (newStartDate) {
+            const y = end.getFullYear();
+            const m = String(end.getMonth() + 1).padStart(2, '0');
+            const d = String(end.getDate()).padStart(2, '0');
+            setNewEndDate(`${y}-${m}-${d}`);
+          }
+          
+          const hh = String(end.getHours()).padStart(2, '0');
+          const mm = String(end.getMinutes()).padStart(2, '0');
+          setNewEndTime(`${hh}:${mm}`);
+        }
+      } catch (e) {}
+    }
+  }, [newStartDate, newStartTime]);
+
   const fetchRequests = async () => {
     setLoading(true);
     try {
@@ -160,7 +190,16 @@ export default function StartupReschedule() {
               <Text style={[styles.label, { color: colors.text }]}>Start Date (YYYY-MM-DD)</Text>
               <View style={[styles.inputWrapper, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
                 <CalendarIcon size={16} color={colors.textSecondary} />
-                <TextInput style={[styles.input, { color: colors.text }]} value={newStartDate} onChangeText={setNewStartDate} placeholder="YYYY-MM-DD" placeholderTextColor={colors.textSecondary} />
+                {Platform.OS === 'web' ? (
+                  React.createElement('input', {
+                    type: 'date',
+                    value: newStartDate,
+                    onChange: (e) => setNewStartDate(e.target.value),
+                    style: { flex: 1, backgroundColor: 'transparent', border: 'none', color: colors.text, fontSize: '14px', outline: 'none', fontFamily: 'inherit' }
+                  })
+                ) : (
+                  <TextInput style={[styles.input, { color: colors.text }]} value={newStartDate} onChangeText={setNewStartDate} placeholder="YYYY-MM-DD" placeholderTextColor={colors.textSecondary} />
+                )}
               </View>
             </View>
 
@@ -168,7 +207,16 @@ export default function StartupReschedule() {
               <Text style={[styles.label, { color: colors.text }]}>End Date (YYYY-MM-DD)</Text>
               <View style={[styles.inputWrapper, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
                 <CalendarIcon size={16} color={colors.textSecondary} />
-                <TextInput style={[styles.input, { color: colors.text }]} value={newEndDate} onChangeText={setNewEndDate} placeholder="YYYY-MM-DD" placeholderTextColor={colors.textSecondary} />
+                {Platform.OS === 'web' ? (
+                  React.createElement('input', {
+                    type: 'date',
+                    value: newEndDate,
+                    onChange: (e) => setNewEndDate(e.target.value),
+                    style: { flex: 1, backgroundColor: 'transparent', border: 'none', color: colors.text, fontSize: '14px', outline: 'none', fontFamily: 'inherit' }
+                  })
+                ) : (
+                  <TextInput style={[styles.input, { color: colors.text }]} value={newEndDate} onChangeText={setNewEndDate} placeholder="YYYY-MM-DD" placeholderTextColor={colors.textSecondary} />
+                )}
               </View>
             </View>
             
@@ -177,14 +225,32 @@ export default function StartupReschedule() {
                 <Text style={[styles.label, { color: colors.text }]}>Start Time</Text>
                 <View style={[styles.inputWrapper, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
                   <Clock size={16} color={colors.textSecondary} />
-                  <TextInput style={[styles.input, { color: colors.text }]} value={newStartTime} onChangeText={setNewStartTime} placeholder="HH:MM" placeholderTextColor={colors.textSecondary} />
+                  {Platform.OS === 'web' ? (
+                    React.createElement('input', {
+                      type: 'time',
+                      value: newStartTime,
+                      onChange: (e) => setNewStartTime(e.target.value),
+                      style: { flex: 1, backgroundColor: 'transparent', border: 'none', color: colors.text, fontSize: '14px', outline: 'none', fontFamily: 'inherit', colorScheme: isDark ? 'dark' : 'light' }
+                    })
+                  ) : (
+                    <TextInput style={[styles.input, { color: colors.text }]} value={newStartTime} onChangeText={setNewStartTime} placeholder="HH:MM" placeholderTextColor={colors.textSecondary} />
+                  )}
                 </View>
               </View>
               <View style={[styles.formGroup, { flex: 1 }]}>
                 <Text style={[styles.label, { color: colors.text }]}>End Time</Text>
                 <View style={[styles.inputWrapper, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
                   <Clock size={16} color={colors.textSecondary} />
-                  <TextInput style={[styles.input, { color: colors.text }]} value={newEndTime} onChangeText={setNewEndTime} placeholder="HH:MM" placeholderTextColor={colors.textSecondary} />
+                  {Platform.OS === 'web' ? (
+                    React.createElement('input', {
+                      type: 'time',
+                      value: newEndTime,
+                      onChange: (e) => setNewEndTime(e.target.value),
+                      style: { flex: 1, backgroundColor: 'transparent', border: 'none', color: colors.text, fontSize: '14px', outline: 'none', fontFamily: 'inherit', colorScheme: isDark ? 'dark' : 'light' }
+                    })
+                  ) : (
+                    <TextInput style={[styles.input, { color: colors.text }]} value={newEndTime} onChangeText={setNewEndTime} placeholder="HH:MM" placeholderTextColor={colors.textSecondary} />
+                  )}
                 </View>
               </View>
             </View>

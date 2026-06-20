@@ -96,6 +96,7 @@ export default function StartupCreateAssessment() {
   const [questions, setQuestions] = useState<any[]>([]);
   const [questionType, setQuestionType] = useState('manual'); // 'manual' or 'domain'
   const [openDifficultyId, setOpenDifficultyId] = useState<number | null>(null);
+  const [isGeneratingMcq, setIsGeneratingMcq] = useState(false);
   
   // Domain config state
   const [domainConfig, setDomainConfig] = useState({
@@ -129,21 +130,33 @@ export default function StartupCreateAssessment() {
   const [interviewEndTime, setInterviewEndTime] = useState('');
   const [interviewLink, setInterviewLink] = useState('');
   const [interviewNotes, setInterviewNotes] = useState('');
-
-  // Auto-calculate MCQ End Time
+    // Auto-calculate MCQ End Time
   React.useEffect(() => {
-    if (mcqStartDate && mcqStartTime && mcqDuration) {
+    // 1. Sync Date
+    if (mcqStartDate && !mcqEndDate) {
+      setMcqEndDate(mcqStartDate);
+    }
+    
+    // 2. Sync Time (independent of date)
+    if (mcqStartTime && mcqDuration) {
       try {
-        const start = new Date(`${mcqStartDate}T${mcqStartTime}`);
+        const dummyDate = mcqStartDate || new Date().toISOString().split('T')[0];
+        // Ensure time format is HH:mm. HTML time input might sometimes add seconds (HH:mm:ss).
+        const timePart = mcqStartTime.length === 5 ? mcqStartTime + ':00' : mcqStartTime;
+        
+        const start = new Date(`${dummyDate}T${timePart}`);
         if (!isNaN(start.getTime())) {
           const end = new Date(start.getTime() + Number(mcqDuration) * 60000);
-          const y = end.getFullYear();
-          const m = String(end.getMonth() + 1).padStart(2, '0');
-          const d = String(end.getDate()).padStart(2, '0');
+          
+          if (mcqStartDate) {
+            const y = end.getFullYear();
+            const m = String(end.getMonth() + 1).padStart(2, '0');
+            const d = String(end.getDate()).padStart(2, '0');
+            setMcqEndDate(`${y}-${m}-${d}`);
+          }
+          
           const hh = String(end.getHours()).padStart(2, '0');
           const mm = String(end.getMinutes()).padStart(2, '0');
-          
-          setMcqEndDate(`${y}-${m}-${d}`);
           setMcqEndTime(`${hh}:${mm}`);
         }
       } catch (e) {}
@@ -152,18 +165,30 @@ export default function StartupCreateAssessment() {
 
   // Auto-calculate Interview End Time
   React.useEffect(() => {
-    if (interviewStartDate && interviewStartTime && interviewDuration) {
+    // 1. Sync Date
+    if (interviewStartDate && !interviewEndDate) {
+      setInterviewEndDate(interviewStartDate);
+    }
+    
+    // 2. Sync Time
+    if (interviewStartTime && interviewDuration) {
       try {
-        const start = new Date(`${interviewStartDate}T${interviewStartTime}`);
+        const dummyDate = interviewStartDate || new Date().toISOString().split('T')[0];
+        const timePart = interviewStartTime.length === 5 ? interviewStartTime + ':00' : interviewStartTime;
+        
+        const start = new Date(`${dummyDate}T${timePart}`);
         if (!isNaN(start.getTime())) {
           const end = new Date(start.getTime() + Number(interviewDuration) * 60000);
-          const y = end.getFullYear();
-          const m = String(end.getMonth() + 1).padStart(2, '0');
-          const d = String(end.getDate()).padStart(2, '0');
+          
+          if (interviewStartDate) {
+            const y = end.getFullYear();
+            const m = String(end.getMonth() + 1).padStart(2, '0');
+            const d = String(end.getDate()).padStart(2, '0');
+            setInterviewEndDate(`${y}-${m}-${d}`);
+          }
+          
           const hh = String(end.getHours()).padStart(2, '0');
           const mm = String(end.getMinutes()).padStart(2, '0');
-          
-          setInterviewEndDate(`${y}-${m}-${d}`);
           setInterviewEndTime(`${hh}:${mm}`);
         }
       } catch (e) {}
@@ -281,6 +306,69 @@ export default function StartupCreateAssessment() {
     } catch (err) {
       console.error(err);
       alert('Error saving assessment. Check server connection.');
+    }
+  };
+
+  
+  const handleGenerateMcqAI = async () => {
+    if (!domainConfig.topic || domainConfig.topic === 'Auto-detect from job...') {
+      alert('Please select a valid domain/topic to generate questions.');
+      return;
+    }
+    
+    setIsGeneratingMcq(true);
+    try {
+      const prompt = `System Instructions: You are Vetri, an AI question generator. You must return ONLY a JSON array of objects representing multiple choice questions. No markdown, no conversational text.
+Generate ${domainConfig.questionsCount} multiple choice questions about ${domainConfig.topic} at ${domainConfig.difficulty} difficulty level.
+The array should be in this exact format:
+[
+  {
+    "question": "The actual question text?",
+    "difficulty": "${domainConfig.difficulty}",
+    "points": 1,
+    "time": 60,
+    "optionA": "First option",
+    "optionB": "Second option",
+    "optionC": "Third option",
+    "optionD": "Fourth option",
+    "correctOption": "A/B/C/D",
+    "explanation": "Brief explanation of the answer"
+  }
+]`;
+
+      const formData = new FormData();
+      formData.append('message', prompt);
+
+      const response = await fetch('https://ai-agent-v01.onrender.com/chat', {
+        method: 'POST',
+        body: formData
+      });
+      
+      const data = await response.json();
+      const aiReply = data.reply || data.response || data.message || data.text || data.answer || data.result;
+      
+      let jsonStr = aiReply;
+      const match = jsonStr.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+      if (match) {
+        jsonStr = match[1];
+      }
+      
+      const parsedQuestions = JSON.parse(jsonStr.trim());
+      
+      if (Array.isArray(parsedQuestions)) {
+        const newQs = parsedQuestions.map((q: any, i: number) => ({
+          ...q,
+          id: Date.now() + i
+        }));
+        setQuestions(prev => [...prev, ...newQs]);
+      } else {
+        alert("Failed to parse generated questions correctly.");
+      }
+    } catch (err) {
+      console.error('AI Generation Error:', err);
+      alert('Failed to generate questions using AI. Please try again.');
+    } finally {
+      setIsGeneratingMcq(false);
     }
   };
 
@@ -655,11 +743,21 @@ export default function StartupCreateAssessment() {
                           />
                         </View>
 
-                        <TouchableOpacity style={[styles.generateAiBtn, { backgroundColor: colors.primary }, isMobile && { width: '100%' }, { zIndex: 1 }]}>
-                          <Sparkles size={14} color="#ffffff" />
-                          <Zap size={14} color={isDark ? colors.warning : "#f59e0b"} style={{ marginLeft: -4, marginRight: 4 }} />
-                          <Text style={styles.generateAiBtnText}>Generate with AI</Text>
-                        </TouchableOpacity>
+                        <TouchableOpacity 
+    style={[styles.generateAiBtn, { backgroundColor: colors.primary }, isMobile && { width: '100%' }, { zIndex: 1 }, isGeneratingMcq && { opacity: 0.7 }]}
+    onPress={handleGenerateMcqAI}
+    disabled={isGeneratingMcq}
+  >
+    {isGeneratingMcq ? (
+      <ActivityIndicator size="small" color="#ffffff" />
+    ) : (
+      <>
+        <Sparkles size={14} color="#ffffff" />
+        <Zap size={14} color={isDark ? colors.warning : "#f59e0b"} style={{ marginLeft: -4, marginRight: 4 }} />
+        <Text style={styles.generateAiBtnText}>Generate with AI</Text>
+      </>
+    )}
+  </TouchableOpacity>
                       </View>
                     </View>
                   )}

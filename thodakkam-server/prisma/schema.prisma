@@ -28,24 +28,31 @@ model Startup {
   updatedAt      DateTime             @updatedAt
   jobs           Job[]
   posts          Post[]
-  followingUsers StartupFollowsUser[]
-  followers      UserFollowsStartup[]
+  followingStudents StartupFollowsStudent[]
+  followers      StudentFollowsStartup[]
   likes          Like[]
   comments       Comment[]
   assessments    Assessment[]
   reposts        Repost[]
   savedPosts     SavedPost[]
   savedJobs      SavedJob[]
+  status         String               @default("PENDING")
+  rejectReason   String?
+  suspendReason  String?
+  applications   Application[]
+  notifications  Notification[]
 }
 
 model Otp {
-  id        String   @id @default(uuid())
-  email     String   @unique
+  id        String    @id @default(uuid())
+  email     String    @unique
   otp       String
-  createdAt DateTime @default(now())
+  expiresAt DateTime?
+  isUsed    Boolean   @default(false)
+  createdAt DateTime  @default(now())
 }
 
-model User {
+model Student {
   id                String               @id @default(uuid())
   fullName          String
   email             String               @unique
@@ -67,8 +74,8 @@ model User {
   updatedAt         DateTime             @updatedAt
   applications      Application[]
   posts             Post[]
-  followedStartups  UserFollowsStartup[]
-  startupFollowers  StartupFollowsUser[]
+  followedStartups  StudentFollowsStartup[]
+  startupFollowers  StartupFollowsStudent[]
   likes             Like[]
   comments          Comment[]
   assessmentResults AssessmentResult[]
@@ -76,28 +83,33 @@ model User {
   savedPosts        SavedPost[]
   savedJobs         SavedJob[]
   mcqResults        McqResult[]
+  rollNumber        String?              @unique
+  department        String?
+  assignedStartup   String?
+  studentStatus        String?              @default("Active")
+  notifications     Notification[]
 }
 
-model StartupFollowsUser {
+model StartupFollowsStudent {
   id        String   @id @default(uuid())
   startupId String
   startup   Startup  @relation(fields: [startupId], references: [id])
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  studentId    String
+  student      Student     @relation(fields: [studentId], references: [id])
   createdAt DateTime @default(now())
 
-  @@unique([startupId, userId])
+  @@unique([startupId, studentId])
 }
 
-model UserFollowsStartup {
+model StudentFollowsStartup {
   id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  studentId    String
+  student      Student     @relation(fields: [studentId], references: [id])
   startupId String
   startup   Startup  @relation(fields: [startupId], references: [id])
   createdAt DateTime @default(now())
 
-  @@unique([userId, startupId])
+  @@unique([studentId, startupId])
 }
 
 model Post {
@@ -105,8 +117,8 @@ model Post {
   text          String
   imageUrl      String?
   category      String      @default("Project")
-  userId        String?
-  user          User?       @relation(fields: [userId], references: [id])
+  studentId    String?
+  student      Student?       @relation(fields: [studentId], references: [id])
   startupId     String?
   startup       Startup?    @relation(fields: [startupId], references: [id])
   authorType    String      @default("student")
@@ -125,13 +137,13 @@ model SavedPost {
   id        String   @id @default(uuid())
   postId    String
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  userId    String?
-  user      User?    @relation(fields: [userId], references: [id])
+  studentId    String?
+  student      Student?    @relation(fields: [studentId], references: [id])
   startupId String?
   startup   Startup? @relation(fields: [startupId], references: [id])
   createdAt DateTime @default(now())
 
-  @@unique([postId, userId])
+  @@unique([postId, studentId])
   @@unique([postId, startupId])
 }
 
@@ -139,21 +151,30 @@ model Repost {
   id        String   @id @default(uuid())
   postId    String
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  userId    String?
-  user      User?    @relation(fields: [userId], references: [id])
+  studentId    String?
+  student      Student?    @relation(fields: [studentId], references: [id])
   startupId String?
   startup   Startup? @relation(fields: [startupId], references: [id])
   createdAt DateTime @default(now())
 }
 
 model Admin {
-  id        String    @id @default(uuid())
-  email     String    @unique
-  password  String
-  role      String    @default("master")
-  lastSeen  DateTime? @default(now())
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id                 String    @id @default(uuid())
+  adminName          String?
+  email              String    @unique
+  password           String
+  role               String    @default("master")
+  bio                String?
+  timezone           String    @default("UTC+5:30")
+  avatarUrl          String?
+  emailNotifications Boolean   @default(true)
+  pushNotifications  Boolean   @default(true)
+  marketingEmails    Boolean   @default(false)
+  theme              String    @default("light")
+  isVerified         Boolean   @default(false)
+  lastSeen           DateTime? @default(now())
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 }
 
 model Job {
@@ -162,6 +183,9 @@ model Job {
   location          String
   type              String        @default("Full-time")
   salary            String?
+  salMin            Int?
+  salMax            Int?
+  remote            Boolean   @default(false)
   description       String
   requirements      String[]
   department        String?
@@ -185,13 +209,19 @@ model Application {
   id            String   @id @default(uuid())
   jobId         String
   job           Job      @relation(fields: [jobId], references: [id])
-  userId        String?
-  user          User?    @relation(fields: [userId], references: [id])
+  studentId    String?
+  startupId     String?
+  startup       Startup? @relation(fields: [startupId], references: [id])
+  avatarUrl     String?
+  roleApplied   String?
+  stage         String    @default("applied")
+  matchScore    Int       @default(0)
+  student      Student?    @relation(fields: [studentId], references: [id])
   fullName      String?
   email         String?
   phone         String?
   resumeUrl     String?
-  status        String   @default("PENDING")
+  status        String   @default("new")
   interviewDate String?
   interviewTime String?
   appliedAt     DateTime @default(now())
@@ -220,8 +250,8 @@ model AssessmentResult {
   id           String     @id @default(uuid())
   assessmentId String
   assessment   Assessment @relation(fields: [assessmentId], references: [id])
-  userId       String
-  user         User       @relation(fields: [userId], references: [id])
+  studentId    String
+  student      Student       @relation(fields: [studentId], references: [id])
   jobId        String?
   roundType    String // e.g., "MCQ_ROUND", "CODING_ROUND", "INTERVIEW"
   score        Float?
@@ -236,13 +266,13 @@ model SavedJob {
   id        String   @id @default(uuid())
   jobId     String
   job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  userId    String?
-  user      User?    @relation(fields: [userId], references: [id])
+  studentId    String?
+  student      Student?    @relation(fields: [studentId], references: [id])
   startupId String?
   startup   Startup? @relation(fields: [startupId], references: [id])
   createdAt DateTime @default(now())
 
-  @@unique([jobId, userId])
+  @@unique([jobId, studentId])
   @@unique([jobId, startupId])
 }
 
@@ -308,7 +338,7 @@ model McqQuestion {
 model McqResult {
   id             String   @id @default(uuid())
   studentId      String
-  student        User     @relation(fields: [studentId], references: [id])
+  student        Student     @relation(fields: [studentId], references: [id])
   score          Int
   totalQuestions Int
   category       String?
@@ -319,8 +349,8 @@ model Like {
   id        String   @id @default(uuid())
   postId    String
   post      Post     @relation(fields: [postId], references: [id])
-  userId    String?
-  user      User?    @relation(fields: [userId], references: [id])
+  studentId    String?
+  student      Student?    @relation(fields: [studentId], references: [id])
   startupId String?
   startup   Startup? @relation(fields: [startupId], references: [id])
   createdAt DateTime @default(now())
@@ -331,9 +361,41 @@ model Comment {
   text      String
   postId    String
   post      Post     @relation(fields: [postId], references: [id])
-  userId    String?
-  user      User?    @relation(fields: [userId], references: [id])
+  studentId    String?
+  student      Student?    @relation(fields: [studentId], references: [id])
   startupId String?
   startup   Startup? @relation(fields: [startupId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+
+model Interview {
+  id              String   @id @default(uuid())
+  applicationId   String
+  startupId       String
+  jobId           String?
+  roundType       String?
+  interviewType   String?  @default("Technical Interview (Round 1)")
+  interviewerIds  String[]
+  interviewers    String[]
+  platform        String?  @default("google_meet")
+  meetLink        String?
+  officeLocation  String?
+  scheduledDate   String?
+  timeSlot        String?
+  notes           String?
+  status          String?  @default("scheduled")
+  createdAt       DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  title     String?
+  message   String
+  studentId    String?
+  student      Student?    @relation(fields: [studentId], references: [id])
+  startupId String?
+  startup   Startup? @relation(fields: [startupId], references: [id])
+  isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
 }
