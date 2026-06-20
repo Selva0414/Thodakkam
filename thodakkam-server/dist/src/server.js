@@ -1327,7 +1327,7 @@ app.post('/api/posts/:id/like', async (req, res) => {
         else {
             // @ts-ignore
             await prisma.like.create({
-                data: { postId: id, userId, startupId }
+                data: { postId: id, studentId: userId, startupId }
             });
             res.status(200).json({ success: true, message: 'Liked', liked: true });
         }
@@ -1373,7 +1373,7 @@ app.post('/api/posts/:id/repost', async (req, res) => {
         else {
             // @ts-ignore
             await prisma.repost.create({
-                data: { postId: id, userId, startupId }
+                data: { postId: id, studentId: userId, startupId }
             });
             res.status(200).json({ success: true, message: 'Reposted', reposted: true });
         }
@@ -1419,7 +1419,7 @@ app.post('/api/posts/:id/save', async (req, res) => {
         else {
             // @ts-ignore
             await prisma.savedPost.create({
-                data: { postId: id, userId, startupId }
+                data: { postId: id, studentId: userId, startupId }
             });
             res.status(200).json({ success: true, message: 'Saved', saved: true });
         }
@@ -1500,7 +1500,7 @@ app.post('/api/posts/:id/comment', async (req, res) => {
         }
         // @ts-ignore
         const comment = await prisma.comment.create({
-            data: { text, postId: id, userId, startupId }
+            data: { text, postId: id, studentId: userId, startupId }
         });
         // @ts-ignore
         const populatedComment = await prisma.comment.findUnique({
@@ -1611,7 +1611,7 @@ app.get('/api/assessments/user/:userId', async (req, res) => {
         const applications = await prisma.application.findMany({
             where: {
                 OR: [
-                    { userId },
+                    { studentId: userId },
                     { email: user.email }
                 ]
             }
@@ -1694,7 +1694,7 @@ app.post('/api/assessment-results', async (req, res) => {
         const { assessmentId, userId, jobId, roundType, score, status, details } = req.body;
         // Check if result already exists
         const existing = await prisma.assessmentResult.findFirst({
-            where: { assessmentId, userId, roundType }
+            where: { assessmentId, studentId: userId, roundType }
         });
         if (existing) {
             const updated = await prisma.assessmentResult.update({
@@ -1730,7 +1730,7 @@ app.get('/api/assessment-results/:userId/:jobId', async (req, res) => {
         const userId = req.params.userId;
         const jobId = req.params.jobId;
         const results = await prisma.assessmentResult.findMany({
-            where: { userId, jobId },
+            where: { studentId: userId, jobId },
             orderBy: { createdAt: 'asc' }
         });
         res.status(200).json({ success: true, results });

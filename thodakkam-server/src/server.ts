@@ -35,7 +35,7 @@ if (!fs.existsSync(uploadsDir)) {
 // Multer Storage config - Use Memory Storage so we can store directly to DB
 const storage = multer.memoryStorage();
 
-const upload = multer({ 
+const upload = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
 });
@@ -50,9 +50,9 @@ const uploadFields = upload.fields([
 // 1. User Registration (Sign Up)
 app.post('/api/register', uploadFields, async (req: Request, res: Response): Promise<void> => {
   try {
-    const { 
+    const {
       fullName, email, password, phone, location,
-      skills, 
+      skills,
       educationInstitution, educationDegree, educationFieldOfStudy, educationStartYear, educationEndYear, educationDescription,
       experienceCompany, experienceRole, experienceLocation, experienceJobType, experienceStartDate, experienceEndDate, experienceDescription,
       portfolioUrl, githubUrl, linkedinUrl
@@ -72,7 +72,7 @@ app.post('/api/register', uploadFields, async (req: Request, res: Response): Pro
       const file = files['profilePhoto'][0];
       profilePhotoPath = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
     }
-    
+
     let resumeFilePath = '';
     if (files?.['resumeFile'] && files['resumeFile'][0]) {
       const file = files['resumeFile'][0];
@@ -89,7 +89,7 @@ app.post('/api/register', uploadFields, async (req: Request, res: Response): Pro
       data: {
         fullName,
         email,
-        password, 
+        password,
         phone,
         location,
         profilePhoto: profilePhotoPath,
@@ -148,9 +148,9 @@ app.post('/api/login', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    res.status(200).json({ 
-      success: true, 
-      message: 'Login successful!', 
+    res.status(200).json({
+      success: true,
+      message: 'Login successful!',
       user: {
         id: user.id,
         fullName: user.fullName,
@@ -174,8 +174,8 @@ app.get('/api/user/:id', async (req: Request, res: Response): Promise<void> => {
       res.status(404).json({ success: false, message: 'User not found' });
       return;
     }
-    res.status(200).json({ 
-      success: true, 
+    res.status(200).json({
+      success: true,
       user: {
         id: user.id,
         fullName: user.fullName,
@@ -207,12 +207,12 @@ app.get('/api/users/all', async (req: Request, res: Response): Promise<void> => 
     const rawStartups = await prisma.startup.findMany({
       select: { id: true, companyName: true, email: true, profilePhoto: true, companyLogo: true }
     });
-    
+
     const combined = [
       ...rawUsers.map(u => ({ id: u.id, fullName: u.fullName, email: u.email, role: 'Student', profilePhoto: u.profilePhoto })),
       ...rawStartups.map(s => ({ id: s.id, fullName: s.companyName, email: s.email, role: 'Startup', profilePhoto: s.companyLogo || s.profilePhoto }))
     ];
-    
+
     res.status(200).json({ success: true, users: combined });
   } catch (err) {
     console.error('Fetch all users error:', err);
@@ -246,8 +246,8 @@ app.post('/api/messages', async (req: Request, res: Response): Promise<void> => 
 
     // Create the message
     const message = await (prisma as any).message.create({
-      data: { 
-        senderId, senderType, receiverId, receiverType, message: text, messageType, 
+      data: {
+        senderId, senderType, receiverId, receiverType, message: text, messageType,
         fileUrl, fileName, fileSize, attachmentMimeType, status: 'sent',
         conversationId: conversation.id
       }
@@ -277,7 +277,7 @@ app.post('/api/messages', async (req: Request, res: Response): Promise<void> => 
 app.get('/api/messages/:user1/:user2', async (req: Request, res: Response): Promise<void> => {
   try {
     const { user1, user2 } = req.params;
-    
+
     // Ordered users
     const [user1Id, user2Id] = user1 < user2 ? [user1, user2] : [user2, user1];
 
@@ -315,11 +315,11 @@ app.get('/api/messages/conversations/:userId', async (req: Request, res: Respons
     const { userId } = req.params;
     const conversations = await (prisma as any).conversation.findMany({
       where: {
-        OR: [ { user1Id: userId }, { user2Id: userId } ]
+        OR: [{ user1Id: userId }, { user2Id: userId }]
       },
       orderBy: { updatedAt: 'desc' }
     });
-    
+
     const uniqueIds = new Set<string>();
     conversations.forEach((c: any) => {
       uniqueIds.add(c.user1Id === userId ? c.user2Id : c.user1Id);
@@ -419,9 +419,9 @@ app.put('/api/presence/:userId', async (req: Request, res: Response): Promise<vo
 app.put('/api/user/:id', async (req: Request, res: Response): Promise<void> => {
   try {
     const id = req.params.id as string;
-    const { 
-      fullName, phone, location, profilePhoto, resumeFile, 
-      skills, education, experience, portfolioUrl, githubUrl, linkedinUrl 
+    const {
+      fullName, phone, location, profilePhoto, resumeFile,
+      skills, education, experience, portfolioUrl, githubUrl, linkedinUrl
     } = req.body;
 
     const updatedUser = await prisma.student.update({
@@ -516,7 +516,7 @@ app.post('/api/startup/send-otp', async (req: Request, res: Response): Promise<v
       try {
         const companyLabel = companyName || 'Thodakkam';
         const userLabel = founderName || 'User';
-        
+
         // Generate initials (e.g. Echo Digital -> ED)
         const words = companyLabel.split(' ').filter((w: string) => w.length > 0);
         let initials = 'SU';
@@ -581,8 +581,8 @@ app.post('/api/startup/send-otp', async (req: Request, res: Response): Promise<v
       }
     }
 
-    res.status(200).json({ 
-      success: true, 
+    res.status(200).json({
+      success: true,
       message: 'Verification code sent to your email address.',
       otp: otp
     });
@@ -665,9 +665,9 @@ app.post('/api/startup/login', async (req: Request, res: Response): Promise<void
       return;
     }
 
-    res.status(200).json({ 
-      success: true, 
-      message: 'Startup login successful!', 
+    res.status(200).json({
+      success: true,
+      message: 'Startup login successful!',
       startup: {
         id: startup.id,
         founderName: startup.founderName,
@@ -691,8 +691,8 @@ app.get('/api/startup/profile/:companyName', async (req: Request, res: Response)
       res.status(404).json({ success: false, message: 'Startup not found' });
       return;
     }
-    res.status(200).json({ 
-      success: true, 
+    res.status(200).json({
+      success: true,
       startup: {
         id: startup.id,
         founderName: startup.founderName,
@@ -716,13 +716,13 @@ app.put('/api/startup/profile/:companyName', async (req: Request, res: Response)
   try {
     const companyName = req.params.companyName as string;
     const { founderName, email, role, timezone, bio, profilePhoto } = req.body;
-    
+
     // We update by companyName. If email is being changed, check if it exists.
     if (email) {
       const existing = await prisma.startup.findUnique({ where: { email } });
       if (existing && existing.companyName !== companyName) {
-         res.status(400).json({ success: false, message: 'Email already used by another account' });
-         return;
+        res.status(400).json({ success: false, message: 'Email already used by another account' });
+        return;
       }
     }
 
@@ -765,7 +765,7 @@ app.get('/api/startup/network/:companyName', async (req: Request, res: Response)
       where: { startupId: startup.id },
       include: { student: true }
     });
-    
+
     const followingRaw = await prisma.startupFollowsStudent.findMany({
       where: { startupId: startup.id },
       include: { student: true }
@@ -808,7 +808,7 @@ app.post('/api/startup/network/:companyName/follow', async (req: Request, res: R
   try {
     const companyName = req.params.companyName as string;
     const { userId } = req.body;
-    
+
     const startup = await prisma.startup.findFirst({ where: { companyName } });
     if (!startup) { res.status(404).json({ success: false, message: 'Startup not found' }); return; }
 
@@ -833,7 +833,7 @@ app.post('/api/startup/network/:companyName/unfollow', async (req: Request, res:
   try {
     const companyName = req.params.companyName as string;
     const { userId } = req.body;
-    
+
     const startup = await prisma.startup.findFirst({ where: { companyName } });
     if (!startup) { res.status(404).json({ success: false, message: 'Startup not found' }); return; }
 
@@ -869,9 +869,9 @@ app.post('/api/admin/login', async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    res.status(200).json({ 
-      success: true, 
-      message: 'Master Admin login successful!', 
+    res.status(200).json({
+      success: true,
+      message: 'Master Admin login successful!',
       admin: {
         id: admin.id,
         email: admin.email,
@@ -890,13 +890,13 @@ app.get('/api/admin/stats', async (req: Request, res: Response): Promise<void> =
   try {
     const totalStudents = await prisma.student.count();
     const totalStartups = await prisma.startup.count();
-    
+
     // As there is no "status" field for pending approvals in the current DB schema yet, 
     // we'll return a mock value for pending or 0.
-    const pendingApprovals = 3; 
+    const pendingApprovals = 3;
 
-    res.status(200).json({ 
-      success: true, 
+    res.status(200).json({
+      success: true,
       stats: {
         totalStudents,
         totalStartups,
@@ -929,9 +929,9 @@ app.get('/api/admin/startups', async (req: Request, res: Response): Promise<void
 // 8. Create a New Job
 app.post('/api/jobs', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { 
+    const {
       title, location, type, salary, description, requirements, companyName,
-      department, workMode, experience, education, openings, deadline, applicationMethod 
+      department, workMode, experience, education, openings, deadline, applicationMethod
     } = req.body;
 
     if (!title || !location || !companyName) {
@@ -980,7 +980,7 @@ app.post('/api/jobs', async (req: Request, res: Response): Promise<void> => {
 app.put('/api/jobs/:id', async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const { 
+    const {
       title, location, type, salary, description, requirements,
       department, workMode, experience, education, openings, deadline, applicationMethod, status
     } = req.body;
@@ -1016,7 +1016,7 @@ app.put('/api/jobs/:id', async (req: Request, res: Response): Promise<void> => {
 app.delete('/api/jobs/:id', async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    
+
     // Check if job exists
     const existingJob = await prisma.job.findUnique({
       where: { id: id as string }
@@ -1051,7 +1051,7 @@ app.get('/api/jobs/startup/:companyName', async (req: Request, res: Response): P
       include: {
         jobs: {
           orderBy: { createdAt: 'desc' },
-          include: { 
+          include: {
             applications: {
               include: { student: true }
             }
@@ -1261,7 +1261,7 @@ app.post('/api/auth/forgot-password', async (req: Request, res: Response): Promi
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    
+
     await prisma.otp.upsert({
       where: { email },
       update: { otp, createdAt: new Date() },
@@ -1319,11 +1319,11 @@ app.post('/api/auth/verify-otp-password', async (req: Request, res: Response): P
   try {
     const { email, otp } = req.body;
     const otpRecord = await prisma.otp.findUnique({ where: { email } });
-    
+
     if (!otpRecord || otpRecord.otp !== otp) {
       res.status(400).json({ success: false, message: 'Invalid OTP' }); return;
     }
-    
+
     res.status(200).json({ success: true, message: 'OTP verified successfully' });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error' });
@@ -1357,8 +1357,8 @@ app.post('/api/auth/reset-password', async (req: Request, res: Response): Promis
 app.get('/api/posts', async (req: Request, res: Response): Promise<void> => {
   try {
     const posts = await prisma.post.findMany({
-      include: { 
-        student: true, 
+      include: {
+        student: true,
         startup: true,
         likes: { include: { student: true, startup: true } },
         comments: { include: { student: true, startup: true } },
@@ -1389,14 +1389,14 @@ app.post('/api/posts', async (req: Request, res: Response): Promise<void> => {
       const user = await prisma.student.findUnique({ where: { email } });
       if (user) userId = user.id;
     }
-    
+
     if (!userId && !startupId) {
       res.status(400).json({ success: false, message: 'No valid user or startup found to post as.' });
       return;
     }
 
     let finalImageUrl = imageUrl;
-    
+
     // Cloud setup: we will just store the base64 string directly in the database
     // instead of writing it to the local file system.
 
@@ -1421,7 +1421,7 @@ app.post('/api/posts/:id/like', async (req: Request, res: Response): Promise<voi
     const id = req.params.id as string;
     const { email, companyName } = req.body;
     if (!email && !companyName) { res.status(400).json({ success: false, message: 'Email or companyName required' }); return; }
-    
+
     let userId = null;
     let startupId = null;
 
@@ -1429,7 +1429,7 @@ app.post('/api/posts/:id/like', async (req: Request, res: Response): Promise<voi
       const user = await prisma.student.findUnique({ where: { email } });
       if (user) userId = user.id;
     }
-    
+
     if (!userId && companyName) {
       const startup = await prisma.startup.findFirst({ where: { companyName } });
       if (startup) startupId = startup.id;
@@ -1439,7 +1439,7 @@ app.post('/api/posts/:id/like', async (req: Request, res: Response): Promise<voi
 
     // @ts-ignore
     const existingLike = await prisma.like.findFirst({
-      where: { postId: id, OR: [ { studentId: userId || undefined }, { startupId: startupId || undefined } ] }
+      where: { postId: id, OR: [{ studentId: userId || undefined }, { startupId: startupId || undefined }] }
     });
 
     if (existingLike) {
@@ -1449,7 +1449,7 @@ app.post('/api/posts/:id/like', async (req: Request, res: Response): Promise<voi
     } else {
       // @ts-ignore
       await prisma.like.create({
-        data: { postId: id, userId, startupId }
+        data: { postId: id, studentId: userId, startupId }
       });
       res.status(200).json({ success: true, message: 'Liked', liked: true });
     }
@@ -1464,7 +1464,7 @@ app.post('/api/posts/:id/repost', async (req: Request, res: Response): Promise<v
     const id = req.params.id as string;
     const { email, companyName } = req.body;
     if (!email && !companyName) { res.status(400).json({ success: false, message: 'Email or companyName required' }); return; }
-    
+
     let userId = null;
     let startupId = null;
 
@@ -1472,7 +1472,7 @@ app.post('/api/posts/:id/repost', async (req: Request, res: Response): Promise<v
       const user = await prisma.student.findUnique({ where: { email } });
       if (user) userId = user.id;
     }
-    
+
     if (!userId && companyName) {
       const startup = await prisma.startup.findFirst({ where: { companyName } });
       if (startup) startupId = startup.id;
@@ -1482,7 +1482,7 @@ app.post('/api/posts/:id/repost', async (req: Request, res: Response): Promise<v
 
     // @ts-ignore
     const existingRepost = await prisma.repost.findFirst({
-      where: { postId: id, OR: [ { studentId: userId || undefined }, { startupId: startupId || undefined } ] }
+      where: { postId: id, OR: [{ studentId: userId || undefined }, { startupId: startupId || undefined }] }
     });
 
     if (existingRepost) {
@@ -1492,7 +1492,7 @@ app.post('/api/posts/:id/repost', async (req: Request, res: Response): Promise<v
     } else {
       // @ts-ignore
       await prisma.repost.create({
-        data: { postId: id, userId, startupId }
+        data: { postId: id, studentId: userId, startupId }
       });
       res.status(200).json({ success: true, message: 'Reposted', reposted: true });
     }
@@ -1507,7 +1507,7 @@ app.post('/api/posts/:id/save', async (req: Request, res: Response): Promise<voi
     const id = req.params.id as string;
     const { email, companyName } = req.body;
     if (!email && !companyName) { res.status(400).json({ success: false, message: 'Email or companyName required' }); return; }
-    
+
     let userId = null;
     let startupId = null;
 
@@ -1515,7 +1515,7 @@ app.post('/api/posts/:id/save', async (req: Request, res: Response): Promise<voi
       const user = await prisma.student.findUnique({ where: { email } });
       if (user) userId = user.id;
     }
-    
+
     if (!userId && companyName) {
       const startup = await prisma.startup.findFirst({ where: { companyName } });
       if (startup) startupId = startup.id;
@@ -1525,7 +1525,7 @@ app.post('/api/posts/:id/save', async (req: Request, res: Response): Promise<voi
 
     // @ts-ignore
     const existingSave = await prisma.savedPost.findFirst({
-      where: { postId: id, OR: [ { studentId: userId || undefined }, { startupId: startupId || undefined } ] }
+      where: { postId: id, OR: [{ studentId: userId || undefined }, { startupId: startupId || undefined }] }
     });
 
     if (existingSave) {
@@ -1535,7 +1535,7 @@ app.post('/api/posts/:id/save', async (req: Request, res: Response): Promise<voi
     } else {
       // @ts-ignore
       await prisma.savedPost.create({
-        data: { postId: id, userId, startupId }
+        data: { postId: id, studentId: userId, startupId }
       });
       res.status(200).json({ success: true, message: 'Saved', saved: true });
     }
@@ -1549,7 +1549,7 @@ app.get('/api/posts/saved/:identifier', async (req: Request, res: Response): Pro
   try {
     const identifier = req.params.identifier as string; // can be email or companyName
     const type = req.query.type as string; // 'student' or 'startup'
-    
+
     let userId = null;
     let startupId = null;
 
@@ -1565,11 +1565,11 @@ app.get('/api/posts/saved/:identifier', async (req: Request, res: Response): Pro
 
     // @ts-ignore
     const savedPostsRelations = await prisma.savedPost.findMany({
-      where: { OR: [ { studentId: userId || undefined }, { startupId: startupId || undefined } ] },
+      where: { OR: [{ studentId: userId || undefined }, { startupId: startupId || undefined }] },
       include: {
         post: {
-          include: { 
-            student: true, 
+          include: {
+            student: true,
             startup: true,
             likes: { include: { student: true, startup: true } },
             comments: { include: { student: true, startup: true } },
@@ -1580,7 +1580,7 @@ app.get('/api/posts/saved/:identifier', async (req: Request, res: Response): Pro
       },
       orderBy: { createdAt: 'desc' }
     });
-    
+
     const posts = savedPostsRelations.map((sp: any) => sp.post);
     res.status(200).json({ success: true, posts });
   } catch (err) {
@@ -1594,7 +1594,7 @@ app.post('/api/posts/:id/comment', async (req: Request, res: Response): Promise<
     const id = req.params.id as string;
     const { text, email, companyName } = req.body;
     if (!text || (!email && !companyName)) { res.status(400).json({ success: false, message: 'Text and email or companyName required' }); return; }
-    
+
     let userId = null;
     let startupId = null;
 
@@ -1602,7 +1602,7 @@ app.post('/api/posts/:id/comment', async (req: Request, res: Response): Promise<
       const user = await prisma.student.findUnique({ where: { email } });
       if (user) userId = user.id;
     }
-    
+
     if (!userId && companyName) {
       const startup = await prisma.startup.findFirst({ where: { companyName } });
       if (startup) startupId = startup.id;
@@ -1612,15 +1612,15 @@ app.post('/api/posts/:id/comment', async (req: Request, res: Response): Promise<
 
     // @ts-ignore
     const comment = await prisma.comment.create({
-      data: { text, postId: id, userId, startupId }
+      data: { text, postId: id, studentId: userId, startupId }
     });
-    
+
     // @ts-ignore
     const populatedComment = await prisma.comment.findUnique({
       where: { id: comment.id },
       include: { student: true, startup: true }
     });
-    
+
     res.status(201).json({ success: true, comment: populatedComment });
   } catch (err) {
     console.error(err);
@@ -1637,11 +1637,11 @@ app.post('/api/assessments', async (req: Request, res: Response): Promise<void> 
       res.status(400).json({ success: false, message: 'startupId/companyName and title are required' });
       return;
     }
-    
+
     // The frontend currently sends companyName in the startupId field. Let's look up the actual startup.
     let actualStartupId = startupId;
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(startupId);
-    
+
     const startup = await prisma.startup.findFirst({
       where: {
         OR: [
@@ -1677,7 +1677,7 @@ app.post('/api/assessments', async (req: Request, res: Response): Promise<void> 
         data: { status: 'ASSESSMENT SCHEDULED' }
       });
     }
-    
+
     res.status(201).json({ success: true, assessment });
   } catch (error) {
     console.error('Error creating assessment:', error);
@@ -1690,7 +1690,7 @@ app.put('/api/assessments/:id', async (req: Request, res: Response): Promise<voi
   try {
     const id = req.params.id as string;
     const { title, description, selectedRounds, selectedCandidates, mcqConfig, codingConfig, interviewConfig } = req.body;
-    
+
     const assessment = await prisma.assessment.update({
       where: { id },
       data: {
@@ -1722,7 +1722,7 @@ app.put('/api/assessments/:id', async (req: Request, res: Response): Promise<voi
 app.get('/api/assessments/user/:userId', async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.params.userId as string;
-    
+
     // Fetch user to get email for broader application matching
     const user = await prisma.student.findUnique({ where: { id: userId } });
     if (!user) {
@@ -1732,15 +1732,15 @@ app.get('/api/assessments/user/:userId', async (req: Request, res: Response): Pr
 
     // Get all application IDs for this user by ID or Email
     const applications = await prisma.application.findMany({
-      where: { 
+      where: {
         OR: [
-          { userId },
+          { studentId: userId },
           { email: user.email }
         ]
       }
     });
     const appIds = applications.map(a => a.id);
-    
+
     console.log(`[API] Fetching assessments for user ${userId}`);
     console.log(`[API] User Applications:`, appIds);
 
@@ -1755,7 +1755,7 @@ app.get('/api/assessments/user/:userId', async (req: Request, res: Response): Pr
       },
       orderBy: { createdAt: 'desc' }
     });
-    
+
     res.status(200).json({ success: true, assessments });
   } catch (error) {
     console.error('Error fetching user assessments:', error);
@@ -1774,12 +1774,12 @@ app.get('/api/assessments/single/:id', async (req: Request, res: Response): Prom
         job: true
       }
     });
-    
+
     if (!assessment) {
       res.status(404).json({ success: false, message: 'Assessment not found' });
       return;
     }
-    
+
     res.status(200).json({ success: true, assessment });
   } catch (error) {
     console.error('Error fetching single assessment:', error);
@@ -1791,7 +1791,7 @@ app.get('/api/assessments/single/:id', async (req: Request, res: Response): Prom
 app.get('/api/assessments/:startupId', async (req: Request, res: Response): Promise<void> => {
   try {
     const startupId = req.params.startupId as string;
-    
+
     // The frontend currently sends companyName in the startupId field. Let's look up the actual startup.
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(startupId);
 
@@ -1825,10 +1825,10 @@ app.get('/api/assessments/:startupId', async (req: Request, res: Response): Prom
 app.post('/api/assessment-results', async (req: Request, res: Response): Promise<void> => {
   try {
     const { assessmentId, userId, jobId, roundType, score, status, details } = req.body;
-    
+
     // Check if result already exists
     const existing = await prisma.assessmentResult.findFirst({
-      where: { assessmentId, userId, roundType }
+      where: { assessmentId, studentId: userId, roundType }
     });
 
     if (existing) {
@@ -1864,7 +1864,7 @@ app.get('/api/assessment-results/:userId/:jobId', async (req: Request, res: Resp
     const userId = req.params.userId as string;
     const jobId = req.params.jobId as string;
     const results = await prisma.assessmentResult.findMany({
-      where: { userId, jobId },
+      where: { studentId: userId, jobId },
       orderBy: { createdAt: 'asc' }
     });
     res.status(200).json({ success: true, results });
@@ -1879,7 +1879,7 @@ app.post('/api/jobs/:id/save', async (req: Request, res: Response): Promise<void
   try {
     const jobId = req.params.id as string;
     const { email } = req.body;
-    
+
     if (!email) {
       res.status(400).json({ success: false, message: 'Email required' });
       return;
@@ -1918,7 +1918,7 @@ app.post('/api/jobs/:id/save', async (req: Request, res: Response): Promise<void
 app.get('/api/jobs/my-jobs/:identifier', async (req: Request, res: Response): Promise<void> => {
   try {
     const identifier = req.params.identifier as string;
-    
+
     const user = await prisma.student.findUnique({ where: { email: identifier } });
     if (!user) {
       res.status(404).json({ success: false, message: 'User not found' });
@@ -1946,8 +1946,8 @@ app.get('/api/jobs/my-jobs/:identifier', async (req: Request, res: Response): Pr
       orderBy: { appliedAt: 'desc' }
     });
 
-    res.status(200).json({ 
-      success: true, 
+    res.status(200).json({
+      success: true,
       savedJobs: savedJobsRelations.map((sj: any) => sj.job),
       applications
     });
