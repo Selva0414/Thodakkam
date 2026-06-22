@@ -1,3 +1,4 @@
+import { BASE_URL } from '@/config/api';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet, Text, View, TextInput, TouchableOpacity, SafeAreaView, Platform, KeyboardAvoidingView, ScrollView, Animated
@@ -59,18 +60,22 @@ export default function LoginScreen() {
     }
     setIsLoading(true);
     try {
-      const BACKEND_URL = Platform.OS === 'web' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
-      const response = await fetch(`${BACKEND_URL}/api/login`, {
+      const BACKEND_URL = BASE_URL;
+      const response = await fetch(`${BACKEND_URL}/api/student/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
       });
       const data = await response.json();
-      if (data.success && data.user) {
-        await AsyncStorage.setItem('studentUserId', data.user.id);
+      const user = data.student || data.user;
+      if ((data.success || data.token) && user) {
+        await AsyncStorage.setItem('studentUserId', String(user.id));
+        if (data.token) {
+          await AsyncStorage.setItem('studentToken', data.token);
+        }
         router.navigate({
           pathname: '/student-dashboard',
-          params: { userId: data.user.id }
+          params: { userId: String(user.id) }
         });
       } else {
         setError(data.message || 'Invalid credentials.');

@@ -1,3 +1,4 @@
+import { BASE_URL } from '@/config/api';
 import React, { useState } from 'react';
 import { 
   StyleSheet, Text, View, ScrollView, TouchableOpacity, 
@@ -11,7 +12,7 @@ import { useAppTheme } from '../context/ThemeContext';
 
 const GREEN = '#10b981';
 
-const BACKEND_URL = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
+const BACKEND_URL = Platform.OS === 'android' ? `${BASE_URL}` : `${BASE_URL}`;
 
 export default function StudentSettings() {
   const router = useRouter();
@@ -48,7 +49,7 @@ export default function StudentSettings() {
         return;
       }
 
-      const res = await fetch(`${BACKEND_URL}/api/user/change-password`, {
+      const res = await fetch(`${BACKEND_URL}/api/students/${storedId}/change-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

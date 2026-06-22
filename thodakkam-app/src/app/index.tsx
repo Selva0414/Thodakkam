@@ -33,17 +33,6 @@ const CARDS = [
     Icon: Briefcase,
     accent: '#10b981', // Green accent
   },
-  {
-    id: 'admin',
-    title: 'For Administrators',
-    shortTitle: 'Admin',
-    subtitle: 'Manage ecosystem health',
-    description: 'Monitor platform analytics, verify startup authenticity, and oversee the entire Thodakkam network.',
-    buttonText: 'Admin Login',
-    route: '/admin-login',
-    Icon: ShieldCheck,
-    accent: '#f43f5e', // Rose accent
-  },
 ];
 
 function FloatingNavBar() {
@@ -1420,9 +1409,6 @@ export default function HomeScreen() {
 
         {/* Supercharge Section */}
         <SuperchargeSection />
-
-        {/* Operations Section */}
-        <OperationsSection />
 
         {/* Journey Section */}
         <JourneySection />

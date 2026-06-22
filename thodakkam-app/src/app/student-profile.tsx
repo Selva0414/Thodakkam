@@ -1,3 +1,4 @@
+import { BASE_URL } from '@/config/api';
 import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, Image, Platform, SafeAreaView, ActivityIndicator, Linking, Animated } from 'react-native';
 import { Camera, X, Plus, FileText, ArrowLeft } from 'lucide-react-native';
@@ -67,28 +68,28 @@ export default function StudentProfile() {
       if (!id) id = '8bbe6fc3-2716-4821-b967-35b0689cbf11';
 
       setUserId(id);
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
-      const response = await fetch(`${baseUrl}/api/user/${id}`);
+      const baseUrl = BASE_URL;
+      const response = await fetch(`${baseUrl}/api/students/${id}/profile`);
       const json = await response.json();
 
-      if (json.success && json.user) {
-        const u = json.user;
+      if (json.success && json.data) {
+        const u = json.data;
         setProfile({
           ...profile,
-          fullName: u.fullName || '',
-          username: u.fullName ? u.fullName.split(' ')[0] : '',
+          fullName: u.name || u.fullName || '',
+          username: u.username || u.name ? (u.name || '').split(' ')[0] : '',
           email: u.email || '',
           phone: u.phone || '',
           location: u.location || '',
-          profilePhoto: u.profilePhoto || null,
-          resumeName: u.resumeFile ? 'Existing Resume Attached' : '',
-          resumeFile: u.resumeFile || null,
-          skills: Array.isArray(u.skills) ? u.skills : [],
-          education: Array.isArray(u.education) ? u.education.map((e:any) => ({...e, cgpa: e.cgpa || (e.description?.includes('CGPA') ? e.description.replace('CGPA: ', '') : '')})) : (typeof u.education === 'string' ? JSON.parse(u.education).map((e:any) => ({...e, cgpa: e.cgpa || (e.description?.includes('CGPA') ? e.description.replace('CGPA: ', '') : '')})) : (typeof u.education === 'object' && u.education !== null ? [{...u.education, cgpa: u.education.cgpa || (u.education.description?.includes('CGPA') ? u.education.description.replace('CGPA: ', '') : '')}] : [])),
-          experience: Array.isArray(u.experience) ? u.experience : (typeof u.experience === 'string' ? JSON.parse(u.experience) : (typeof u.experience === 'object' && u.experience !== null ? [u.experience] : [])),
-          portfolioUrl: u.portfolioUrl || '',
-          githubUrl: u.githubUrl || '',
-          linkedinUrl: u.linkedinUrl || ''
+          profilePhoto: u.profile_photo || u.profilePhoto || null,
+          resumeName: (u.resume_file || u.resumeFile) ? 'Existing Resume Attached' : '',
+          resumeFile: u.resume_file || u.resumeFile || null,
+          skills: Array.isArray(u.skills) ? u.skills : (typeof u.skills === 'string' ? JSON.parse(u.skills) : []),
+          education: Array.isArray(u.educations || u.education) ? (u.educations || u.education) : (typeof (u.educations || u.education) === 'string' ? JSON.parse(u.educations || u.education) : []),
+          experience: Array.isArray(u.internships || u.experience) ? (u.internships || u.experience) : (typeof (u.internships || u.experience) === 'string' ? JSON.parse(u.internships || u.experience) : []),
+          portfolioUrl: u.website_url || u.portfolioUrl || '',
+          githubUrl: u.github_url || u.githubUrl || '',
+          linkedinUrl: u.linkedin_url || u.linkedinUrl || ''
         });
       }
     } catch (err) {
@@ -101,8 +102,8 @@ export default function StudentProfile() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
-      const res = await fetch(`${baseUrl}/api/user/${userId}`, {
+      const baseUrl = BASE_URL;
+      const res = await fetch(`${baseUrl}/api/students/${userId}/profile`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { BASE_URL } from '@/config/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   StyleSheet, Text, View, ScrollView, TouchableOpacity,
@@ -105,30 +106,45 @@ export default function StudentMessages() {
 
   const fetchUsers = async (userId: string) => {
     try {
-      const res = await fetch('https://thodakkam-1.onrender.com/api/users/all');
-      if (!res.ok) {
-        console.warn('API /api/users/all returned ' + res.status);
-        return;
-      }
-      const data = await res.json();
+      const token = await AsyncStorage.getItem('studentToken');
       let formattedUsers: any[] = [];
-      if (data.success) {
-        formattedUsers = data.users.map((u: any) => {
-          let avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(u.fullName || 'User')}&background=0D8ABC&color=fff`;
-          if (u.profilePhoto && !u.profilePhoto.startsWith('file://')) {
-            avatarUrl = u.profilePhoto;
+      const studentRes = await fetch(`${BASE_URL}/api/students/search?query=a`);
+      if (studentRes.ok) {
+        const data = await studentRes.json();
+        const usersArray = data.data || data.users || [];
+        const students = usersArray.map((u: any) => {
+          let avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || u.fullName || 'User')}&background=0D8ABC&color=fff`;
+          if (u.profilePic || u.profilePhoto || u.profile_photo) {
+            const photo = u.profilePic || u.profilePhoto || u.profile_photo;
+            if (photo && !photo.startsWith('file://')) {
+              avatarUrl = photo;
+            }
           }
-          return {
-            id: u.id,
-            name: u.fullName || u.email,
-            type: u.role,
-            avatar: avatarUrl
-          };
+          return { id: String(u.id), name: u.name || u.fullName || u.email, type: 'Student', avatar: avatarUrl };
         });
-        setAllUsersToMessage(formattedUsers);
+        formattedUsers = [...formattedUsers, ...students];
       }
+      const jobsRes = await fetch(`${BASE_URL}/api/jobs`);
+      if (jobsRes.ok) {
+        const jobsData = await jobsRes.json();
+        const startupMap = new Map();
+        if (Array.isArray(jobsData)) {
+          jobsData.forEach((job: any) => {
+            if (job.startup_id && !startupMap.has(job.startup_id)) {
+              let avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(job.company_name || 'Startup')}&background=10b981&color=fff`;
+              if (job.company_logo && !job.company_logo.startsWith('file://')) { avatarUrl = job.company_logo; }
+              startupMap.set(job.startup_id, { id: String(job.startup_id), name: job.company_name, type: 'Startup', avatar: avatarUrl });
+            }
+          });
+          formattedUsers = [...formattedUsers, ...Array.from(startupMap.values())];
+        }
+      }
+      formattedUsers = formattedUsers.filter(u => u.id !== userId);
+      setAllUsersToMessage(formattedUsers);
 
-      const convRes = await fetch(`https://thodakkam-1.onrender.com/api/messages/conversations/${userId}`);
+      const convRes = await fetch(`${BASE_URL}/api/messages/conversations`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       if (convRes.ok) {
         const convData = await convRes.json();
         const pinnedStr = await AsyncStorage.getItem(`pinned_startups_${userId}`);
@@ -138,12 +154,14 @@ export default function StudentMessages() {
         }
 
         if (convData.success) {
-          const allIds = new Set<string>([...pinnedIds, ...(convData.conversationIds || [])]);
+          const convs = convData.data || [];
+          const conversationIds = convs.map((c: any) => String(c.other_user_id));
+          const allIds = new Set<string>([...pinnedIds, ...conversationIds]);
           const activeStartups = Array.from(allIds).map((id: string) => {
             const u = formattedUsers.find(u => u.id === id);
-            const conv = convData.conversations?.find((c: any) => c.user1Id === id || c.user2Id === id);
-            const unreadCount = conv ? (conv.user1Id === userId ? conv.unreadCountUser1 : conv.unreadCountUser2) : 0;
-            const lastMessagePreview = conv?.lastMessagePreview;
+            const conv = convs.find((c: any) => String(c.other_user_id) === id);
+            const unreadCount = conv ? Number(conv.unread_count || 0) : 0;
+            const lastMessagePreview = conv?.last_message;
 
             return u ? { 
               id: u.id, name: u.name, active: false, avatar: u.avatar,
@@ -192,15 +210,19 @@ export default function StudentMessages() {
     if (!myUserId) return;
 
     try {
-      const res = await fetch(`https://thodakkam-1.onrender.com/api/messages/${myUserId}/${user.id}`);
+      const token = await AsyncStorage.getItem('studentToken');
+      // Fix: the backend expects GET /api/messages/:otherUserId?otherUserType=...
+      const res = await fetch(`${BASE_URL}/api/messages/${user.id}?otherUserType=${user.type}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
-          const formattedMsgs = data.messages.map((m: any) => ({
+          const formattedMsgs = (data.data || []).map((m: any) => ({
             id: m.id,
-            text: m.text,
-            isSentByMe: m.senderId === myUserId,
-            time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            text: m.content || m.message,
+            isSentByMe: String(m.sender_id) === String(myUserId),
+            time: new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
           }));
           setChatMessages(prev => ({ ...prev, [user.id]: formattedMsgs }));
         }
@@ -219,28 +241,35 @@ export default function StudentMessages() {
     const uid = overrideUserId || myUserId;
     if (!uid) return;
     try {
-      const res = await fetch(`https://thodakkam-1.onrender.com/api/messages/${uid}/${startupId}`);
+      const targetUser = allUsersToMessage.find(u => u.id === startupId);
+      const targetType = targetUser?.type ? targetUser.type.toLowerCase() : 'startup';
+      const token = await AsyncStorage.getItem('studentToken');
+      // Fix: the backend expects GET /api/messages/:otherUserId?otherUserType=...
+      const res = await fetch(`${BASE_URL}/api/messages/${startupId}?otherUserType=${targetType}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
-          const formattedMsgs = data.messages.map((m: any) => ({
+          const formattedMsgs = (data.data || []).map((m: any) => ({
             id: m.id,
-            text: m.text || m.message,
-            isSentByMe: m.senderId === myUserId,
-            time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            text: m.content || m.message,
+            isSentByMe: String(m.sender_id) === String(uid),
+            time: new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             status: m.status,
-            isDeleted: m.isDeleted,
-            conversationId: data.conversationId
+            isDeleted: m.is_deleted,
+            conversationId: `${uid}:student:${startupId}:${targetType}`
           }));
           setChatMessages(prev => ({ ...prev, [startupId]: formattedMsgs }));
 
-          if (data.conversationId) {
-            fetch('https://thodakkam-1.onrender.com/api/messages/read', {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ conversationId: data.conversationId, userId: uid })
-            }).catch(e => console.log('Read mark error', e));
-          }
+          const token = await AsyncStorage.getItem('studentToken');
+          fetch(`${BASE_URL}/api/messages/seen/${uid}:student:${startupId}:${targetType}`, {
+            method: 'PUT',
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            }
+          }).catch(e => console.log('Read mark error', e));
         }
       }
     } catch (err) {
@@ -269,16 +298,22 @@ export default function StudentMessages() {
     });
 
     try {
-      const res = await fetch('https://thodakkam-1.onrender.com/api/messages', {
+      const targetUser = allUsersToMessage.find(u => u.id === activeChatId);
+      const computedReceiverType = targetUser?.type ? targetUser.type.toLowerCase() : 'startup';
+      const token = await AsyncStorage.getItem('studentToken');
+      const res = await fetch(`${BASE_URL}/api/messages`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ senderId: myUserId, senderType: 'student', receiverId: activeChatId, receiverType: 'startup', text: msgText })
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ senderId: myUserId, senderType: 'student', receiverId: activeChatId, receiverType: computedReceiverType, content: msgText })
       });
       const data = await res.json();
-      if (data.success && data.message) {
+      if (data.success && data.data) {
         setChatMessages(prev => {
            const msgs = prev[activeChatId] || [];
-           const updated = msgs.map(m => m.id === tempId ? { ...m, id: data.message.id, status: data.message.status } : m);
+           const updated = msgs.map(m => m.id === tempId ? { ...m, id: data.data.id, status: data.data.status } : m);
            return { ...prev, [activeChatId]: updated };
         });
       }
@@ -303,7 +338,7 @@ export default function StudentMessages() {
     setShowAttachmentMenu(false);
     if (!activeChatId) return;
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       base64: true,
       quality: 0.5,
     });

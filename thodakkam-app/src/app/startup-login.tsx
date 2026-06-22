@@ -1,3 +1,4 @@
+import { BASE_URL } from '@/config/api';
 import React, { useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { 
@@ -14,7 +15,7 @@ const TEXT_GRAY = '#6b7280';
 const BORDER_COLOR = '#e5e7eb';
 const BG_LIGHT = '#f9fafb';
 
-const BASE_URL = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
+
 
 export default function StartupLoginScreen() {
   const router = useRouter();
@@ -32,7 +33,7 @@ export default function StartupLoginScreen() {
     }
     setIsLoading(true);
     try {
-      const response = await fetch(`${BASE_URL}/api/startup/login`, {
+      const response = await fetch(`${BASE_URL}/api/startup/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim().toLowerCase(), password }),

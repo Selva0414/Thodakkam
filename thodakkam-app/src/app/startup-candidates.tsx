@@ -1,3 +1,4 @@
+import { BASE_URL } from '@/config/api';
 import React, { useState } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, TouchableOpacity,
@@ -40,7 +41,7 @@ export default function StartupCandidates() {
   const fetchApplications = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`https://thodakkam-1.onrender.com/api/applications/startup/${companyName}`);
+      const response = await fetch(`${BASE_URL}/api/applications/startup/${companyName}`);
       if (!response.ok) throw new Error(`Server returned ${response.status}`);
       const data = await response.json();
       if (data.success) {

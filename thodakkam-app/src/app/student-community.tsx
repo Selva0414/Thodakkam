@@ -1,3 +1,5 @@
+import { BASE_URL } from '@/config/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, TouchableOpacity,
@@ -78,12 +80,26 @@ export default function StudentCommunity() {
 
   const fetchPosts = async () => {
     try {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
-      const res = await fetch(`${baseUrl}/api/posts`);
+      const baseUrl = BASE_URL;
+      const res = await fetch(`${baseUrl}/api/community/posts`, { headers: { "Authorization": `Bearer ${await AsyncStorage.getItem(role === "startup" ? "startupToken" : "studentToken")}` } });
       const data = await res.json();
-      if (data.success) {
-        const processedPosts = data.posts.map((post: any) => {
-          let pImageUrl = post.imageUrl;
+      if (data.success && data.data && data.data.posts) {
+        const processedPosts = data.data.posts.map((post: any) => {
+          post.text = post.content || post.text;
+          
+          let avatar = post.author_avatar || post.userId?.avatar;
+          if (typeof avatar === 'string' && (avatar.trim() === '' || avatar === 'null' || avatar === 'undefined')) {
+            avatar = null;
+          }
+          
+          if (!post.user && (post.author_name || post.userId?.name)) {
+            post.user = { 
+              fullName: post.author_name || post.userId?.name, 
+              profilePhoto: avatar 
+            };
+          }
+          
+          let pImageUrl = post.media_url || post.media || post.imageUrl;
           let parsedImages: string[] = [];
           if (pImageUrl) {
             try {
@@ -115,9 +131,15 @@ export default function StudentCommunity() {
           }
 
           let uPhoto = post.user?.profilePhoto;
-          if (uPhoto && !uPhoto.startsWith('http') && !uPhoto.startsWith('data:image')) {
-            const filename = uPhoto.split(/[/\\]/).pop();
-            uPhoto = `${baseUrl}/uploads/${filename}`;
+          if (typeof uPhoto === 'string' && (uPhoto.trim() === '' || uPhoto === 'null' || uPhoto === 'undefined')) {
+             uPhoto = null;
+          } else if (uPhoto && !uPhoto.startsWith('http') && !uPhoto.startsWith('data:image')) {
+            if (uPhoto.startsWith('/api/')) {
+              uPhoto = `${baseUrl}${uPhoto}`;
+            } else {
+              const filename = uPhoto.split(/[\/\\]/).pop();
+              uPhoto = `${baseUrl}/uploads/${filename}`;
+            }
           }
           return { ...post, imageUrls: parsedImages, user: post.user ? { ...post.user, profilePhoto: uPhoto } : null };
         });
@@ -230,10 +252,14 @@ function PostItem({ post }: { post: any }) {
     setLikesCount((prev: number) => newLikedState ? prev + 1 : prev - 1);
     
     try {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
-      await fetch(`${baseUrl}/api/posts/${post.id}/like`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const baseUrl = BASE_URL;
+      const token = await AsyncStorage.getItem('studentToken');
+      await fetch(`${baseUrl}/api/community/posts/${post.id}/like`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ email: userStore.email })
       });
     } catch (err) {
@@ -248,8 +274,8 @@ function PostItem({ post }: { post: any }) {
     setIsCommenting(true);
     
     try {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
-      const res = await fetch(`${baseUrl}/api/posts/${post.id}/comment`, {
+      const baseUrl = BASE_URL;
+      const res = await fetch(`${baseUrl}/api/community/posts/${post.id}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: commentText, email: userStore.email })
@@ -289,8 +315,8 @@ function PostItem({ post }: { post: any }) {
     setIsReposting(true);
     
     try {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
-      const res = await fetch(`${baseUrl}/api/posts/${post.id}/repost`, {
+      const baseUrl = BASE_URL;
+      const res = await fetch(`${baseUrl}/api/community/posts/${post.id}/share`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: userStore.email })
@@ -316,8 +342,8 @@ function PostItem({ post }: { post: any }) {
     setIsSaving(true);
     
     try {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
-      const res = await fetch(`${baseUrl}/api/posts/${post.id}/save`, {
+      const baseUrl = BASE_URL;
+      const res = await fetch(`${baseUrl}/api/community/posts/${post.id}/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: userStore.email })

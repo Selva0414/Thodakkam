@@ -1,3 +1,4 @@
+import { BASE_URL } from '@/config/api';
 import React, { useState } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, TouchableOpacity,
@@ -30,7 +31,7 @@ export default function StartupInterviews() {
 
   const fetchAssessments = async () => {
     try {
-      const res = await fetch(`https://thodakkam-1.onrender.com/api/assessments/${encodeURIComponent(companyName)}`);
+      const res = await fetch(`${BASE_URL}/api/assessments/${encodeURIComponent(companyName)}`);
       const data = await res.json();
       if (data.success && data.assessments) {
         const mapped = data.assessments.map((a: any) => {
@@ -134,7 +135,7 @@ export default function StartupInterviews() {
 
   const deleteAssessment = async (id: string) => {
     try {
-      const res = await fetch(`https://thodakkam-1.onrender.com/api/assessments/${id}`, { method: 'DELETE' });
+      const res = await fetch(`${BASE_URL}/api/assessments/${id}`, { method: 'DELETE' });
       if (res.ok) {
         fetchAssessments();
       } else {

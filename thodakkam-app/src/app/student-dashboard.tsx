@@ -1,3 +1,4 @@
+import { BASE_URL } from '@/config/api';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, TouchableOpacity,
@@ -444,23 +445,24 @@ export default function StudentDashboard() {
           return;
         }
 
-        const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
-        const response = await fetch(`${baseUrl}/api/user/${userId}`);
+        const baseUrl = BASE_URL;
+        const response = await fetch(`${baseUrl}/api/students/${userId}/profile`);
         const resJson = await response.json();
 
-        if (resJson.success && resJson.user) {
-          let photoUrl = resJson.user.profilePhoto;
+        if (resJson.success && resJson.data) {
+          const user = resJson.data;
+          let photoUrl = user.profilePhoto || user.profile_photo;
           if (photoUrl && !photoUrl.startsWith('http') && !photoUrl.startsWith('data:')) {
             const filename = photoUrl.split(/[/\\]/).pop();
             photoUrl = `${baseUrl}/uploads/${filename}`;
           }
 
           const newUserData = {
-            id: resJson.user.id,
-            name: resJson.user.fullName,
+            id: user.id,
+            name: user.fullName || user.name || user.full_name,
             profilePhoto: photoUrl,
-            email: resJson.user.email || '',
-            phone: resJson.user.phone || ''
+            email: user.email || '',
+            phone: user.phone || ''
           };
           setUserData(newUserData as any);
           updateGlobalUser(newUserData);
@@ -477,10 +479,12 @@ export default function StudentDashboard() {
       
       if (userIdToFetch) {
         try {
-          const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
-          const appRes = await fetch(`${baseUrl}/api/applications/user/${userIdToFetch}`);
+          const baseUrl = BASE_URL;
+          const appRes = await fetch(`${baseUrl}/api/applications/student/${userIdToFetch}`);
           const appJson = await appRes.json();
-          if (appJson.success && appJson.applications) {
+          if (Array.isArray(appJson)) {
+            setApplications(appJson);
+          } else if (appJson.success && appJson.applications) {
             setApplications(appJson.applications);
           }
         } catch (err) {

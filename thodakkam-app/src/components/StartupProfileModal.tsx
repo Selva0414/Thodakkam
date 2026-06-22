@@ -1,3 +1,4 @@
+import { BASE_URL } from '@/config/api';
 import React, { useState, useEffect } from 'react';
 import {
   Modal, View, Text, TouchableOpacity, StyleSheet,
@@ -34,7 +35,7 @@ export default function StartupProfileModal({ visible, onClose, companyName }: S
   const fetchProfile = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`https://thodakkam-1.onrender.com/api/startup/profile/${encodeURIComponent(companyName)}`);
+      const response = await fetch(`${BASE_URL}/api/startup/profile/${encodeURIComponent(companyName)}`);
       const data = await response.json();
       if (data.success && data.startup) {
         setFullName(data.startup.founderName || '');
@@ -54,7 +55,7 @@ export default function StartupProfileModal({ visible, onClose, companyName }: S
   const handleSave = async () => {
     setSaving(true);
     try {
-      const response = await fetch(`https://thodakkam-1.onrender.com/api/startup/profile/${encodeURIComponent(companyName)}`, {
+      const response = await fetch(`${BASE_URL}/api/startup/profile/${encodeURIComponent(companyName)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -1,3 +1,4 @@
+import { BASE_URL } from '@/config/api';
 import React, { useState } from 'react';
 import { 
   StyleSheet, Text, View, TextInput, TouchableOpacity, 
@@ -11,7 +12,7 @@ const BG_COLOR = '#f8f9fa';
 const BG_LIGHT = '#ffffff';
 const TEXT_DARK = '#1e293b';
 const BORDER_COLOR = '#e2e8f0';
-const BACKEND_URL = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
+const BACKEND_URL = Platform.OS === 'android' ? `${BASE_URL}` : `${BASE_URL}`;
 
 export default function ForgotPassword() {
   const router = useRouter();

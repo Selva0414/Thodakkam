@@ -1,3 +1,4 @@
+import { BASE_URL } from '@/config/api';
 import React, { useState, useEffect } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, TouchableOpacity,
@@ -38,7 +39,7 @@ export default function StudentExam() {
           setAlreadyCompleted(true);
         }
 
-        const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
+        const baseUrl = BASE_URL;
         const res = await fetch(`${baseUrl}/api/assessments/single/${assessmentId}`);
         const data = await res.json();
         if (data.success && data.assessment) {
@@ -144,7 +145,7 @@ export default function StudentExam() {
          };
 
          try {
-           const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
+           const baseUrl = BASE_URL;
            await fetch(`${baseUrl}/api/assessments/${assessmentId}/submit-mcq`, {
              method: 'POST',
              headers: { 'Content-Type': 'application/json' },

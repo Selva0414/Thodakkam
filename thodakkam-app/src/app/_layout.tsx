@@ -18,7 +18,6 @@ function RootNavigation() {
         <Stack.Screen name="student-dashboard" />
         <Stack.Screen name="startup-register" />
         <Stack.Screen name="startup-login" />
-        <Stack.Screen name="admin-login" options={{ headerShown: false }} />
       </Stack>
     </ThemeProvider>
   );

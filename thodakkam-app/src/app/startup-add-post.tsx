@@ -1,3 +1,5 @@
+import { BASE_URL } from '@/config/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useState } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, TouchableOpacity,
@@ -46,20 +48,38 @@ export default function StartupAddPost() {
 
     setLoading(true);
     try {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
-      const res = await fetch(`${baseUrl}/api/posts`, {
+      const baseUrl = BASE_URL;
+      const token = await AsyncStorage.getItem('startupToken');
+      
+      // Extract base64 part if image exists
+      let media_base64 = null;
+      let media_type = null;
+      if (imageUrls.length > 0) {
+        const firstImage = imageUrls[0];
+        if (firstImage.startsWith('data:image')) {
+          const parts = firstImage.split(',');
+          if (parts.length === 2) {
+            media_type = parts[0].split(';')[0].split(':')[1];
+            media_base64 = parts[1];
+          }
+        }
+      }
+
+      const res = await fetch(`${baseUrl}/api/community/posts`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({
-          text,
-          imageUrl: imageUrls.length > 0 ? JSON.stringify(imageUrls) : null,
-          category,
-          email: userStore.email || 'startup@example.com',
-          companyName: companyName
+          content: text,
+          tags: [category],
+          media_base64,
+          media_type
         })
       });
       const data = await res.json();
-      if (data.success) {
+      if (res.ok || data.success || data.id) {
         if (router.canGoBack()) router.back();
         else router.push('/startup-community');
       } else {

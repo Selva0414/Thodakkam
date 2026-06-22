@@ -1,3 +1,4 @@
+import { BASE_URL } from '@/config/api';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, TouchableOpacity,
@@ -88,12 +89,12 @@ export default function StudentJobs() {
       }
       if (!id) id = '8bbe6fc3-2716-4821-b967-35b0689cbf11';
 
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
-      const response = await fetch(`${baseUrl}/api/user/${id}`);
+      const baseUrl = BASE_URL;
+      const response = await fetch(`${baseUrl}/api/students/${id}/profile`);
       const json = await response.json();
 
-      if (json.success && json.user && Array.isArray(json.user.skills)) {
-        setUserSkills(json.user.skills);
+      if (json.success && json.data && Array.isArray(json.data.skills)) {
+        setUserSkills(json.data.skills);
       }
     } catch (err) {
       console.error('Error fetching user skills:', err);
@@ -102,7 +103,7 @@ export default function StudentJobs() {
 
   const fetchJobs = async () => {
     try {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
+      const baseUrl = BASE_URL;
       const response = await fetch(`${baseUrl}/api/jobs`);
       const data = await response.json();
       if (data.success) {
@@ -163,7 +164,7 @@ function JobItem({ job, router }: { job: any, router: any }) {
 
   let startupPhoto = job.startup?.companyLogo || job.startup?.profilePhoto;
   if (startupPhoto && !startupPhoto.startsWith('http') && !startupPhoto.startsWith('data:')) {
-    const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
+    const baseUrl = BASE_URL;
     startupPhoto = `${baseUrl}/uploads/${startupPhoto.split(/[/\\]/).pop()}`;
   }
 
@@ -174,7 +175,7 @@ function JobItem({ job, router }: { job: any, router: any }) {
     setIsSaving(true);
     
     try {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
+      const baseUrl = BASE_URL;
       const res = await fetch(`${baseUrl}/api/jobs/${job.id}/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

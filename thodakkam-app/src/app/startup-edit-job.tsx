@@ -1,3 +1,4 @@
+import { BASE_URL } from '@/config/api';
 import React, { useState, useEffect } from 'react';
 import {
   StyleSheet, Text, View, TextInput, TouchableOpacity,
@@ -110,7 +111,7 @@ export default function StartupEditJob() {
 
     setLoading(true);
     try {
-      const response = await fetch(`https://thodakkam-1.onrender.com/api/jobs/${jobId}`, {
+      const response = await fetch(`${BASE_URL}/api/jobs/${jobId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

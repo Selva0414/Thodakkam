@@ -1,3 +1,4 @@
+import { BASE_URL } from '@/config/api';
 import React, { useState, useEffect } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, TouchableOpacity,
@@ -26,7 +27,7 @@ export default function StartupAssessmentDetail() {
 
   const fetchAssessment = async () => {
     try {
-      const response = await fetch(`https://thodakkam-1.onrender.com/api/assessments/single/${id}`);
+      const response = await fetch(`${BASE_URL}/api/assessments/single/${id}`);
       if (!response.ok) throw new Error(`Server returned ${response.status}`);
       const data = await response.json();
       if (data.success && data.assessment) {

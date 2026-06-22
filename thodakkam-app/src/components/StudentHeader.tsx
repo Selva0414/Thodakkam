@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { BASE_URL } from '@/config/api';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, Image, Platform, Modal, ScrollView } from 'react-native';
 import { Bell, Search, Mail, Settings, LogOut, Menu } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
@@ -24,22 +25,23 @@ export default function StudentHeader({ user }: { user?: { id?: string, name: st
         const storedId = await AsyncStorage.getItem('studentUserId');
         if (storedId) {
           try {
-            const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
-            const res = await fetch(`${baseUrl}/api/user/${storedId}`);
+            const baseUrl = BASE_URL;
+            const token = await AsyncStorage.getItem('studentToken');
+            const res = await fetch(`${baseUrl}/api/students/${storedId}/profile`);
             const data = await res.json();
-            if (data.success && data.user) {
-              let photo = data.user.profilePhoto;
+            if (data.success && data.data) {
+              let photo = data.data.profile_photo || data.data.profilePhoto;
               if (photo && photo.startsWith('file://')) {
                 photo = null; // Invalid across devices, fallback to initials
               } else if (photo && !photo.startsWith('http') && !photo.startsWith('data:image')) {
                 photo = `${baseUrl}/uploads/${photo.split(/[/\\]/).pop()}`;
               }
               const u = {
-                id: data.user.id,
-                name: data.user.fullName,
-                email: data.user.email,
+                id: data.data.id,
+                name: data.data.name || data.data.fullName,
+                email: data.data.email,
                 profilePhoto: photo,
-                phone: data.user.phone
+                phone: data.data.phone
               };
               userStore.id = u.id;
               userStore.name = u.name;

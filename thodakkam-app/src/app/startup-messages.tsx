@@ -1,3 +1,4 @@
+import { BASE_URL } from '@/config/api';
 import React, { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
@@ -35,7 +36,7 @@ export default function StartupMessages() {
 
   useEffect(() => {
     if (companyName) {
-      fetch(`https://thodakkam-1.onrender.com/api/startup/profile/${encodeURIComponent(companyName)}`)
+      fetch(`${BASE_URL}/api/startup/profile/${encodeURIComponent(companyName)}`)
         .then(res => res.json())
         .then(data => {
           if (data.success && data.startup?.companyLogo) {
@@ -52,7 +53,7 @@ export default function StartupMessages() {
         setMyUserId(id);
         fetchUsers(id);
       } else if (companyName) {
-        fetch(`https://thodakkam-1.onrender.com/api/startup/profile/${encodeURIComponent(companyName)}`)
+        fetch(`${BASE_URL}/api/startup/profile/${encodeURIComponent(companyName)}`)
           .then(res => res.json())
           .then(data => {
             if (data.success && data.startup?.id) {
@@ -81,7 +82,10 @@ export default function StartupMessages() {
 
   const fetchUsers = async (userId: string) => {
     try {
-      const res = await fetch('https://thodakkam-1.onrender.com/api/users/all');
+      const token = await AsyncStorage.getItem('startupToken');
+      const res = await fetch(`${BASE_URL}/api/users/all`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       if (!res.ok) {
         console.warn('API /api/users/all returned ' + res.status);
         return;
@@ -105,7 +109,9 @@ export default function StartupMessages() {
       }
 
       // Fetch active conversations
-      const convRes = await fetch(`https://thodakkam-1.onrender.com/api/messages/conversations/${userId}`);
+      const convRes = await fetch(`${BASE_URL}/api/messages/conversations`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       if (convRes.ok) {
         const convData = await convRes.json();
         const pinnedStr = await AsyncStorage.getItem(`pinned_candidates_${userId}`);
@@ -115,12 +121,14 @@ export default function StartupMessages() {
         }
 
         if (convData.success) {
-          const allIds = new Set<string>([...pinnedIds, ...(convData.conversationIds || [])]);
+          const convs = convData.data || [];
+          const conversationIds = convs.map((c: any) => String(c.other_user_id));
+          const allIds = new Set<string>([...pinnedIds, ...conversationIds]);
           const activeCandidates = Array.from(allIds).map((id: string) => {
             const u = formattedUsers.find(u => u.id === id);
-            const conv = convData.conversations?.find((c: any) => c.user1Id === id || c.user2Id === id);
-            const unreadCount = conv ? (conv.user1Id === userId ? conv.unreadCountUser1 : conv.unreadCountUser2) : 0;
-            const lastMessagePreview = conv?.lastMessagePreview;
+            const conv = convs.find((c: any) => String(c.other_user_id) === id);
+            const unreadCount = conv ? Number(conv.unread_count || 0) : 0;
+            const lastMessagePreview = conv?.last_message;
 
             return u ? { 
               id: u.id, name: u.name, active: false, avatar: u.avatar,
@@ -169,15 +177,19 @@ export default function StartupMessages() {
     if (!myUserId) return;
 
     try {
-      const res = await fetch(`https://thodakkam-1.onrender.com/api/messages/${myUserId}/${user.id}`);
+      const token = await AsyncStorage.getItem('startupToken');
+      const targetType = user.type ? user.type.toLowerCase() : 'student';
+      const res = await fetch(`${BASE_URL}/api/messages/${user.id}?otherUserType=${targetType}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
-          const formattedMsgs = data.messages.map((m: any) => ({
+          const formattedMsgs = (data.data || []).map((m: any) => ({
             id: m.id,
-            text: m.text,
-            isSentByMe: m.senderId === myUserId,
-            time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            text: m.content || m.message,
+            isSentByMe: String(m.sender_id) === String(myUserId),
+            time: new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
           }));
           setChatMessages(prev => ({ ...prev, [user.id]: formattedMsgs }));
         }
@@ -196,29 +208,34 @@ export default function StartupMessages() {
     const uid = overrideUserId || myUserId;
     if (!uid) return;
     try {
-      const res = await fetch(`https://thodakkam-1.onrender.com/api/messages/${uid}/${candidateId}`);
+      const targetUser = allUsersToMessage.find(u => u.id === candidateId);
+      const targetType = targetUser?.type ? targetUser.type.toLowerCase() : 'student';
+      const token = await AsyncStorage.getItem('startupToken');
+      const res = await fetch(`${BASE_URL}/api/messages/${candidateId}?otherUserType=${targetType}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
-          const formattedMsgs = data.messages.map((m: any) => ({
+          const formattedMsgs = (data.data || []).map((m: any) => ({
             id: m.id,
-            text: m.text || m.message, // backwards compatibility
-            isSentByMe: m.senderId === myUserId,
-            time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            text: m.content || m.message, // backwards compatibility
+            isSentByMe: String(m.sender_id) === String(uid),
+            time: new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             status: m.status,
-            isDeleted: m.isDeleted,
-            conversationId: data.conversationId
+            isDeleted: m.is_deleted,
+            conversationId: `${uid}:startup:${candidateId}:${targetType}`
           }));
           setChatMessages(prev => ({ ...prev, [candidateId]: formattedMsgs }));
 
           // Mark as read
-          if (data.conversationId) {
-            fetch('https://thodakkam-1.onrender.com/api/messages/read', {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ conversationId: data.conversationId, userId: uid })
-            }).catch(e => console.log('Read mark error', e));
-          }
+          fetch(`${BASE_URL}/api/messages/seen/${uid}:startup:${candidateId}:${targetType}`, {
+            method: 'PUT',
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            }
+          }).catch(e => console.log('Read mark error', e));
         }
       }
     } catch (err) {
@@ -247,17 +264,23 @@ export default function StartupMessages() {
     });
 
     try {
-      const res = await fetch('https://thodakkam-1.onrender.com/api/messages', {
+      const targetUser = allUsersToMessage.find(u => u.id === activeChatId);
+      const computedReceiverType = targetUser?.type ? targetUser.type.toLowerCase() : 'student';
+      const token = await AsyncStorage.getItem('startupToken');
+      const res = await fetch(`${BASE_URL}/api/messages`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ senderId: myUserId, senderType: 'startup', receiverId: activeChatId, receiverType: 'student', text: msgText })
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ senderId: myUserId, senderType: 'startup', receiverId: activeChatId, receiverType: computedReceiverType, content: msgText })
       });
       const data = await res.json();
-      if (data.success && data.message) {
+      if (data.success && data.data) {
         // Update temporary message with real ID and status
         setChatMessages(prev => {
            const msgs = prev[activeChatId] || [];
-           const updated = msgs.map(m => m.id === tempId ? { ...m, id: data.message.id, status: data.message.status } : m);
+           const updated = msgs.map(m => m.id === tempId ? { ...m, id: data.data.id, status: data.data.status } : m);
            return { ...prev, [activeChatId]: updated };
         });
       }
@@ -282,7 +305,7 @@ export default function StartupMessages() {
     setShowAttachmentMenu(false);
     if (!activeChatId) return;
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       base64: true,
       quality: 0.5,
     });

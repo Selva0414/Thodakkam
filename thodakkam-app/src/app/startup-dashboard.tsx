@@ -1,3 +1,4 @@
+import { BASE_URL } from '@/config/api';
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, TouchableOpacity,
@@ -43,7 +44,7 @@ export default function StartupDashboard() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
+        const baseUrl = BASE_URL;
         const res = await fetch(`${baseUrl}/api/applications/startup/${encodeURIComponent(companyName)}`);
         const data = await res.json();
         if (data.success && data.applications) {

@@ -1,3 +1,4 @@
+import { BASE_URL } from '@/config/api';
 import React, { useState } from 'react';
 import {
   Modal, View, Text, TouchableOpacity, StyleSheet,
@@ -38,7 +39,7 @@ export default function StartupNetworkModal({ visible, onClose, companyName }: S
   const fetchNetwork = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`https://thodakkam-1.onrender.com/api/startup/network/${encodeURIComponent(companyName)}`);
+      const res = await fetch(`${BASE_URL}/api/startup/network/${encodeURIComponent(companyName)}`);
       const data = await res.json();
       if (data.success) {
         setFollowers(data.followers || []);
@@ -55,7 +56,7 @@ export default function StartupNetworkModal({ visible, onClose, companyName }: S
   const toggleFollow = async (userId: string, isCurrentlyFollowing: boolean) => {
     try {
       const endpoint = isCurrentlyFollowing ? 'unfollow' : 'follow';
-      const res = await fetch(`https://thodakkam-1.onrender.com/api/startup/network/${encodeURIComponent(companyName)}/${endpoint}`, {
+      const res = await fetch(`${BASE_URL}/api/startup/network/${encodeURIComponent(companyName)}/${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId })

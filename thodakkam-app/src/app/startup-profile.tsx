@@ -1,3 +1,4 @@
+import { BASE_URL } from '@/config/api';
 import React, { useState, useEffect } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, TouchableOpacity,
@@ -63,7 +64,7 @@ export default function StartupProfile() {
     setLoading(true);
     try {
       // 1. Fetch from DB
-      const response = await fetch(`https://thodakkam-1.onrender.com/api/startup/profile/${encodeURIComponent(companyName)}`);
+      const response = await fetch(`${BASE_URL}/api/startup/profile/${encodeURIComponent(companyName)}`);
       const data = await response.json();
       
       let dbData: any = {};
@@ -102,7 +103,7 @@ export default function StartupProfile() {
     setSaving(true);
     try {
       // 1. Save core fields to DB
-      await fetch(`https://thodakkam-1.onrender.com/api/startup/profile/${encodeURIComponent(companyName)}`, {
+      await fetch(`${BASE_URL}/api/startup/profile/${encodeURIComponent(companyName)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

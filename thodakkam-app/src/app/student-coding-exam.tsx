@@ -1,3 +1,4 @@
+import { BASE_URL } from '@/config/api';
 import React, { useState, useEffect } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, TouchableOpacity,
@@ -37,7 +38,7 @@ export default function StudentCodingExam() {
           setAlreadyCompleted(true);
         }
 
-        const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
+        const baseUrl = BASE_URL;
         const res = await fetch(`${baseUrl}/api/assessments/single/${assessmentId}`);
         const data = await res.json();
         if (data.success && data.assessment) {

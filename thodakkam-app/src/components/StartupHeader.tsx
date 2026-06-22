@@ -1,3 +1,4 @@
+import { BASE_URL } from '@/config/api';
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, Platform, Image, Modal, ScrollView, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -44,7 +45,7 @@ export default function StartupHeader({ companyName = 'Echo Digital' }: { compan
 
   useEffect(() => {
     if (companyName) {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
+      const baseUrl = BASE_URL;
       fetch(`${baseUrl}/api/startup/profile/${encodeURIComponent(companyName)}`)
         .then(res => res.json())
         .then(data => {

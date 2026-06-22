@@ -108,7 +108,7 @@ export default function SavedPosts() {
         return;
       }
       const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
-      const res = await fetch(`${baseUrl}/api/posts/saved/${encodeURIComponent(identifier)}?type=${role}`);
+      const res = await fetch(`${baseUrl}/api/community/saved`, { headers: { "Authorization": `Bearer ${token}` } });
       const data = await res.json();
       if (data.success) {
         const processedPosts = data.posts.map((post: any) => {
@@ -227,7 +227,7 @@ function PostItem({ post, role, identifier }: { post: any, role: string, identif
     
     try {
       const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
-      await fetch(`${baseUrl}/api/posts/${post.id}/like`, {
+      await fetch(`${baseUrl}/api/community/posts/${post.id}/like`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(role === 'startup' ? { companyName: identifier } : { email: identifier })
@@ -246,7 +246,7 @@ function PostItem({ post, role, identifier }: { post: any, role: string, identif
     
     try {
       const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
-      const res = await fetch(`${baseUrl}/api/posts/${post.id}/comment`, {
+      const res = await fetch(`${baseUrl}/api/community/posts/${post.id}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: commentText, ...(role === 'startup' ? { companyName: identifier } : { email: identifier }) })
@@ -287,7 +287,7 @@ function PostItem({ post, role, identifier }: { post: any, role: string, identif
     
     try {
       const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
-      const res = await fetch(`${baseUrl}/api/posts/${post.id}/repost`, {
+      const res = await fetch(`${baseUrl}/api/community/posts/${post.id}/share`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(role === 'startup' ? { companyName: identifier } : { email: identifier })
@@ -316,7 +316,7 @@ function PostItem({ post, role, identifier }: { post: any, role: string, identif
     
     try {
       const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
-      const res = await fetch(`${baseUrl}/api/posts/${post.id}/save`, {
+      const res = await fetch(`${baseUrl}/api/community/posts/${post.id}/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(role === 'startup' ? { companyName: identifier } : { email: identifier })

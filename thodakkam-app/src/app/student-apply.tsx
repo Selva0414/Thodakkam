@@ -1,3 +1,4 @@
+import { BASE_URL } from '@/config/api';
 import React, { useState } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, TouchableOpacity,
@@ -73,16 +74,16 @@ export default function StudentApply() {
       try {
         const fallbackId = await AsyncStorage.getItem('studentUserId');
         const finalUserId = userStore.id || fallbackId;
-        const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
+        const baseUrl = BASE_URL;
         
         let fetchedEmail = userStore.email || form.email;
 
         // Fetch User Data to prefill form
         if (finalUserId) {
-           const userRes = await fetch(`${baseUrl}/api/user/${finalUserId}`);
+           const userRes = await fetch(`${baseUrl}/api/students/${finalUserId}/profile`);
            const userJson = await userRes.json();
-           if (userJson.success && userJson.user) {
-             const u = userJson.user;
+           if (userJson.success && userJson.data) {
+             const u = userJson.data;
              let resumeName = '';
              if (u.resumeFile) {
                 if (u.resumeFile.startsWith('data:')) {
@@ -131,7 +132,7 @@ export default function StudentApply() {
 
     setLoading(true);
     try {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
+      const baseUrl = BASE_URL;
       const fallbackId = await AsyncStorage.getItem('studentUserId');
       const finalUserId = userStore.id || fallbackId;
 

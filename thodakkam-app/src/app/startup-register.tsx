@@ -1,3 +1,4 @@
+import { BASE_URL } from '@/config/api';
 import React, { useState, useRef } from 'react';
 import { 
   StyleSheet, Text, View, TextInput, ScrollView, TouchableOpacity, SafeAreaView, Platform, KeyboardAvoidingView, Image, ImageBackground, Modal
@@ -24,7 +25,7 @@ const CATEGORIES = [
   'Others'
 ];
 
-const BASE_URL = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
+
 
 function InputField({ label, placeholder, value, onChangeText, secureTextEntry, rightIcon: RightIcon, onRightIconPress, keyboardType, autoCapitalize }: any) {
   return (
@@ -82,8 +83,7 @@ export default function StartupRegisterScreen() {
     });
 
     if (!result.canceled && result.assets && result.assets.length > 0) {
-      const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
-      setImage(base64Image);
+      setImage(result.assets[0].uri);
     }
   };
 
@@ -100,24 +100,57 @@ export default function StartupRegisterScreen() {
       setErrorMessage('You must agree to the Terms of Service and Privacy Policy.');
       return;
     }
+    if (!companyLogo) {
+      setErrorMessage('Company Logo is required.');
+      return;
+    }
 
     setLoading(true);
     setErrorMessage('');
 
     try {
-      const response = await fetch(`${BASE_URL}/api/startup/send-otp`, {
+      const formData = new FormData();
+      formData.append('founderName', founderName);
+      formData.append('companyName', companyName);
+      formData.append('email', email.trim().toLowerCase());
+      formData.append('password', password);
+      formData.append('category', category);
+      formData.append('certificateId', registrationId);
+      
+      // Required by backend
+      formData.append('regType', 'MSME');
+      formData.append('linkedinUrl', 'https://linkedin.com');
+      formData.append('websiteUrl', 'https://example.com');
+      
+      let fileData: any;
+      if (Platform.OS === 'web') {
+        const res = await fetch(companyLogo);
+        const blob = await res.blob();
+        fileData = new File([blob], 'logo.jpg', { type: 'image/jpeg' });
+      } else {
+        fileData = { uri: companyLogo, name: 'logo.jpg', type: 'image/jpeg' };
+      }
+
+      formData.append('companyLogo', fileData);
+      formData.append('certificateFile', fileData);
+      formData.append('physicalPhotos', fileData);
+      formData.append('physicalPhotos', fileData);
+
+      const response = await fetch(`${BASE_URL}/api/startup/auth/register`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, founderName, companyName })
+        headers: {
+          'Accept': 'application/json',
+        },
+        body: formData
       });
 
       const data = await response.json();
 
-      if (response.ok) {
+      if (response.ok || data.success) {
         setShowOtpScreen(true);
         alert(`${data.message}${data.otp ? `\n\nFor testing: Your OTP is ${data.otp}` : ''}`);
       } else {
-        setErrorMessage(data.message || 'Failed to send OTP. Please try again.');
+        setErrorMessage(data.message || 'Failed to register. Please try again.');
       }
     } catch (err: any) {
       setErrorMessage('Network error. Make sure backend server is running.');
@@ -138,25 +171,18 @@ export default function StartupRegisterScreen() {
     setErrorMessage('');
 
     try {
-      const response = await fetch(`${BASE_URL}/api/startup/register`, {
+      const response = await fetch(`${BASE_URL}/api/startup/auth/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          founderName,
-          companyName,
-          registrationId,
-          email,
-          password,
-          category,
-          otp: fullOtp,
-          founderImage,
-          companyLogo
+          email: email.trim().toLowerCase(),
+          otp: fullOtp
         })
       });
 
       const data = await response.json();
 
-      if (response.ok) {
+      if (response.ok || data.success) {
         setShowSuccessModal(true);
       } else {
         setErrorMessage(data.message || 'Verification failed. Please try again.');

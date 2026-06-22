@@ -1,3 +1,4 @@
+import { BASE_URL } from '@/config/api';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet, Text, View, ScrollView, TouchableOpacity,
@@ -56,7 +57,7 @@ export default function StudentMyJobs() {
 
   const fetchMyJobs = async () => {
     try {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
+      const baseUrl = BASE_URL;
       const response = await fetch(`${baseUrl}/api/jobs/my-jobs/${encodeURIComponent(userStore.email)}`);
       const data = await response.json();
       if (data.success) {
@@ -72,7 +73,7 @@ export default function StudentMyJobs() {
 
   const handleUnsave = async (jobId: string) => {
     try {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
+      const baseUrl = BASE_URL;
       const res = await fetch(`${baseUrl}/api/jobs/${jobId}/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -119,7 +120,7 @@ export default function StudentMyJobs() {
     return list.map((job: any) => {
       let startupPhoto = job.startup?.companyLogo || job.startup?.profilePhoto;
       if (startupPhoto && !startupPhoto.startsWith('http') && !startupPhoto.startsWith('data:')) {
-        const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
+        const baseUrl = BASE_URL;
         startupPhoto = `${baseUrl}/uploads/${startupPhoto.split(/[/\\]/).pop()}`;
       }
 
