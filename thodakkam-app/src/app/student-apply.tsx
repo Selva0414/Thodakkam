@@ -105,12 +105,15 @@ export default function StudentApply() {
         }
 
         // Check Application Status
-        if (fetchedEmail) {
+        if (finalUserId) {
            const jId = jobId || "mock-job-id";
-           const response = await fetch(`${baseUrl}/api/apply/check?jobId=${jId}&email=${fetchedEmail}`);
+           const response = await fetch(`${baseUrl}/api/applications/student/${finalUserId}`);
            if (response.ok) {
              const resJson = await response.json();
-             if (resJson.success && resJson.applied) {
+             // Assuming resJson is an array of applications, or { success, data }
+             const apps = Array.isArray(resJson) ? resJson : resJson.data || [];
+             const hasApplied = apps.some((app: any) => app.job_id === jId);
+             if (hasApplied) {
                setAlreadyApplied(true);
              }
            }
@@ -136,21 +139,25 @@ export default function StudentApply() {
       const fallbackId = await AsyncStorage.getItem('studentUserId');
       const finalUserId = userStore.id || fallbackId;
 
-      const response = await fetch(`${baseUrl}/api/apply`, {
+      const token = await AsyncStorage.getItem('studentToken');
+      const response = await fetch(`${baseUrl}/api/applications/apply`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({
-          jobId: jobId || "mock-job-id",
-          userId: finalUserId,
-          fullName: form.fullName,
-          email: form.email,
-          phone: form.phone,
-          resumeUrl: form.resumeName
+          job_id: jobId || "mock-job-id",
+          candidate_name: form.fullName,
+          candidate_email: form.email,
+          candidate_phone: form.phone,
+          resume_url: form.resumeName,
+          role_applied: jobTitle
         }),
       });
 
       const resJson = await response.json();
-      if (resJson.success) {
+      if (response.ok || resJson.success || resJson.id) {
         setIsSubmitted(true);
         // Notify the company through global store
         globalNotificationStore.addNotification({
@@ -160,10 +167,10 @@ export default function StudentApply() {
           targetRole: 'startup'
         });
       } else {
-        if (resJson.message === 'You have already applied for this job') {
+        if (resJson.error === 'You have already applied for this job') {
           setAlreadyApplied(true);
         } else {
-          Alert.alert("Error", resJson.message || "Failed to submit application");
+          Alert.alert("Error", resJson.error || resJson.message || "Failed to submit application");
         }
       }
     } catch (err) {
@@ -199,7 +206,7 @@ export default function StudentApply() {
             <Text style={[styles.successSubtitle, { color: colors.textSecondary }]}>
               You have already submitted an application for the {jobTitle} position. Please wait for the company to review your profile.
             </Text>
-            <TouchableOpacity style={[styles.backBtn, { backgroundColor: colors.inputBg }]} onPress={() => router.back()}>
+            <TouchableOpacity style={[styles.backBtn, { backgroundColor: colors.inputBg }]} onPress={() => router.push('/student-jobs')}>
               <Text style={[styles.backBtnText, { color: colors.text }]}>Back to Jobs</Text>
             </TouchableOpacity>
           </View>
@@ -212,7 +219,7 @@ export default function StudentApply() {
             <Text style={[styles.successSubtitle, { color: colors.textSecondary }]}>
               Your application for {jobTitle} has been successfully sent. We will review your profile and get back to you soon.
             </Text>
-            <TouchableOpacity style={[styles.backBtn, { backgroundColor: colors.inputBg }]} onPress={() => router.back()}>
+            <TouchableOpacity style={[styles.backBtn, { backgroundColor: colors.inputBg }]} onPress={() => router.push('/student-jobs')}>
               <Text style={[styles.backBtnText, { color: colors.text }]}>Back to Jobs</Text>
             </TouchableOpacity>
           </View>

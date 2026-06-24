@@ -46,16 +46,23 @@ export default function StartupHeader({ companyName = 'Echo Digital' }: { compan
   useEffect(() => {
     if (companyName) {
       const baseUrl = BASE_URL;
-      fetch(`${baseUrl}/api/startup/profile/${encodeURIComponent(companyName)}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.success && data.startup) {
-            if (data.startup.companyLogo) setCompanyLogo(data.startup.companyLogo);
-            if (data.startup.founderName) setFounderName(data.startup.founderName);
-            if (data.startup.email) setFounderEmail(data.startup.email);
+      const getTokenAndFetch = async () => {
+        try {
+          const token = await AsyncStorage.getItem('startupToken');
+          const res = await fetch(`${baseUrl}/api/startup/auth/me`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const data = await res.json();
+          if (data.success && data.user) {
+            if (data.user.logo_url || data.user.logoUrl) setCompanyLogo(data.user.logo_url || data.user.logoUrl);
+            if (data.user.founderName) setFounderName(data.user.founderName);
+            if (data.user.email) setFounderEmail(data.user.email);
           }
-        })
-        .catch(err => console.log('Error fetching logo/profile:', err));
+        } catch (err) {
+          console.log('Error fetching logo/profile:', err);
+        }
+      };
+      getTokenAndFetch();
     }
   }, [companyName]);
 

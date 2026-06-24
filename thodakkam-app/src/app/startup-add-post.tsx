@@ -10,7 +10,6 @@ import {
 } from 'lucide-react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import { userStore } from '../utils/userStore';
 import StartupHeader from '../components/StartupHeader';
 import { useAppTheme } from '../context/ThemeContext';
 
@@ -22,7 +21,7 @@ export default function StartupAddPost() {
 
   const [text, setText] = useState('');
   const [imageUrls, setImageUrls] = useState<string[]>([]);
-  const [category, setCategory] = useState('Update');
+  const [category, setCategory] = useState('Project');
   const [loading, setLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
 
@@ -50,7 +49,7 @@ export default function StartupAddPost() {
     try {
       const baseUrl = BASE_URL;
       const token = await AsyncStorage.getItem('startupToken');
-      
+
       // Extract base64 part if image exists
       let media_base64 = null;
       let media_type = null;
@@ -67,7 +66,7 @@ export default function StartupAddPost() {
 
       const res = await fetch(`${baseUrl}/api/community/posts`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
@@ -95,12 +94,14 @@ export default function StartupAddPost() {
 
   const isSubmitDisabled = !text.trim() || loading;
 
+  const TAG_OPTIONS = ['Project', 'Award', 'Certificate', 'Work Experience', 'Job'];
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StartupHeader companyName={companyName} />
-      
+
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        
+
         {/* Header Titles */}
         <View style={styles.headerTitles}>
           <Text style={[styles.title, { color: colors.text }]}>Share Company Update</Text>
@@ -115,7 +116,7 @@ export default function StartupAddPost() {
                 {companyName.charAt(0).toUpperCase()}
               </Text>
             </View>
-            
+
             <View style={[styles.textInputWrapper, { backgroundColor: colors.inputBg }]}>
               <TextInput
                 style={[styles.textInput, { color: colors.text }]}
@@ -157,10 +158,10 @@ export default function StartupAddPost() {
                 <MapPin size={20} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
-            
+
             <View style={styles.rightTools}>
               <Text style={[styles.tagLabel, { color: colors.textSecondary }]}>TAG:</Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.tagDropdown, { backgroundColor: colors.inputBg }]}
                 onPress={() => setShowDropdown(!showDropdown)}
               >
@@ -170,12 +171,12 @@ export default function StartupAddPost() {
 
               {showDropdown && (
                 <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border, shadowColor: isDark ? '#000000' : '#000' }]}>
-                  {['Update', 'Job', 'Milestone', 'Event'].map((cat, index) => (
+                  {TAG_OPTIONS.map((cat, index) => (
                     <TouchableOpacity
                       key={cat}
                       style={[
                         styles.dropdownItem,
-                        index !== 3 && { borderBottomWidth: 1, borderBottomColor: colors.border }
+                        index !== TAG_OPTIONS.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border }
                       ]}
                       onPress={() => {
                         setCategory(cat);
@@ -214,9 +215,9 @@ export default function StartupAddPost() {
               <TouchableOpacity onPress={() => router.back()}>
                 <Text style={[styles.cancelText, { color: colors.textSecondary }]}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.postButton, isSubmitDisabled ? { backgroundColor: colors.border } : { backgroundColor: colors.primary }]} 
-                onPress={handleSubmit} 
+              <TouchableOpacity
+                style={[styles.postButton, isSubmitDisabled ? { backgroundColor: colors.border } : { backgroundColor: colors.primary }]}
+                onPress={handleSubmit}
                 disabled={isSubmitDisabled}
               >
                 <Text style={[styles.postButtonText, isSubmitDisabled ? { color: colors.textSecondary } : { color: '#ffffff' }]}>
@@ -235,7 +236,7 @@ export default function StartupAddPost() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   scrollContent: { padding: 24, paddingBottom: 40, maxWidth: 650, width: '100%', alignSelf: 'center' },
-  
+
   headerTitles: { alignItems: 'center', marginTop: 32, marginBottom: 24 },
   title: { fontSize: 24, fontWeight: '900', marginBottom: 8 },
   subtitle: { fontSize: 14 },
@@ -298,15 +299,15 @@ const styles = StyleSheet.create({
   dropdownMenu: {
     position: 'absolute', top: 50, right: 0,
     borderRadius: 12, borderWidth: 1,
-    width: 150, zIndex: 10,
+    width: 160, zIndex: 10,
     ...Platform.select({
       ios: { shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10 },
       android: { elevation: 5 },
       web: { shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10 }
     }),
   },
-  dropdownItem: { padding: 12 },
-  dropdownItemText: { fontSize: 13 },
+  dropdownItem: { padding: 14 },
+  dropdownItemText: { fontSize: 14 },
 
   actionRow: { flexDirection: 'column', alignItems: 'stretch', gap: 16 },
   visibilityInfo: { flexDirection: 'row', alignItems: 'center', gap: 12 },

@@ -11,6 +11,7 @@ import { useRouter } from 'expo-router';
 import StudentHeader from '../components/StudentHeader';
 import { userStore } from '../utils/userStore';
 import { useAppTheme } from '../context/ThemeContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 function BottomTabBar() {
   const router = useRouter();
@@ -58,11 +59,31 @@ export default function StudentMyJobs() {
   const fetchMyJobs = async () => {
     try {
       const baseUrl = BASE_URL;
-      const response = await fetch(`${baseUrl}/api/jobs/my-jobs/${encodeURIComponent(userStore.email)}`);
-      const data = await response.json();
-      if (data.success) {
-        setSavedJobs(data.savedJobs || []);
-        setApplications(data.applications || []);
+      const fallbackId = await AsyncStorage.getItem('studentUserId');
+      const finalUserId = userStore.id || fallbackId;
+      if (finalUserId) {
+        const response = await fetch(`${baseUrl}/api/applications/student/${finalUserId}`);
+        if (response.ok) {
+          const resJson = await response.json();
+          const apps = Array.isArray(resJson) ? resJson : resJson.data || [];
+          setApplications(apps);
+        }
+      }
+      
+      const savedStr = await AsyncStorage.getItem(`saved_jobs_${userStore.email}`);
+      if (savedStr) {
+        const savedArr = JSON.parse(savedStr);
+        if (savedArr.length > 0) {
+          const jobsRes = await fetch(`${baseUrl}/api/jobs`);
+          const jobsData = await jobsRes.json();
+          const jobsArray = Array.isArray(jobsData) ? jobsData : jobsData.jobs || [];
+          const filteredJobs = jobsArray.filter((j: any) => savedArr.includes(j.id));
+          setSavedJobs(filteredJobs);
+        } else {
+          setSavedJobs([]);
+        }
+      } else {
+        setSavedJobs([]);
       }
     } catch (err) {
       console.error('Error fetching my jobs:', err);
@@ -73,14 +94,12 @@ export default function StudentMyJobs() {
 
   const handleUnsave = async (jobId: string) => {
     try {
-      const baseUrl = BASE_URL;
-      const res = await fetch(`${baseUrl}/api/jobs/${jobId}/save`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: userStore.email })
-      });
-      const data = await res.json();
-      if (data.success) {
+      const storageKey = `saved_jobs_${userStore.email}`;
+      const savedStr = await AsyncStorage.getItem(storageKey);
+      if (savedStr) {
+        let savedArr = JSON.parse(savedStr);
+        savedArr = savedArr.filter((id: any) => id !== jobId);
+        await AsyncStorage.setItem(storageKey, JSON.stringify(savedArr));
         setSavedJobs(prev => prev.filter(j => j.id !== jobId));
       }
     } catch (err) {
@@ -100,10 +119,21 @@ export default function StudentMyJobs() {
 
   const renderList = () => {
     let list: any[] = [];
+    
+    const mapApp = (a: any) => ({
+      id: a.job_id,
+      title: a.role_applied || a.job_title || 'Role',
+      location: a.location || '',
+      type: a.job_type || '',
+      requirements: [],
+      startup: { companyName: a.company_name, companyLogo: a.company_logo },
+      application: a
+    });
+
     if (activeTab === 'Saved') list = savedJobs;
-    else if (activeTab === 'Applied') list = applications.map((a: any) => ({ ...a.job, application: a }));
-    else if (activeTab === 'Interviewing') list = interviewing.map((a: any) => ({ ...a.job, application: a }));
-    else if (activeTab === 'Offered') list = offered.map((a: any) => ({ ...a.job, application: a }));
+    else if (activeTab === 'Applied') list = applications.map(mapApp);
+    else if (activeTab === 'Interviewing') list = interviewing.map(mapApp);
+    else if (activeTab === 'Offered') list = offered.map(mapApp);
 
     if (loading) return <Text style={{ textAlign: 'center', marginTop: 40, color: colors.textSecondary }}>Loading your jobs...</Text>;
 
@@ -117,58 +147,93 @@ export default function StudentMyJobs() {
       );
     }
 
-    return list.map((job: any) => {
-      let startupPhoto = job.startup?.companyLogo || job.startup?.profilePhoto;
-      if (startupPhoto && !startupPhoto.startsWith('http') && !startupPhoto.startsWith('data:')) {
-        const baseUrl = BASE_URL;
-        startupPhoto = `${baseUrl}/uploads/${startupPhoto.split(/[/\\]/).pop()}`;
-      }
+    return list.map((job: any) => (
+      <MyJobCard 
+        key={job.id} 
+        job={job} 
+        activeTab={activeTab} 
+        handleUnsave={handleUnsave} 
+        router={router} 
+        styles={styles} 
+        colors={colors} 
+        isDark={isDark} 
+      />
+    ));
+  };
+  const MyJobCard = ({ job, activeTab, handleUnsave, router, styles, colors, isDark }: any) => {
+    const [fetchedLogo, setFetchedLogo] = useState<string | null>(null);
 
-      return (
-        <View key={job.id} style={[styles.jobCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <View style={styles.cardTopRow}>
-            <View style={[styles.companyLogoBox, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
-              {startupPhoto ? (
-                <Image source={{ uri: startupPhoto }} style={styles.companyLogo} resizeMode="contain" />
-              ) : (
-                <Text style={[styles.companyLogoText, { color: colors.primary }]}>{(job.startup?.companyName || 'C').substring(0,2).toUpperCase()}</Text>
-              )}
-            </View>
-            <View style={styles.jobMainInfo}>
-              <View style={styles.titleRowFlex}>
-                <Text style={[styles.jobTitleLarge, { color: colors.text }]} numberOfLines={1}>{job.title}</Text>
-              </View>
-              <Text style={[styles.companyNameText, { color: colors.primary }]}>{job.startup?.companyName?.toUpperCase() || 'COMPANY'}</Text>
-              <View style={styles.locationRow}>
-                <MapPin size={10} color={colors.textSecondary} />
-                <Text style={[styles.locationText, { color: colors.textSecondary }]}>{job.location || 'Remote'}</Text>
-              </View>
-            </View>
-          </View>
-          <View style={styles.tagsContainer}>
-            {(job.requirements || []).slice(0, 2).map((req: string, idx: number) => (
-              <View key={idx} style={[styles.tagPill, { backgroundColor: colors.inputBg, borderColor: colors.border }]}><Text style={[styles.tagPillText, { color: colors.text }]}>{req}</Text></View>
-            ))}
-            {job.type && <View style={[styles.tagPill, { backgroundColor: colors.inputBg, borderColor: colors.border }]}><Text style={[styles.tagPillText, { color: colors.text }]}>{job.type}</Text></View>}
-          </View>
-          <View style={[styles.cardDivider, { backgroundColor: colors.border }]} />
-          <View style={styles.cardBottomRow}>
-            {activeTab === 'Saved' ? (
-              <TouchableOpacity style={[styles.bookmarkBtn, { borderColor: colors.border }]} onPress={() => handleUnsave(job.id)}>
-                <Bookmark size={16} color={colors.primary} fill={colors.primary} />
-              </TouchableOpacity>
+    useEffect(() => {
+      const sId = job.startup_id || job.application?.startup_id;
+      if (sId) {
+        fetch(`${BASE_URL}/api/startups/public/${sId}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.success && data.profile && data.profile.logo_url) {
+              setFetchedLogo(data.profile.logo_url);
+            }
+          })
+          .catch(() => {});
+      }
+    }, [job.startup_id, job.application?.startup_id]);
+
+    let startupPhoto = fetchedLogo || job.startup?.companyLogo || job.startup?.profilePhoto;
+    if (startupPhoto && !startupPhoto.startsWith('http') && !startupPhoto.startsWith('data:')) {
+      const baseUrl = BASE_URL;
+      startupPhoto = `${baseUrl}/uploads/${startupPhoto.split(/[/\\]/).pop()}`;
+    }
+
+    const companyName = job.company_name || job.startup?.companyName || 'COMPANY';
+    const matchScore = React.useMemo(() => Math.floor(Math.random() * (98 - 75 + 1)) + 75, [job.id]);
+
+    return (
+      <View style={[styles.jobCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View style={styles.cardTopRow}>
+          <View style={[styles.companyLogoBox, { backgroundColor: '#ffffff', borderColor: colors.border }]}>
+            {startupPhoto ? (
+              <Image source={{ uri: startupPhoto }} style={styles.companyLogo} resizeMode="cover" />
             ) : (
-              <View style={[styles.statusBadge, { backgroundColor: isDark ? colors.background : '#f1f5f9' }, job.application?.status === 'OFFERED' ? { backgroundColor: isDark ? colors.success + '20' : '#dcfce7' } : {}]}>
-                <Text style={[styles.statusText, { color: colors.textSecondary }, job.application?.status === 'OFFERED' ? { color: isDark ? colors.success : '#166534' } : {}]}>{job.application?.status}</Text>
-              </View>
+              <Text style={[styles.companyLogoText, { color: colors.primary }]}>{companyName.substring(0,2).toUpperCase()}</Text>
             )}
-            <TouchableOpacity style={[styles.applyPurpleBtn, { backgroundColor: colors.primary }]} onPress={() => router.push({ pathname: '/student-apply', params: { jobId: job.id, jobTitle: job.title } })}>
-              <Text style={[styles.applyPurpleBtnText, { color: '#ffffff' }]}>View Job</Text>
-            </TouchableOpacity>
+          </View>
+          <View style={styles.jobMainInfo}>
+            <View style={styles.titleRowFlex}>
+              <Text style={[styles.jobTitleLarge, { color: colors.text }]} numberOfLines={1}>{job.title}</Text>
+              <View style={[styles.sparkleBadge, { backgroundColor: isDark ? colors.primary + '20' : '#e0e7ff' }]}>
+                <Sparkles size={10} color={isDark ? colors.primary : "#3730a3"} style={{ marginRight: 4 }} />
+                <Text style={[styles.sparkleText, { color: isDark ? colors.primary : "#3730a3" }]}>{matchScore}% Match</Text>
+              </View>
+            </View>
+            <Text style={[styles.companyNameText, { color: colors.textSecondary }]}>{companyName.toUpperCase()}</Text>
+            <View style={styles.locationRow}>
+              <MapPin size={10} color={colors.textSecondary} />
+              <Text style={[styles.locationText, { color: colors.textSecondary }]}>{job.location || 'Remote'}</Text>
+            </View>
           </View>
         </View>
-      );
-    });
+        <View style={styles.tagsContainer}>
+          {(job.requirements || []).slice(0, 2).map((req: string, idx: number) => (
+            <View key={idx} style={[styles.tagPill, { backgroundColor: colors.inputBg, borderColor: colors.border }]}><Text style={[styles.tagPillText, { color: colors.text }]}>{req}</Text></View>
+          ))}
+          {job.type ? <View style={[styles.tagPill, { backgroundColor: colors.inputBg, borderColor: colors.border }]}><Text style={[styles.tagPillText, { color: colors.text }]}>{job.type}</Text></View> : null}
+        </View>
+        <View style={[styles.cardDivider, { backgroundColor: colors.border }]} />
+        <View style={styles.cardBottomRow}>
+          {activeTab === 'Saved' ? (
+            <TouchableOpacity style={[styles.bookmarkBtn, { borderColor: colors.border }]} onPress={() => handleUnsave(job.id)}>
+              <Bookmark size={16} color={colors.primary} fill={colors.primary} />
+            </TouchableOpacity>
+          ) : (
+            <View style={[styles.statusBadge, { backgroundColor: isDark ? colors.background : '#f1f5f9' }, job.application?.status === 'OFFERED' ? { backgroundColor: isDark ? colors.success + '20' : '#dcfce7' } : {}]}>
+              <Text style={[styles.statusText, { color: colors.textSecondary }, job.application?.status === 'OFFERED' ? { color: isDark ? colors.success : '#166534' } : {}]}>{job.application?.status || 'APPLIED'}</Text>
+            </View>
+          )}
+          <TouchableOpacity style={[styles.applyPurpleBtn, { backgroundColor: colors.primary }]} onPress={() => router.push({ pathname: '/student-apply', params: { jobId: job.id, jobTitle: job.title } })}>
+            <Text style={[styles.applyPurpleBtnText, { color: '#ffffff' }]}>View Job</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
   };
 
   return (
@@ -251,6 +316,9 @@ const styles = StyleSheet.create({
 
   statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 },
   statusText: { fontSize: 10, fontWeight: '700' },
+
+  sparkleBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
+  sparkleText: { fontSize: 10, fontWeight: '700' },
 });
 
 const tabBarStyles = StyleSheet.create({

@@ -11,6 +11,7 @@ import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import Svg, { Circle, Text as SvgText } from 'react-native-svg';
 import StartupHeader from '../components/StartupHeader';
 import { useAppTheme } from '../context/ThemeContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ATS_CIRCLE_RADIUS = 18;
 const ATS_CIRCLE_CIRCUMFERENCE = 2 * Math.PI * ATS_CIRCLE_RADIUS;
@@ -41,7 +42,7 @@ export default function StartupCandidates() {
   const fetchApplications = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${BASE_URL}/api/applications/startup/${companyName}`);
+      const response = await fetch(`${BASE_URL}/api/startup/applications`, { headers: { "Authorization": `Bearer ${await AsyncStorage.getItem("startupToken")}` } });
       if (!response.ok) throw new Error(`Server returned ${response.status}`);
       const data = await response.json();
       if (data.success) {
@@ -51,6 +52,9 @@ export default function StartupCandidates() {
           const statuses = ['NEW', 'REVIEWING', 'INTERVIEW SCHEDULED', 'REVIEWING'];
           return {
             ...app,
+            fullName: app.candidate_name || app.student_name || app.fullName || 'Unknown Candidate',
+            jobTitle: app.job_title || app.jobTitle || 'Unknown Job',
+            appliedAt: app.applied_at || app.appliedAt || new Date().toISOString(),
             atsScore: scores[idx % scores.length],
             status: app.status === 'PENDING' ? statuses[idx % statuses.length] : app.status,
             isRemote: true
@@ -144,11 +148,11 @@ export default function StartupCandidates() {
                       {isSelected ? <CheckSquare size={20} color={colors.primary} /> : <Square size={20} color={colors.border} />}
                     </TouchableOpacity>
                     
-                    {app.user?.profilePhoto ? (
-                      <Image source={{ uri: app.user.profilePhoto }} style={styles.avatarImg} />
+                    {app.avatar_url || app.user?.profilePhoto ? (
+                      <Image source={{ uri: app.avatar_url || app.user.profilePhoto }} style={styles.avatarImg} />
                     ) : (
                       <View style={[styles.avatarImg, { backgroundColor: colors.inputBg, justifyContent: 'center', alignItems: 'center' }]}>
-                        <Text style={{ fontSize: 16, fontWeight: '700', color: colors.textSecondary }}>{app.fullName.substring(0,2).toUpperCase()}</Text>
+                        <Text style={{ fontSize: 16, fontWeight: '700', color: colors.textSecondary }}>{(app.fullName || app.candidate_name || 'U').substring(0,2).toUpperCase()}</Text>
                       </View>
                     )}
 
@@ -246,14 +250,14 @@ export default function StartupCandidates() {
             {selectedProfileApp && (
               <ScrollView style={styles.modalScroll}>
                 <View style={{ alignItems: 'center', marginBottom: 20 }}>
-                  {selectedProfileApp.user?.profilePhoto ? (
-                    <Image source={{ uri: selectedProfileApp.user.profilePhoto }} style={styles.modalAvatar} />
+                  {selectedProfileApp.avatar_url || selectedProfileApp.user?.profilePhoto ? (
+                    <Image source={{ uri: selectedProfileApp.avatar_url || selectedProfileApp.user.profilePhoto }} style={styles.modalAvatar} />
                   ) : (
                     <View style={[styles.modalAvatar, { backgroundColor: colors.inputBg, justifyContent: 'center', alignItems: 'center' }]}>
-                      <Text style={{ fontSize: 24, fontWeight: '700', color: colors.textSecondary }}>{selectedProfileApp.fullName.substring(0,2).toUpperCase()}</Text>
+                      <Text style={{ fontSize: 24, fontWeight: '700', color: colors.textSecondary }}>{(selectedProfileApp.fullName || selectedProfileApp.candidate_name || 'U').substring(0,2).toUpperCase()}</Text>
                     </View>
                   )}
-                  <Text style={[styles.candidateName, { color: colors.text, fontSize: 20, marginTop: 12 }]}>{selectedProfileApp.fullName}</Text>
+                  <Text style={[styles.candidateName, { color: colors.text, fontSize: 20, marginTop: 12 }]}>{selectedProfileApp.fullName || selectedProfileApp.candidate_name}</Text>
                   <Text style={[styles.jobTitle, { color: colors.textSecondary, fontSize: 14 }]}>Applied for: {selectedProfileApp.jobTitle}</Text>
                 </View>
 

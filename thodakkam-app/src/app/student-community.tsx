@@ -81,10 +81,20 @@ export default function StudentCommunity() {
   const fetchPosts = async () => {
     try {
       const baseUrl = BASE_URL;
-      const res = await fetch(`${baseUrl}/api/community/posts`, { headers: { "Authorization": `Bearer ${await AsyncStorage.getItem(role === "startup" ? "startupToken" : "studentToken")}` } });
+      const res = await fetch(`${baseUrl}/api/community/posts`, { headers: { "Authorization": `Bearer ${await AsyncStorage.getItem("studentToken")}` } });
       const data = await res.json();
-      if (data.success && data.data && data.data.posts) {
-        const processedPosts = data.data.posts.map((post: any) => {
+      
+      let postsArray = [];
+      if (Array.isArray(data)) {
+        postsArray = data;
+      } else if (data && data.success && data.data && data.data.posts) {
+        postsArray = data.data.posts;
+      } else if (data && data.posts) {
+        postsArray = data.posts;
+      }
+
+      if (postsArray) {
+        const processedPosts = postsArray.map((post: any) => {
           post.text = post.content || post.text;
           
           let avatar = post.author_avatar || post.userId?.avatar;

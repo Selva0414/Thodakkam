@@ -48,7 +48,7 @@ export default function StartupJobs() {
   const fetchJobs = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${BASE_URL}/api/jobs/startup/${companyName}`);
+      const response = await fetch(`${BASE_URL}/api/startup/jobs`, { headers: { "Authorization": `Bearer ${await AsyncStorage.getItem("startupToken")}` } });
       
       if (!response.ok) {
         throw new Error(`Server returned ${response.status}`);
@@ -59,11 +59,12 @@ export default function StartupJobs() {
         setJobs(data.jobs);
       }
 
-      const profileRes = await fetch(`${BASE_URL}/api/startup/profile/${encodeURIComponent(companyName)}`);
+      const profileRes = await fetch(`${BASE_URL}/api/startup/auth/me`, { headers: { "Authorization": `Bearer ${await AsyncStorage.getItem("startupToken")}` } });
       if (profileRes.ok) {
         const profileData = await profileRes.json();
-        if (profileData.success && profileData.startup?.companyLogo) {
-          setGlobalCompanyLogo(profileData.startup.companyLogo);
+        if (profileData.success && profileData.user) {
+          const logo = profileData.user.logo_url || profileData.user.logoUrl || profileData.user.founderImage || profileData.user.profilePhoto;
+          if (logo) setGlobalCompanyLogo(logo);
         }
       }
     } catch (err) {

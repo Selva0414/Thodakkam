@@ -64,16 +64,20 @@ export default function StartupProfile() {
     setLoading(true);
     try {
       // 1. Fetch from DB
-      const response = await fetch(`${BASE_URL}/api/startup/profile/${encodeURIComponent(companyName)}`);
+      const response = await fetch(`${BASE_URL}/api/startup/auth/me`, { headers: { "Authorization": `Bearer ${await AsyncStorage.getItem("startupToken")}` } });
       const data = await response.json();
       
       let dbData: any = {};
-      if (data.success && data.startup) {
-        dbData = data.startup;
+      if (data.success && data.user) {
+        dbData = data.user;
         setFounderName(dbData.founderName || '');
         setEmail(dbData.email || '');
-        setBio(dbData.bio || '');
-        setCompanyLogo(dbData.founderImage || dbData.profilePhoto || null);
+        setBio(dbData.company_description || dbData.bio || '');
+        setCompanyLogo(dbData.logo_url || dbData.logoUrl || dbData.founderImage || dbData.profilePhoto || null);
+        
+        if (dbData.company_website) setWebsite(dbData.company_website);
+        if (dbData.linkedin_url) setLinkedin(dbData.linkedin_url);
+        if (dbData.twitter_url) setTwitter(dbData.twitter_url);
       }
 
       // 2. Fetch extra fields from local storage (Fallback if DB doesn't support them)
@@ -103,14 +107,20 @@ export default function StartupProfile() {
     setSaving(true);
     try {
       // 1. Save core fields to DB
-      await fetch(`${BASE_URL}/api/startup/profile/${encodeURIComponent(companyName)}`, {
+      await fetch(`${BASE_URL}/api/startup/auth/me`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${await AsyncStorage.getItem("startupToken")}`
+        },
         body: JSON.stringify({
           founderName,
           email,
-          bio,
-          profilePhoto: companyLogo
+          companyDescription: bio,
+          logoUrl: companyLogo,
+          companyWebsite: website,
+          linkedinUrl: linkedin,
+          twitterUrl: twitter
         })
       });
 

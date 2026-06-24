@@ -40,13 +40,16 @@ export default function StartupLoginScreen() {
       });
       const data = await response.json();
       if (data.success) {
-        await AsyncStorage.setItem('startupId', data.startup.id);
-        await AsyncStorage.setItem('startupCompanyName', data.startup.companyName);
-        alert(`Welcome back, ${data.startup.founderName}!`);
+        const startupId = String(data.user?.id || '');
+        const companyName = String(data.user?.companyName || '');
+        await AsyncStorage.setItem('startupId', startupId);
+        await AsyncStorage.setItem('startupCompanyName', companyName);
+        if (data.token) await AsyncStorage.setItem('startupToken', data.token);
+        alert(`Welcome back, ${data.user?.founderName}!`);
         // Navigate to the startup dashboard
         router.navigate({
           pathname: '/startup-dashboard',
-          params: { companyName: data.startup.companyName }
+          params: { companyName: companyName }
         });
       } else {
         setError(data.message || 'Invalid email or password.');

@@ -107,7 +107,9 @@ export default function StudentJobs() {
       const response = await fetch(`${baseUrl}/api/jobs`);
       const data = await response.json();
       if (data.success) {
-        setJobs(data.jobs);
+        setJobs(data.jobs || []);
+      } else if (Array.isArray(data)) {
+        setJobs(data);
       }
     } catch (err) {
       console.error('Error fetching jobs:', err);
@@ -153,20 +155,47 @@ export default function StudentJobs() {
   );
 }
 
-function JobItem({ job, router }: { job: any, router: any }) {
+export function JobItem({ job, router, initiallySavedStr }: { job: any, router: any, initiallySavedStr?: string }) {
   const { colors, isDark } = useAppTheme();
   const matchScore = Math.floor(Math.random() * (98 - 70 + 1) + 70);
   
-  const initiallySaved = job.savedBy ? job.savedBy.some((s: any) => s.user?.email === userStore.email) : false;
-  const [hasSaved, setHasSaved] = useState(initiallySaved);
+  const [hasSaved, setHasSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
 
-  let startupPhoto = job.startup?.companyLogo || job.startup?.profilePhoto;
-  if (startupPhoto && !startupPhoto.startsWith('http') && !startupPhoto.startsWith('data:')) {
+  useEffect(() => {
+    AsyncStorage.getItem(`saved_jobs_${userStore.email}`).then(savedStr => {
+      if (savedStr) {
+        const savedArr = JSON.parse(savedStr);
+        if (savedArr.includes(job.id)) {
+          setHasSaved(true);
+        }
+      }
+    }).catch(() => {});
+  }, [job.id]);
+
+  let initialPhoto = job.company_logo || job.startup?.companyLogo || job.startup?.profilePhoto;
+  if (initialPhoto && !initialPhoto.startsWith('http') && !initialPhoto.startsWith('data:')) {
     const baseUrl = BASE_URL;
-    startupPhoto = `${baseUrl}/uploads/${startupPhoto.split(/[/\\]/).pop()}`;
+    initialPhoto = `${baseUrl}/uploads/${initialPhoto.split(/[/\\]/).pop()}`;
   }
+  const [fetchedLogo, setFetchedLogo] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (job.startup_id) {
+      fetch(`${BASE_URL}/api/startups/public/${job.startup_id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.profile && data.profile.logo_url) {
+            setFetchedLogo(data.profile.logo_url);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [job.startup_id]);
+
+  const startupPhoto = fetchedLogo || initialPhoto;
+  const companyName = job.company_name || job.startup?.companyName || 'COMPANY';
 
   const handleSave = async () => {
     if (isSaving) return;
@@ -175,16 +204,17 @@ function JobItem({ job, router }: { job: any, router: any }) {
     setIsSaving(true);
     
     try {
-      const baseUrl = BASE_URL;
-      const res = await fetch(`${baseUrl}/api/jobs/${job.id}/save`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: userStore.email })
-      });
-      const data = await res.json();
-      if (!data.success) {
-        setHasSaved(!newSavedState);
+      const storageKey = `saved_jobs_${userStore.email}`;
+      const savedStr = await AsyncStorage.getItem(storageKey);
+      let savedArr = savedStr ? JSON.parse(savedStr) : [];
+      
+      if (newSavedState) {
+        if (!savedArr.includes(job.id)) savedArr.push(job.id);
+      } else {
+        savedArr = savedArr.filter((id: any) => id !== job.id);
       }
+      
+      await AsyncStorage.setItem(storageKey, JSON.stringify(savedArr));
     } catch (err) {
       console.error(err);
       setHasSaved(!newSavedState);
@@ -203,9 +233,9 @@ function JobItem({ job, router }: { job: any, router: any }) {
       <View style={styles.cardTopRow}>
         <View style={[styles.companyLogoBox, { backgroundColor: colors.inputBg }]}>
           {startupPhoto ? (
-            <Image source={{ uri: startupPhoto }} style={styles.companyLogo} resizeMode="contain" />
+            <Image source={{ uri: startupPhoto }} style={styles.companyLogo} resizeMode="cover" />
           ) : (
-            <Text style={[styles.companyLogoText, { color: colors.primary }]}>{(job.startup?.companyName || 'C').substring(0,2).toUpperCase()}</Text>
+            <Text style={[styles.companyLogoText, { color: '#ffffff' }]}>{companyName.substring(0,2).toUpperCase()}</Text>
           )}
         </View>
         
@@ -217,7 +247,7 @@ function JobItem({ job, router }: { job: any, router: any }) {
               <Text style={[styles.sparkleText, { color: isDark ? colors.primary : "#3730a3" }]}>{matchScore}% Match</Text>
             </View>
           </View>
-          <Text style={[styles.companyNameText, { color: colors.textSecondary }]}>{job.startup?.companyName?.toUpperCase() || 'COMPANY'}</Text>
+          <Text style={[styles.companyNameText, { color: colors.textSecondary }]}>{companyName.toUpperCase()}</Text>
           <View style={styles.locationRow}>
             <MapPin size={10} color={colors.textSecondary} />
             <Text style={[styles.locationText, { color: colors.textSecondary }]}>{job.location || 'Remote'}</Text>
@@ -263,14 +293,14 @@ function JobItem({ job, router }: { job: any, router: any }) {
             <View style={styles.modalHeaderRow}>
               <View style={[styles.companyLogoBox, { width: 64, height: 64, borderRadius: 32, backgroundColor: '#fff', marginRight: 16 }]}>
                 {startupPhoto ? (
-                  <Image source={{ uri: startupPhoto }} style={styles.companyLogo} resizeMode="contain" />
+                  <Image source={{ uri: startupPhoto }} style={styles.companyLogo} resizeMode="cover" />
                 ) : (
-                  <Text style={[styles.companyLogoText, { color: colors.primary, fontSize: 24 }]}>{(job.startup?.companyName || 'C').substring(0,2).toUpperCase()}</Text>
+                  <Text style={[styles.companyLogoText, { color: '#ffffff', fontSize: 24 }]}>{companyName.substring(0,2).toUpperCase()}</Text>
                 )}
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.jobTitleLarge, { color: colors.text, fontSize: 22, marginBottom: 4 }]}>{job.title}</Text>
-                <Text style={{ color: colors.textSecondary, fontSize: 14, textTransform: 'uppercase', letterSpacing: 1 }}>{job.startup?.companyName || 'COMPANY'}</Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 14, textTransform: 'uppercase', letterSpacing: 1 }}>{companyName}</Text>
               </View>
               <TouchableOpacity onPress={() => setModalVisible(false)} style={[styles.closeBtn, { backgroundColor: colors.card }]}>
                 <X size={20} color={colors.textSecondary} />
@@ -352,24 +382,24 @@ const styles = StyleSheet.create({
   pageSubtitle: { fontSize: 12, lineHeight: 18 },
 
   jobCard: {
-    borderRadius: 16, padding: 16, marginBottom: 16, borderWidth: 1,
+    borderRadius: 20, padding: 20, marginBottom: 16, borderWidth: 1,
     ...Platform.select({
-      web: { boxShadow: '0 4px 12px rgba(0,0,0,0.03)' },
-      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 3 },
+      web: { boxShadow: '0 8px 24px rgba(0,0,0,0.06)' },
+      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.06, shadowRadius: 16, elevation: 4 },
     }),
   },
-  cardTopRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 16 },
-  companyLogoBox: { width: 44, height: 44, borderRadius: 8, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  companyLogo: { width: '80%', height: '80%' },
-  companyLogoText: { fontSize: 16, fontWeight: '800' },
+  cardTopRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 20 },
+  companyLogoBox: { width: 52, height: 52, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 14, overflow: 'hidden' },
+  companyLogo: { width: '100%', height: '100%' },
+  companyLogoText: { fontSize: 18, fontWeight: '800' },
   jobMainInfo: { flex: 1 },
-  titleRowFlex: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
-  jobTitleLarge: { fontSize: 18, fontWeight: '800', flex: 1, marginRight: 8 },
-  sparkleBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
-  sparkleText: { fontSize: 10, fontWeight: '700' },
-  companyNameText: { fontSize: 12, letterSpacing: 0.5, marginBottom: 4 },
+  titleRowFlex: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
+  jobTitleLarge: { fontSize: 19, fontWeight: '900', flex: 1, marginRight: 8, letterSpacing: -0.3 },
+  sparkleBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12 },
+  sparkleText: { fontSize: 11, fontWeight: '800' },
+  companyNameText: { fontSize: 13, fontWeight: '600', letterSpacing: 0.5, marginBottom: 6 },
   locationRow: { flexDirection: 'row', alignItems: 'center' },
-  locationText: { fontSize: 12, marginLeft: 4 },
+  locationText: { fontSize: 12, marginLeft: 6, fontWeight: '500' },
   
   tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
   tagPill: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },

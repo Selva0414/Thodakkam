@@ -11,6 +11,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import StartupHeader from '../components/StartupHeader';
 import { useAppTheme } from '../context/ThemeContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function StartupInterviews() {
   const router = useRouter();
@@ -31,61 +32,47 @@ export default function StartupInterviews() {
 
   const fetchAssessments = async () => {
     try {
-      const res = await fetch(`${BASE_URL}/api/assessments/${encodeURIComponent(companyName)}`);
+      const res = await fetch(`${BASE_URL}/api/assessments`, { headers: { "Authorization": `Bearer ${await AsyncStorage.getItem("startupToken")}` } });
       const data = await res.json();
       if (data.success && data.assessments) {
         const mapped = data.assessments.map((a: any) => {
           const tags: any[] = [];
-          let questionsCount = 0;
 
-          if (a.selectedRounds?.includes('mcq')) {
+          // Backend returns `rounds` as a JSONB array like [{type:"mcq"},{type:"coding"}]
+          const rounds: any[] = Array.isArray(a.rounds) ? a.rounds : [];
+          const roundTypes = rounds.map((r: any) => (r.type || r).toLowerCase());
+
+          if (roundTypes.includes('mcq')) {
             tags.push({ label: 'MCQ Assessment', icon: FileText });
-            if (a.mcqConfig?.questions) questionsCount += a.mcqConfig.questions.length;
-            else if (a.mcqConfig?.domainConfig?.questionsCount) questionsCount += Number(a.mcqConfig.domainConfig.questionsCount);
           }
-          if (a.selectedRounds?.includes('coding')) {
+          if (roundTypes.includes('coding')) {
             tags.push({ label: 'Live Coding', icon: Code });
           }
-          if (a.selectedRounds?.includes('interview')) {
+          if (roundTypes.includes('interview')) {
             tags.push({ label: 'Interview', icon: Users });
           }
 
-          let status = 'INACTIVE';
-          const now = new Date();
-          let startDateObj = null;
-          let endDateObj = null;
+          // Use is_active from DB; default ACTIVE if no schedule info
+          const status = a.is_active === false ? 'INACTIVE' : 'ACTIVE';
 
-          if (a.mcqConfig?.startDate && a.mcqConfig?.startTime) {
-            startDateObj = new Date(`${a.mcqConfig.startDate}T${a.mcqConfig.startTime}`);
-          } else if (a.mcqConfig?.startDate) {
-            startDateObj = new Date(a.mcqConfig.startDate);
-          }
+          // questions count from DB aggregate; candidates count from DB aggregate
+          const questionsCount = Number(a.question_count ?? 0);
+          const candidatesCount = Number(a.candidate_count ?? 0);
 
-          if (a.mcqConfig?.endDate && a.mcqConfig?.endTime) {
-            endDateObj = new Date(`${a.mcqConfig.endDate}T${a.mcqConfig.endTime}`);
-          } else if (a.mcqConfig?.endDate) {
-            endDateObj = new Date(a.mcqConfig.endDate);
-          }
-
-          if (startDateObj && endDateObj) {
-            if (now >= startDateObj && now <= endDateObj) {
-              status = 'ACTIVE';
-            }
-          } else if (startDateObj) {
-            if (now >= startDateObj) status = 'ACTIVE';
-          } else {
-            // Default to active if no schedule is set
-            status = 'ACTIVE';
-          }
+          // Date from created_at (DB column is snake_case)
+          const createdDate = a.created_at ? new Date(a.created_at) : null;
+          const dateStr = createdDate && !isNaN(createdDate.getTime())
+            ? createdDate.toLocaleDateString()
+            : 'No date';
 
           return {
             id: a.id,
             title: a.title,
-            status: status,
+            status,
             tags,
             questions: questionsCount,
-            candidates: a.assignedCandidates?.length || 0,
-            date: startDateObj ? startDateObj.toLocaleDateString() : new Date(a.createdAt).toLocaleDateString()
+            candidates: candidatesCount,
+            date: dateStr
           };
         });
         setAssessments(mapped);

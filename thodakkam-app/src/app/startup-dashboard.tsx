@@ -45,20 +45,23 @@ export default function StartupDashboard() {
     async function fetchData() {
       try {
         const baseUrl = BASE_URL;
-        const res = await fetch(`${baseUrl}/api/applications/startup/${encodeURIComponent(companyName)}`);
+        const res = await fetch(`${baseUrl}/api/startup/applications`, { headers: { "Authorization": `Bearer ${await AsyncStorage.getItem("startupToken")}` } });
         const data = await res.json();
         if (data.success && data.applications) {
           setApplications(data.applications);
         }
 
         // Fetch profile data to calculate completion
-        const profileRes = await fetch(`${baseUrl}/api/startup/profile/${encodeURIComponent(companyName)}`);
+        const profileRes = await fetch(`${baseUrl}/api/startup/auth/me`, {
+          headers: { 'Authorization': `Bearer ${await AsyncStorage.getItem("startupToken")}` }
+        });
         const profileData = await profileRes.json();
         let filledCount = 0;
         let totalFields = 10;
         
-        if (profileData.success && profileData.startup) {
-          const dbData = profileData.startup;
+        if (profileData.success && profileData.user) {
+          const dbData = profileData.user;
+          if (dbData.logo_url || dbData.logoUrl) filledCount++;
           if (dbData.founderName) filledCount++;
           if (dbData.email) filledCount++;
           if (dbData.bio) filledCount++;

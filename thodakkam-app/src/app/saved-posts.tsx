@@ -1,4 +1,6 @@
+import { BASE_URL } from '@/config/api';
 import React, { useState, useEffect, useRef } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   StyleSheet, Text, View, ScrollView, TouchableOpacity,
   SafeAreaView, TextInput, Platform, Image, Alert, Share, Animated
@@ -16,6 +18,7 @@ import { useCallback } from 'react';
 import StudentHeader from '../components/StudentHeader';
 import StartupHeader from '../components/StartupHeader';
 import { userStore } from '../utils/userStore';
+import { JobItem } from './student-jobs';
 
 
 
@@ -81,6 +84,7 @@ export default function SavedPosts() {
   const identifier = (params.identifier as string) || userStore.email || params.companyName as string;
   
   const [posts, setPosts] = useState<any[]>([]);
+  const [savedJobs, setSavedJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -107,7 +111,8 @@ export default function SavedPosts() {
         setLoading(false);
         return;
       }
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
+      const baseUrl = BASE_URL;
+      const token = await AsyncStorage.getItem(role === 'startup' ? 'startupToken' : 'studentToken');
       const res = await fetch(`${baseUrl}/api/community/saved`, { headers: { "Authorization": `Bearer ${token}` } });
       const data = await res.json();
       if (data.success) {
@@ -151,6 +156,24 @@ export default function SavedPosts() {
         });
         setPosts(processedPosts);
       }
+      
+      // Fetch Saved Jobs from AsyncStorage
+      const savedStr = await AsyncStorage.getItem(`saved_jobs_${userStore.email}`);
+      if (savedStr) {
+        const savedArr = JSON.parse(savedStr);
+        if (savedArr.length > 0) {
+          const jobsRes = await fetch(`${baseUrl}/api/jobs`);
+          const jobsData = await jobsRes.json();
+          const jobsArray = Array.isArray(jobsData) ? jobsData : jobsData.jobs || [];
+          const filteredJobs = jobsArray.filter((j: any) => savedArr.includes(j.id));
+          setSavedJobs(filteredJobs);
+        } else {
+          setSavedJobs([]);
+        }
+      } else {
+        setSavedJobs([]);
+      }
+      
     } catch (err) {
       console.error(err);
     } finally {
@@ -179,11 +202,15 @@ export default function SavedPosts() {
 
         {/* Feed */}
         {loading ? (
-          <Text style={{ textAlign: 'center', marginTop: 20, color: colors.textSecondary }}>Loading saved posts...</Text>
-        ) : posts.length === 0 ? (
-          <Text style={{ textAlign: 'center', marginTop: 20, color: colors.textSecondary }}>You haven't saved any posts yet.</Text>
+          <Text style={{ textAlign: 'center', marginTop: 20, color: colors.textSecondary }}>Loading saved items...</Text>
+        ) : posts.length === 0 && savedJobs.length === 0 ? (
+          <Text style={{ textAlign: 'center', marginTop: 20, color: colors.textSecondary }}>You haven't saved any posts or jobs yet.</Text>
         ) : (
-          posts.map(post => <PostItem key={post.id} post={post} role={role} identifier={identifier} />)
+          <>
+            {posts.map(post => <PostItem key={`post-${post.id}`} post={post} role={role} identifier={identifier} />)}
+            {savedJobs.length > 0 && <Text style={{ fontSize: 18, fontWeight: 'bold', color: colors.text, marginTop: 10, marginBottom: 16 }}>Saved Jobs</Text>}
+            {savedJobs.map(job => <JobItem key={`job-${job.id}`} job={job} router={router} />)}
+          </>
         )}
         </Animated.View>
       </ScrollView>
@@ -226,7 +253,7 @@ function PostItem({ post, role, identifier }: { post: any, role: string, identif
     setLikesCount((prev: number) => newLikedState ? prev + 1 : prev - 1);
     
     try {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
+      const baseUrl = BASE_URL;
       await fetch(`${baseUrl}/api/community/posts/${post.id}/like`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -245,7 +272,7 @@ function PostItem({ post, role, identifier }: { post: any, role: string, identif
     setIsCommenting(true);
     
     try {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
+      const baseUrl = BASE_URL;
       const res = await fetch(`${baseUrl}/api/community/posts/${post.id}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -286,7 +313,7 @@ function PostItem({ post, role, identifier }: { post: any, role: string, identif
     setIsReposting(true);
     
     try {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
+      const baseUrl = BASE_URL;
       const res = await fetch(`${baseUrl}/api/community/posts/${post.id}/share`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -315,7 +342,7 @@ function PostItem({ post, role, identifier }: { post: any, role: string, identif
     setIsSaving(true);
     
     try {
-      const baseUrl = Platform.OS === 'android' ? 'https://thodakkam-1.onrender.com' : 'https://thodakkam-1.onrender.com';
+      const baseUrl = BASE_URL;
       const res = await fetch(`${baseUrl}/api/community/posts/${post.id}/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

@@ -29,6 +29,8 @@ export default function StartupCommunity() {
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('All');
   const [companyLogo, setCompanyLogo] = useState<string | null>(null);
+  const [workExpDropdownOpen, setWorkExpDropdownOpen] = useState(false);
+  const [workExpSub, setWorkExpSub] = useState<string | null>(null);
 
   useEffect(() => {
     if (companyName) {
@@ -65,10 +67,19 @@ export default function StartupCommunity() {
   const fetchPosts = async () => {
     try {
       const baseUrl = BASE_URL;
-      const res = await fetch(`${baseUrl}/api/community/posts`, { headers: { "Authorization": `Bearer ${await AsyncStorage.getItem(role === "startup" ? "startupToken" : "studentToken")}` } });
+      const res = await fetch(`${baseUrl}/api/community/posts`, { headers: { "Authorization": `Bearer ${await AsyncStorage.getItem("startupToken")}` } });
       const data = await res.json();
-      if (data.success && data.data && data.data.posts) {
-        const processedPosts = data.data.posts.map((post: any) => {
+      let postsArray = [];
+      if (Array.isArray(data)) {
+        postsArray = data;
+      } else if (data && data.success && data.data && data.data.posts) {
+        postsArray = data.data.posts;
+      } else if (data && data.posts) {
+        postsArray = data.posts;
+      }
+
+      if (postsArray && postsArray.length > 0) {
+        const processedPosts = await Promise.all(postsArray.map(async (post: any) => {
           post.text = post.content || post.text;
           
           let avatar = post.author_avatar || post.userId?.avatar;
@@ -83,33 +94,54 @@ export default function StartupCommunity() {
             };
           }
           
-          let pImageUrl = post.media_url || post.media || post.imageUrl;
+          // Resolve images: prefer media_url already on the post, then fetch /media endpoint
           let parsedImages: string[] = [];
-          if (pImageUrl) {
-            try {
-              const parsed = JSON.parse(pImageUrl);
-              if (Array.isArray(parsed)) {
-                parsedImages = parsed.map(url => {
-                  if (!url.startsWith('http') && !url.startsWith('data:image')) {
-                    const filename = url.split(/[/\\]/).pop();
-                    return `${baseUrl}/uploads/${filename}`;
-                  }
-                  return url;
+          
+          const resolveMediaUrl = (url: string) => {
+            if (!url) return null;
+            if (url.startsWith('data:image') || url.startsWith('http')) return url;
+            if (url.startsWith('/api/')) return `${baseUrl}${url}`;
+            const filename = url.split(/[/\\]/).pop();
+            return `${baseUrl}/uploads/${filename}`;
+          };
+
+          if (post.has_media || post.orig_has_media) {
+            // media_url is already in the post row from the SELECT query
+            const rawUrl = post.media_url || null;
+            if (rawUrl) {
+              const resolved = resolveMediaUrl(rawUrl);
+              if (resolved) parsedImages = [resolved];
+            }
+            // If media_url wasn't included in the list query, fall back to fetching the /media endpoint
+            if (parsedImages.length === 0) {
+              try {
+                const mediaPostId = post.has_media ? post.id : post.orig_id;
+                const mediaRes = await fetch(`${baseUrl}/api/community/posts/${mediaPostId}/media`, {
+                  headers: { "Authorization": `Bearer ${await AsyncStorage.getItem("startupToken")}` }
                 });
-              } else {
-                if (!pImageUrl.startsWith('http') && !pImageUrl.startsWith('data:image')) {
-                  const filename = pImageUrl.split(/[/\\]/).pop();
-                  parsedImages = [`${baseUrl}/uploads/${filename}`];
-                } else {
-                  parsedImages = [pImageUrl];
+                if (mediaRes.ok) {
+                  const mediaData = await mediaRes.json();
+                  if (mediaData.media_url) {
+                    const resolved = resolveMediaUrl(mediaData.media_url);
+                    if (resolved) parsedImages = [resolved];
+                  }
                 }
-              }
-            } catch (e) {
-              if (!pImageUrl.startsWith('http') && !pImageUrl.startsWith('data:image')) {
-                const filename = pImageUrl.split(/[/\\]/).pop();
-                parsedImages = [`${baseUrl}/uploads/${filename}`];
-              } else {
-                parsedImages = [pImageUrl];
+              } catch (_e) { /* ignore */ }
+            }
+          } else {
+            let pImageUrl = post.media_url || post.media || post.imageUrl;
+            if (pImageUrl) {
+              try {
+                const parsed = JSON.parse(pImageUrl);
+                if (Array.isArray(parsed)) {
+                  parsedImages = parsed.map((url: string) => resolveMediaUrl(url) || url);
+                } else {
+                  const resolved = resolveMediaUrl(pImageUrl);
+                  if (resolved) parsedImages = [resolved];
+                }
+              } catch (e) {
+                const resolved = resolveMediaUrl(pImageUrl);
+                if (resolved) parsedImages = [resolved];
               }
             }
           }
@@ -126,7 +158,7 @@ export default function StartupCommunity() {
             }
           }
           return { ...post, imageUrls: parsedImages, user: post.user ? { ...post.user, profilePhoto: uPhoto } : null };
-        });
+        }));
         setPosts(processedPosts);
       }
     } catch (err) {
@@ -157,7 +189,10 @@ export default function StartupCommunity() {
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <StartupHeader companyName={companyName} />
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}
+        onScrollBeginDrag={() => setWorkExpDropdownOpen(false)}
+        onTouchStart={() => workExpDropdownOpen && setWorkExpDropdownOpen(false)}
+      >
         <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
         
         {/* Top Search & Filter Card */}
@@ -177,32 +212,102 @@ export default function StartupCommunity() {
           </View>
           <Text style={[styles.sortByText, { color: colors.textSecondary }]}>Sort by:</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={styles.filterContent}>
-            {['All', 'Project', 'Award', 'Certificate', 'Work Experience'].map((cat, index) => {
-              const isActive = activeCategory === cat;
-              return (
-                <TouchableOpacity
-                  key={cat}
-                  style={[styles.newFilterChip, { backgroundColor: colors.card, borderColor: colors.border }, isActive && { backgroundColor: colors.primary, borderColor: colors.primary }]}
-                  onPress={() => setActiveCategory(cat)}
-                >
-                  {!isActive && index === 1 && <LayoutGrid size={14} color={colors.textSecondary} style={{marginRight: 6}}/>}
-                  {!isActive && index === 2 && <ClipboardList size={14} color={colors.textSecondary} style={{marginRight: 6}}/>}
-                  {!isActive && index === 3 && <GraduationCap size={14} color={colors.textSecondary} style={{marginRight: 6}}/>}
-                  {!isActive && index === 4 && <Briefcase size={14} color={colors.textSecondary} style={{marginRight: 6}}/>}
-                  <Text style={[styles.newFilterText, { color: colors.textSecondary }, isActive && { color: '#ffffff' }]}>{cat}</Text>
-                </TouchableOpacity>
-              );
-            })}
+            {/* All */}
+            <TouchableOpacity
+              style={[styles.newFilterChip, { backgroundColor: colors.card, borderColor: colors.border }, activeCategory === 'All' && { backgroundColor: colors.primary, borderColor: colors.primary }]}
+              onPress={() => { setActiveCategory('All'); setWorkExpSub(null); setWorkExpDropdownOpen(false); }}
+            >
+              <Text style={[styles.newFilterText, { color: colors.textSecondary }, activeCategory === 'All' && { color: '#ffffff' }]}>All</Text>
+            </TouchableOpacity>
+
+            {/* Project */}
+            <TouchableOpacity
+              style={[styles.newFilterChip, { backgroundColor: colors.card, borderColor: colors.border }, activeCategory === 'Project' && { backgroundColor: colors.primary, borderColor: colors.primary }]}
+              onPress={() => { setActiveCategory('Project'); setWorkExpSub(null); setWorkExpDropdownOpen(false); }}
+            >
+              <LayoutGrid size={14} color={activeCategory === 'Project' ? '#ffffff' : colors.textSecondary} style={{marginRight: 6}}/>
+              <Text style={[styles.newFilterText, { color: colors.textSecondary }, activeCategory === 'Project' && { color: '#ffffff' }]}>Project</Text>
+            </TouchableOpacity>
+
+            {/* Award */}
+            <TouchableOpacity
+              style={[styles.newFilterChip, { backgroundColor: colors.card, borderColor: colors.border }, activeCategory === 'Award' && { backgroundColor: colors.primary, borderColor: colors.primary }]}
+              onPress={() => { setActiveCategory('Award'); setWorkExpSub(null); setWorkExpDropdownOpen(false); }}
+            >
+              <ClipboardList size={14} color={activeCategory === 'Award' ? '#ffffff' : colors.textSecondary} style={{marginRight: 6}}/>
+              <Text style={[styles.newFilterText, { color: colors.textSecondary }, activeCategory === 'Award' && { color: '#ffffff' }]}>Award</Text>
+            </TouchableOpacity>
+
+            {/* Certificate */}
+            <TouchableOpacity
+              style={[styles.newFilterChip, { backgroundColor: colors.card, borderColor: colors.border }, activeCategory === 'Certificate' && { backgroundColor: colors.primary, borderColor: colors.primary }]}
+              onPress={() => { setActiveCategory('Certificate'); setWorkExpSub(null); setWorkExpDropdownOpen(false); }}
+            >
+              <GraduationCap size={14} color={activeCategory === 'Certificate' ? '#ffffff' : colors.textSecondary} style={{marginRight: 6}}/>
+              <Text style={[styles.newFilterText, { color: colors.textSecondary }, activeCategory === 'Certificate' && { color: '#ffffff' }]}>Certificate</Text>
+            </TouchableOpacity>
+
+            {/* Work Experience with dropdown */}
+            <View style={{ position: 'relative' }}>
+              <TouchableOpacity
+                style={[styles.newFilterChip, { backgroundColor: colors.card, borderColor: colors.border }, (activeCategory === 'Work Experience') && { backgroundColor: colors.primary, borderColor: colors.primary }]}
+                onPress={() => { setWorkExpDropdownOpen(prev => !prev); }}
+              >
+                <Briefcase size={14} color={(activeCategory === 'Work Experience') ? '#ffffff' : colors.textSecondary} style={{marginRight: 6}}/>
+                <Text style={[styles.newFilterText, { color: colors.textSecondary }, (activeCategory === 'Work Experience') && { color: '#ffffff' }]}>
+                  {workExpSub ? workExpSub : 'Category'}
+                </Text>
+                <Text style={{ color: (activeCategory === 'Work Experience') ? '#ffffff' : colors.textSecondary, marginLeft: 4, fontSize: 10 }}>▾</Text>
+              </TouchableOpacity>
+
+              {workExpDropdownOpen && (
+                <View style={[
+                  styles.weDropdown,
+                  { backgroundColor: isDark ? '#1e2535' : '#ffffff', borderColor: colors.border }
+                ]}>
+                  {['Project', 'Award', 'Certificate', 'Work Experience', 'Job'].map((sub, idx) => (
+                    <TouchableOpacity
+                      key={sub}
+                      style={[styles.weDropdownItem, idx < 4 && { borderBottomColor: colors.border }]}
+                      onPress={() => {
+                        setWorkExpSub(sub);
+                        setActiveCategory('Work Experience');
+                        setWorkExpDropdownOpen(false);
+                      }}
+                    >
+                      <Text style={[styles.weDropdownText, { color: workExpSub === sub ? colors.primary : colors.text }, workExpSub === sub && { fontWeight: '700' }]}>{sub}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
           </ScrollView>
         </View>
 
         {/* Feed */}
         {loading ? (
           <Text style={{ textAlign: 'center', marginTop: 20, color: colors.textSecondary }}>Loading feed...</Text>
-        ) : posts.filter(p => activeCategory === 'All' || p.category === activeCategory).length === 0 ? (
-          <Text style={{ textAlign: 'center', marginTop: 20, color: colors.textSecondary }}>No posts yet in {activeCategory}.</Text>
+        ) : posts.filter(p => {
+          if (activeCategory === 'All') return true;
+          if (activeCategory === 'Work Experience' && workExpSub) {
+            // filter by tags array from backend
+            const tags: string[] = Array.isArray(p.tags) ? p.tags : (typeof p.tags === 'string' ? JSON.parse(p.tags || '[]') : []);
+            return tags.some((t: string) => t.toLowerCase() === workExpSub.toLowerCase());
+          }
+          return p.category === activeCategory;
+        }).length === 0 ? (
+          <Text style={{ textAlign: 'center', marginTop: 20, color: colors.textSecondary }}>
+            No posts yet{workExpSub ? ` tagged "${workExpSub}"` : ` in ${activeCategory}`}.
+          </Text>
         ) : (
-          posts.filter(p => activeCategory === 'All' || p.category === activeCategory).map(post => <PostItem key={post.id} post={post} companyName={companyName} companyLogo={companyLogo} colors={colors} isDark={isDark} />)
+          posts.filter(p => {
+            if (activeCategory === 'All') return true;
+            if (activeCategory === 'Work Experience' && workExpSub) {
+              const tags: string[] = Array.isArray(p.tags) ? p.tags : (typeof p.tags === 'string' ? JSON.parse(p.tags || '[]') : []);
+              return tags.some((t: string) => t.toLowerCase() === workExpSub.toLowerCase());
+            }
+            return p.category === activeCategory;
+          }).map(post => <PostItem key={post.id} post={post} companyName={companyName} companyLogo={companyLogo} colors={colors} isDark={isDark} />)
         )}
         
         </Animated.View>
@@ -659,6 +764,23 @@ const styles = StyleSheet.create({
   filterScroll: { flexGrow: 0 },
   filterContent: { paddingRight: 16 },
 
+  weDropdown: {
+    position: 'absolute',
+    top: 44,
+    left: 0,
+    width: 160,
+    borderRadius: 12,
+    borderWidth: 1,
+    zIndex: 999,
+    overflow: 'hidden',
+    ...Platform.select({
+      web: { boxShadow: '0 8px 24px rgba(0,0,0,0.18)' },
+      default: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.18, shadowRadius: 12, elevation: 12 },
+    }),
+  },
+  weDropdownItem: { paddingHorizontal: 16, paddingVertical: 13, borderBottomWidth: 1 },
+  weDropdownText: { fontSize: 14, fontWeight: '500' },
+
   postCard: {
     borderRadius: 16, padding: 16, marginBottom: 16,
     ...Platform.select({
@@ -719,3 +841,5 @@ const styles = StyleSheet.create({
   navItem: { alignItems: 'center', justifyContent: 'center', gap: 4 },
   navText: { fontSize: 10, fontWeight: '500' },
 });
+
+
