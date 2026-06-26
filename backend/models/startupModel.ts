@@ -1,7 +1,7 @@
 import { sql } from "../config/database";
 
 const StartupModel = {
-  async create({ founder_name, company_name, company_reg_id, email, password_hash, category, logo_url, linkedin_url, website_url, instagram_url, github_url, physical_photos, msme_id, iso_id, reg_type, certificate_id, certificate_url }: any) {
+  async create({ founder_name, company_name, company_reg_id, email, password_hash, category, logo_url, linkedin_url, website_url, instagram_url, github_url, physical_photos, msme_id, iso_id, reg_type, certificate_id, certificate_url, source }: any) {
     try {
       // Ensure columns exist
       try {
@@ -13,11 +13,11 @@ const StartupModel = {
       const result = await sql`
         INSERT INTO startups (
           name, founder_name, company_name, company_reg_id, email, password_hash, category, status, rules_accepted,
-          logo_url, linkedin_url, company_website, instagram_url, github_url, physical_photos, msme_id, iso_id, reg_type, certificate_id, certificate_url
+          logo_url, linkedin_url, company_website, instagram_url, github_url, physical_photos, msme_id, iso_id, reg_type, certificate_id, certificate_url, registration_source
         )
         VALUES (
           ${company_name}, ${founder_name}, ${company_name}, ${company_reg_id}, ${email}, ${password_hash}, ${category}, 'PENDING', FALSE,
-          ${logo_url || null}, ${linkedin_url || null}, ${website_url || null}, ${instagram_url || null}, ${github_url || null}, ${physical_photos || null}, ${msme_id || null}, ${iso_id || null}, ${reg_type || null}, ${certificate_id || null}, ${certificate_url || null}
+          ${logo_url || null}, ${linkedin_url || null}, ${website_url || null}, ${instagram_url || null}, ${github_url || null}, ${physical_photos || null}, ${msme_id || null}, ${iso_id || null}, ${reg_type || null}, ${certificate_id || null}, ${certificate_url || null}, ${source || 'web'}
         )
         RETURNING id, founder_name, company_name, email, category, status, is_verified, rules_accepted, created_at, msme_id, iso_id, reg_type, certificate_id, certificate_url
       `;
@@ -28,11 +28,11 @@ const StartupModel = {
         const result = await sql`
           INSERT INTO startups (
             founder_name, company_name, company_reg_id, email, password_hash, category, status, rules_accepted,
-            logo_url, linkedin_url, company_website, instagram_url, github_url, physical_photos, msme_id, iso_id, reg_type, certificate_id, certificate_url
+            logo_url, linkedin_url, company_website, instagram_url, github_url, physical_photos, msme_id, iso_id, reg_type, certificate_id, certificate_url, registration_source
           )
           VALUES (
             ${founder_name}, ${company_name}, ${company_reg_id}, ${email}, ${password_hash}, ${category}, 'PENDING', FALSE,
-            ${logo_url || null}, ${linkedin_url || null}, ${website_url || null}, ${instagram_url || null}, ${github_url || null}, ${physical_photos || null}, ${msme_id || null}, ${iso_id || null}, ${reg_type || null}, ${certificate_id || null}, ${certificate_url || null}
+            ${logo_url || null}, ${linkedin_url || null}, ${website_url || null}, ${instagram_url || null}, ${github_url || null}, ${physical_photos || null}, ${msme_id || null}, ${iso_id || null}, ${reg_type || null}, ${certificate_id || null}, ${certificate_url || null}, ${source || 'web'}
           )
           RETURNING id, founder_name, company_name, email, category, status, is_verified, rules_accepted, created_at, msme_id, iso_id, reg_type, certificate_id, certificate_url
         `;

@@ -176,7 +176,7 @@ function getApprovalEmailTemplate(founderName: string, companyName: string, stat
           <p style="margin:0 0 20px;font-size:14px;font-weight:600;color:#334155;">Status: ${status}</p>
           ${status === 'ACTIVE' ? `
             <div style="text-align:center;padding:20px 0;">
-              <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/startup/login"
+              <a href="${process.env.FRONTEND_URL || 'https://thodakkam.com'}/startup/login"
                  style="display:inline-block;background:${statusInfo.color};color:white;padding:12px 24px;text-decoration:none;border-radius:8px;font-weight:600;">
                 ${statusInfo.action}
               </a>
@@ -268,7 +268,7 @@ function getStudentStatusEmailTemplate(studentName: string, status: string): str
           <p style="margin:0 0 20px;font-size:14px;font-weight:600;color:#334155;">Account Status: ${status}</p>
           ${status === 'Active' ? `
             <div style="text-align:center;padding:20px 0;">
-              <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/student/login"
+              <a href="${process.env.FRONTEND_URL || 'https://thodakkam.com'}/student/login"
                  style="display:inline-block;background:${statusInfo.color};color:white;padding:12px 24px;text-decoration:none;border-radius:8px;font-weight:600;">
                 ${statusInfo.action}
               </a>
@@ -337,7 +337,7 @@ function getMCQScheduleEmailTemplate(studentName: string, companyName: string, a
             Please log in to your student portal and complete this round under the scheduled assessments section.
           </p>
           <div style="text-align:center;padding:20px 0;">
-            <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/student/login"
+            <a href="${process.env.FRONTEND_URL || 'https://thodakkam.com'}/student/login"
                style="display:inline-block;background:#8033CC;color:white;padding:12px 24px;text-decoration:none;border-radius:8px;font-weight:600;">
               View Assessment Dashboard
             </a>
@@ -384,7 +384,7 @@ function getInterviewScheduleEmailTemplate(studentName: string, companyName: str
             ${meetLinkHtml}
           </div>
           <div style="text-align:center;padding:10px 0;">
-            <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/student/login"
+            <a href="${process.env.FRONTEND_URL || 'https://thodakkam.com'}/student/login"
                style="display:inline-block;background:#8033CC;color:white;padding:12px 24px;text-decoration:none;border-radius:8px;font-weight:600;">
               View in Dashboard
             </a>
@@ -447,5 +447,71 @@ export async function sendInterviewScheduleEmail(toEmail: string, studentName: s
     }
   } catch (error: any) {
     console.warn(`[DEV_MODE] Interview email delivery failed for ${toEmail}: ${error.message}`);
+  }
+}
+
+function getInterviewReminderEmailTemplate(name: string, roleTitle: string, isStartup: boolean, meetLink?: string): string {
+  const meetLinkHtml = meetLink ? '<p style="margin:0;font-size:14px;color:#334155;"><strong>Meeting Link:</strong> <a href="' + meetLink + '" target="_blank" style="color:#8033CC;word-break:break-all;">' + meetLink + '</a></p>' : '';
+  const portalPath = isStartup ? '/startup/login' : '/student/login';
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <body style="margin:0;padding:40px 16px;font-family:Arial,sans-serif;background-color:#F3F4F6;">
+      <div style="max-width:420px;margin:0 auto;background:#fff;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,0.08);overflow:hidden;">
+        <div style="height:5px;background:linear-gradient(180deg,#8033CC 0%,#401A66 100%);"></div>
+        <div style="text-align:center;padding:40px 25px 30px;">
+          <div style="width:52px;height:52px;background:linear-gradient(180deg,#8033CC 0%,#401A66 100%);border-radius:12px;line-height:52px;text-align:center;margin:0 auto 24px;">
+            <span style="color:#fff;font-weight:700;font-size:16px;">ED</span>
+          </div>
+          <h1 style="margin:0 0 8px;font-weight:700;font-size:20px;color:#8033CC;">⏰ Upcoming Reminder</h1>
+          <p style="margin:0;font-size:13px;color:#64748B;">Echo Digital Works Platform</p>
+        </div>
+        <div style="padding:0 25px 32px;">
+          <p style="margin:0 0 14px;font-size:14px;line-height:22px;color:#334155;">Hello <strong>${name}</strong>,</p>
+          <p style="margin:0 0 20px;font-size:14px;line-height:22px;color:#334155;">
+            This is a friendly reminder that the interview/assessment for <strong>${roleTitle}</strong> is starting in <strong>10 minutes</strong>.
+          </p>
+          <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:10px;padding:16px;margin-bottom:20px;">
+            ${meetLinkHtml}
+          </div>
+          <div style="text-align:center;padding:10px 0;">
+            <a href="${process.env.FRONTEND_URL || 'https://thodakkam.com'}${portalPath}"
+               style="display:inline-block;background:#8033CC;color:white;padding:12px 24px;text-decoration:none;border-radius:8px;font-weight:600;">
+              View Dashboard
+            </a>
+          </div>
+        </div>
+        <div style="text-align:center;padding:32px 20px 40px;border-top:1px solid #E2E8F0;">
+          <p style="margin:0 0 12px;font-weight:700;font-size:12px;color:#94A3B8;">Echo Digital Works</p>
+          <p style="margin:0 0 12px;font-size:12px;color:#94A3B8;">Startup • Student • Admin Platform</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+export async function sendInterviewReminderEmail(toEmail: string, name: string, roleTitle: string, isStartup: boolean, meetLink?: string): Promise<void> {
+  const smtp = getSmtpConfig();
+  if (!smtp.configured) {
+    console.warn(`[DEV_MODE] SMTP is not configured. Reminder email for ${toEmail} - Role: ${roleTitle}`);
+    return;
+  }
+
+  const transporter = getTransporter();
+  const mailOptions = {
+    from: `"Echo Digital Works" <${smtp.user}>`,
+    to: toEmail,
+    subject: `⏰ Reminder: Upcoming Event for ${roleTitle} in 10 minutes`,
+    html: getInterviewReminderEmailTemplate(name, roleTitle, isStartup, meetLink),
+  };
+
+  try {
+    if (transporter) {
+      await transporter.sendMail(mailOptions);
+    }
+  } catch (error: any) {
+    console.warn(`[DEV_MODE] Reminder email delivery failed for ${toEmail}: ${error.message}`);
   }
 }

@@ -223,8 +223,8 @@ export default function SavedPosts() {
 function PostItem({ post, role, identifier }: { post: any, role: string, identifier: string }) {
   const { colors, isDark } = useAppTheme();
   const styles = getStyles(colors, isDark);
-  const initialLikes = post.likes ? post.likes.length : 0;
-  const initiallyLiked = post.likes ? post.likes.some((l: any) => role === 'startup' ? l.startup?.companyName === identifier : l.user?.email === identifier) : false;
+  const initialLikes = post.likes_count ?? (post.likes ? post.likes.length : 0);
+  const initiallyLiked = post.isLiked ?? (post.likes ? post.likes.some((l: any) => role === 'startup' ? l.startup?.companyName === identifier : l.user?.email === identifier) : false);
   
   const initialReposts = post.reposts ? post.reposts.length : 0;
   const initiallyReposted = post.reposts ? post.reposts.some((r: any) => role === 'startup' ? r.startup?.companyName === identifier : r.user?.email === identifier) : false;

@@ -230,11 +230,11 @@ export default function StudentCommunity() {
 
 function PostItem({ post }: { post: any }) {
   const { colors, isDark } = useAppTheme();
-  const initialLikes = post.likes ? post.likes.length : 0;
-  const initiallyLiked = post.likes ? post.likes.some((l: any) => l.user?.email === userStore.email) : false;
+  const initialLikes = post.likes_count ?? (post.likes ? post.likes.length : 0);
+  const initiallyLiked = post.isLiked ?? (post.likes ? post.likes.some((l: any) => l.user?.email === userStore.email) : false);
   
-  const initialReposts = post.reposts ? post.reposts.length : 0;
-  const initiallyReposted = post.reposts ? post.reposts.some((r: any) => r.user?.email === userStore.email) : false;
+  const initialReposts = post.shares_count ?? (post.reposts ? post.reposts.length : 0);
+  const initiallyReposted = post.isShared ?? (post.reposts ? post.reposts.some((r: any) => r.user?.email === userStore.email) : false);
 
   const initiallySaved = post.savedBy ? post.savedBy.some((s: any) => s.user?.email === userStore.email) : false;
 
@@ -242,19 +242,42 @@ function PostItem({ post }: { post: any }) {
   const [liked, setLiked] = useState(initiallyLiked);
   
   const [comments, setComments] = useState<any[]>(post.comments || []);
+  const [commentsCount, setCommentsCount] = useState(post.comments_count ?? (post.comments ? post.comments.length : 0));
   const [showComments, setShowComments] = useState(false);
+  const [commentsFetched, setCommentsFetched] = useState(!!post.comments);
   const [commentText, setCommentText] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isCommenting, setIsCommenting] = useState(false);
   const [isReposting, setIsReposting] = useState(false);
   const [repostCount, setRepostCount] = useState(initialReposts);
   const [hasReposted, setHasReposted] = useState(initiallyReposted);
-  const [isSaving, setIsSaving] = useState(false);
   const [hasSaved, setHasSaved] = useState(initiallySaved);
-
-  // Image Viewer State
+  const [isSaving, setIsSaving] = useState(false);
   const [viewerVisible, setViewerVisible] = useState(false);
   const [viewerIndex, setViewerIndex] = useState(0);
+
+  const [fetchedMedia, setFetchedMedia] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (post.has_media && (!post.imageUrls || post.imageUrls.length === 0)) {
+      AsyncStorage.getItem('studentToken').then(token => {
+        if (token) {
+          fetch(`${BASE_URL}/api/community/posts/${post.id}/media`, {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data && data.media_url) {
+              setFetchedMedia(data.media_url);
+            }
+          })
+          .catch(() => {});
+        }
+      });
+    }
+  }, [post.id, post.has_media, post.imageUrls]);
+
+  const finalImages = post.imageUrls && post.imageUrls.length > 0 ? post.imageUrls : fetchedMedia ? [fetchedMedia] : [];
 
   const handleLike = async () => {
     const newLikedState = !liked;
@@ -264,18 +287,37 @@ function PostItem({ post }: { post: any }) {
     try {
       const baseUrl = BASE_URL;
       const token = await AsyncStorage.getItem('studentToken');
-      await fetch(`${baseUrl}/api/community/posts/${post.id}/like`, {
-        method: 'PUT',
+      const res = await fetch(`${baseUrl}/api/community/posts/${post.id}/like`, {
+        method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ email: userStore.email })
       });
+      if (!res.ok) throw new Error('Failed to like post');
     } catch (err) {
       console.error(err);
       setLiked(!newLikedState);
       setLikesCount((prev: number) => newLikedState ? prev - 1 : prev + 1);
+    }
+  };
+
+  const toggleComments = async () => {
+    const newShowState = !showComments;
+    setShowComments(newShowState);
+    if (newShowState && !commentsFetched) {
+      try {
+        const token = await AsyncStorage.getItem('studentToken');
+        const res = await fetch(`${BASE_URL}/api/community/posts/${post.id}/comments`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        setComments(Array.isArray(data) ? data : []);
+        setCommentsFetched(true);
+      } catch (err) {
+        console.error("Failed to fetch comments", err);
+      }
     }
   };
 
@@ -285,14 +327,22 @@ function PostItem({ post }: { post: any }) {
     
     try {
       const baseUrl = BASE_URL;
+      const token = await AsyncStorage.getItem('studentToken');
       const res = await fetch(`${baseUrl}/api/community/posts/${post.id}/comments`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: commentText, email: userStore.email })
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({ content: commentText, email: userStore.email })
       });
+      
+      if (!res.ok) throw new Error('Failed to add comment');
+      
       const data = await res.json();
-      if (data.success && data.comment) {
-        setComments([...comments, data.comment]);
+      if (!data.error) {
+        setComments([...comments, data]);
+        setCommentsCount((prev: number) => prev + 1);
         setCommentText('');
       }
     } catch (err) {
@@ -326,13 +376,17 @@ function PostItem({ post }: { post: any }) {
     
     try {
       const baseUrl = BASE_URL;
+      const token = await AsyncStorage.getItem('studentToken');
       const res = await fetch(`${baseUrl}/api/community/posts/${post.id}/share`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
         body: JSON.stringify({ email: userStore.email })
       });
       const data = await res.json();
-      if (!data.success) {
+      if (data.error) {
         setHasReposted(!newRepostedState);
         setRepostCount((prev: number) => newRepostedState ? prev - 1 : prev + 1);
       }
@@ -353,13 +407,17 @@ function PostItem({ post }: { post: any }) {
     
     try {
       const baseUrl = BASE_URL;
+      const token = await AsyncStorage.getItem('studentToken');
       const res = await fetch(`${baseUrl}/api/community/posts/${post.id}/save`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
         body: JSON.stringify({ email: userStore.email })
       });
       const data = await res.json();
-      if (!data.success) {
+      if (data.error) {
         setHasSaved(!newSavedState);
       }
     } catch (err) {
@@ -396,31 +454,31 @@ function PostItem({ post }: { post: any }) {
 
       {post.text ? <Text style={[styles.postText, { color: colors.text }]}>{post.text}</Text> : null}
 
-      {post.imageUrls && post.imageUrls.length > 0 && (
+      {finalImages && finalImages.length > 0 && (
         <View style={styles.imageGridContainer}>
-          {post.imageUrls.length === 1 ? (
+          {finalImages.length === 1 ? (
             <TouchableOpacity onPress={() => { setViewerIndex(0); setViewerVisible(true); }} activeOpacity={0.9}>
-              <Image source={{ uri: post.imageUrls[0] }} style={[styles.postImage, { backgroundColor: '#ffffff' }]} resizeMode="contain" />
+              <Image source={{ uri: finalImages[0] }} style={[styles.postImage, { backgroundColor: '#ffffff' }]} resizeMode="contain" />
             </TouchableOpacity>
-          ) : post.imageUrls.length === 2 ? (
+          ) : finalImages.length === 2 ? (
             <View style={{ flexDirection: 'row', gap: 4, height: 220, marginBottom: 12 }}>
-              {post.imageUrls.map((img: string, idx: number) => (
+              {finalImages.map((img: string, idx: number) => (
                 <TouchableOpacity key={idx} style={{ flex: 1 }} onPress={() => { setViewerIndex(idx); setViewerVisible(true); }} activeOpacity={0.9}>
                   <Image source={{ uri: img }} style={[{ flex: 1, borderRadius: 12, backgroundColor: '#ffffff' }]} resizeMode="cover" />
                 </TouchableOpacity>
               ))}
             </View>
-          ) : post.imageUrls.length === 3 ? (
+          ) : finalImages.length === 3 ? (
             <View style={{ flexDirection: 'row', gap: 4, height: 220, marginBottom: 12 }}>
               <TouchableOpacity style={{ flex: 1 }} onPress={() => { setViewerIndex(0); setViewerVisible(true); }} activeOpacity={0.9}>
-                <Image source={{ uri: post.imageUrls[0] }} style={[{ flex: 1, borderRadius: 12, backgroundColor: '#ffffff' }]} resizeMode="cover" />
+                <Image source={{ uri: finalImages[0] }} style={[{ flex: 1, borderRadius: 12, backgroundColor: '#ffffff' }]} resizeMode="cover" />
               </TouchableOpacity>
               <View style={{ flex: 1, gap: 4 }}>
                 <TouchableOpacity style={{ flex: 1 }} onPress={() => { setViewerIndex(1); setViewerVisible(true); }} activeOpacity={0.9}>
-                  <Image source={{ uri: post.imageUrls[1] }} style={[{ flex: 1, borderRadius: 12, backgroundColor: '#ffffff' }]} resizeMode="cover" />
+                  <Image source={{ uri: finalImages[1] }} style={[{ flex: 1, borderRadius: 12, backgroundColor: '#ffffff' }]} resizeMode="cover" />
                 </TouchableOpacity>
                 <TouchableOpacity style={{ flex: 1 }} onPress={() => { setViewerIndex(2); setViewerVisible(true); }} activeOpacity={0.9}>
-                  <Image source={{ uri: post.imageUrls[2] }} style={[{ flex: 1, borderRadius: 12, backgroundColor: '#ffffff' }]} resizeMode="cover" />
+                  <Image source={{ uri: finalImages[2] }} style={[{ flex: 1, borderRadius: 12, backgroundColor: '#ffffff' }]} resizeMode="cover" />
                 </TouchableOpacity>
               </View>
             </View>
@@ -428,21 +486,21 @@ function PostItem({ post }: { post: any }) {
             <View style={{ flexDirection: 'row', gap: 4, height: 220, marginBottom: 12 }}>
               <View style={{ flex: 1, gap: 4 }}>
                 <TouchableOpacity style={{ flex: 1 }} onPress={() => { setViewerIndex(0); setViewerVisible(true); }} activeOpacity={0.9}>
-                  <Image source={{ uri: post.imageUrls[0] }} style={[{ flex: 1, borderRadius: 12, backgroundColor: '#ffffff' }]} resizeMode="cover" />
+                  <Image source={{ uri: finalImages[0] }} style={[{ flex: 1, borderRadius: 12, backgroundColor: '#ffffff' }]} resizeMode="cover" />
                 </TouchableOpacity>
                 <TouchableOpacity style={{ flex: 1 }} onPress={() => { setViewerIndex(2); setViewerVisible(true); }} activeOpacity={0.9}>
-                  <Image source={{ uri: post.imageUrls[2] }} style={[{ flex: 1, borderRadius: 12, backgroundColor: '#ffffff' }]} resizeMode="cover" />
+                  <Image source={{ uri: finalImages[2] }} style={[{ flex: 1, borderRadius: 12, backgroundColor: '#ffffff' }]} resizeMode="cover" />
                 </TouchableOpacity>
               </View>
               <View style={{ flex: 1, gap: 4 }}>
                 <TouchableOpacity style={{ flex: 1 }} onPress={() => { setViewerIndex(1); setViewerVisible(true); }} activeOpacity={0.9}>
-                  <Image source={{ uri: post.imageUrls[1] }} style={[{ flex: 1, borderRadius: 12, backgroundColor: '#ffffff' }]} resizeMode="cover" />
+                  <Image source={{ uri: finalImages[1] }} style={[{ flex: 1, borderRadius: 12, backgroundColor: '#ffffff' }]} resizeMode="cover" />
                 </TouchableOpacity>
                 <TouchableOpacity style={{ flex: 1, position: 'relative' }} onPress={() => { setViewerIndex(3); setViewerVisible(true); }} activeOpacity={0.9}>
-                  <Image source={{ uri: post.imageUrls[3] }} style={[{ flex: 1, borderRadius: 12, backgroundColor: '#ffffff' }]} resizeMode="cover" />
-                  {post.imageUrls.length > 4 && (
+                  <Image source={{ uri: finalImages[3] }} style={[{ flex: 1, borderRadius: 12, backgroundColor: '#ffffff' }]} resizeMode="cover" />
+                  {finalImages.length > 4 && (
                     <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 12, justifyContent: 'center', alignItems: 'center' }}>
-                      <Text style={{ color: '#fff', fontSize: 24, fontWeight: 'bold' }}>+{post.imageUrls.length - 4}</Text>
+                      <Text style={{ color: '#fff', fontSize: 24, fontWeight: 'bold' }}>+{finalImages.length - 4}</Text>
                     </View>
                   )}
                 </TouchableOpacity>
@@ -460,10 +518,10 @@ function PostItem({ post }: { post: any }) {
 
         <TouchableOpacity 
           style={[styles.footerAction, showComments && { backgroundColor: isDark ? colors.primary + '20' : '#f3e8ff', borderWidth: 1, borderColor: colors.primary }]} 
-          onPress={() => setShowComments(!showComments)}
+          onPress={toggleComments}
         >
           <MessageSquare size={20} color={showComments ? colors.primary : colors.textSecondary} />
-          <Text style={[styles.footerActionText, { color: colors.textSecondary }, showComments && { color: colors.primary }]}>{comments.length}</Text>
+          <Text style={[styles.footerActionText, { color: colors.textSecondary }, showComments && { color: colors.primary }]}>{commentsCount}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.footerAction} onPress={handleRepost} disabled={isReposting}>
@@ -480,9 +538,9 @@ function PostItem({ post }: { post: any }) {
       {showComments && (
         <View style={styles.commentsSection}>
           {comments.map(c => {
-            const author = c.user?.fullName || c.startup?.companyName || 'Anonymous';
-            const avatar = c.user?.profilePhoto || c.startup?.profilePhoto || c.startup?.companyLogo;
-            const role = c.user ? 'Student' : (c.startup ? 'Startup' : 'Member');
+            const author = c.author_name || c.user?.fullName || c.startup?.companyName || 'Anonymous';
+            const avatar = c.author_avatar || c.user?.profilePhoto || c.startup?.profilePhoto || c.startup?.companyLogo;
+            const role = c.author_role || (c.author_type === 'startup' ? 'Startup' : 'Student');
             return (
             <View key={c.id} style={styles.commentItem}>
               {avatar ? (
@@ -500,7 +558,7 @@ function PostItem({ post }: { post: any }) {
                     <Text style={[styles.commentRoleText, { color: isDark ? colors.success : '#10b981' }]}>{role}</Text>
                   </View>
                 </View>
-                <Text style={[styles.commentText, { color: colors.text }]}>{c.text}</Text>
+                <Text style={[styles.commentText, { color: colors.text }]}>{c.content || c.text}</Text>
               </View>
             </View>
           )})}
@@ -557,10 +615,10 @@ function PostItem({ post }: { post: any }) {
           <SafeAreaView style={{ flex: 1 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, zIndex: 10 }}>
               <TouchableOpacity onPress={() => setViewerVisible(false)} style={{ padding: 8 }}>
-                <Text style={{ color: '#fff', fontSize: 32, lineHeight: 32 }}>×</Text>
+                <Text style={{ color: '#fff', fontSize: 32, lineHeight: 32 }}>✕</Text>
               </TouchableOpacity>
               <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>
-                {viewerIndex + 1} / {post.imageUrls?.length || 0}
+                {viewerIndex + 1} / {finalImages.length || 0}
               </Text>
               <View style={{ width: 40 }} />
             </View>
@@ -575,17 +633,23 @@ function PostItem({ post }: { post: any }) {
               contentOffset={{ x: viewerIndex * SCREEN_WIDTH, y: 0 }}
               style={{ flex: 1 }}
             >
-              {post.imageUrls?.map((img: string, idx: number) => (
+              {finalImages.map((img: string, idx: number) => (
                 <View key={idx} style={{ width: SCREEN_WIDTH, height: '100%', justifyContent: 'center', alignItems: 'center' }}>
-                  <Image source={{ uri: img }} style={{ width: '100%', height: '100%' }} resizeMode="contain" />
+                  <Image source={{ uri: img }} style={{ width: '100%', height: '80%' }} resizeMode="contain" />
                 </View>
               ))}
             </ScrollView>
+            {finalImages.length > 1 && (
             <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingTop: 20, paddingBottom: 100, gap: 8 }}>
-              {post.imageUrls?.map((_: any, idx: number) => (
-                <View key={idx} style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: viewerIndex === idx ? '#fff' : 'rgba(255,255,255,0.3)' }} />
+              {finalImages.map((_: any, idx: number) => (
+                <TouchableOpacity
+                  key={idx}
+                  onPress={() => setViewerIndex(idx)}
+                  style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: idx === viewerIndex ? '#fff' : 'rgba(255,255,255,0.4)', marginHorizontal: 4 }}
+                />
               ))}
             </View>
+            )}
           </SafeAreaView>
         </View>
       </Modal>

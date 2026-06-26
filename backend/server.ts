@@ -14,6 +14,8 @@ import { query, testConnection, pool } from "./config/database";
 import { ensureCoreSchema, ensureMasterAdmin } from "./config/ensureCoreSchema";
 import { checkNoShowInterviews } from "./jobs/interviewNoShowChecker";
 import { startTrialLockChecker } from "./jobs/trialLockChecker";
+import { checkAndSendInterviewReminders } from "./jobs/interviewReminderCron";
+import { checkAndSendAssessmentReminders } from "./jobs/assessmentReminderCron";
 import dotenv from "dotenv";
 import mockDataRouter from "./mock/mockDataRouter";
 import { resolveMediaUrl } from "./utils/mediaUrl";
@@ -544,6 +546,14 @@ async function startServer() {
     checkNoShowInterviews(io);
     setInterval(() => checkNoShowInterviews(io), 5 * 60 * 1000);
     console.log(`   ⏰ Interview no-show checker: running every 5 minutes`);
+
+    checkAndSendInterviewReminders(io);
+    checkAndSendAssessmentReminders(io);
+    setInterval(() => {
+      checkAndSendInterviewReminders(io);
+      checkAndSendAssessmentReminders(io);
+    }, 1 * 60 * 1000);
+    console.log(`   ⏰ Interview reminder cron: running every minute`);
 
     startTrialLockChecker();
   });

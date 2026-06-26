@@ -91,7 +91,7 @@ export const getPosts = async (req: Request, res: Response): Promise<any> => {
     const offsetParam = `$${params.length}`;
 
     const rows = await query(
-      `SELECT p.*, COALESCE((SELECT array_agg(l.user_id) FROM post_likes l WHERE l.post_id = p.id), ARRAY[]::TEXT[]) AS likes
+      `SELECT p.*, COALESCE((SELECT array_agg(l.user_id) FROM post_likes l WHERE l.post_id = p.id), ARRAY[]::INTEGER[]) AS likes
        FROM posts p ${whereClause} ORDER BY p.created_at DESC LIMIT ${limitParam} OFFSET ${offsetParam}`,
       params
     );
@@ -190,7 +190,7 @@ export const toggleLike = async (req: Request, res: Response): Promise<any> => {
       liked = true;
     }
 
-    const likesRows = await query(`SELECT COALESCE(array_agg(user_id), ARRAY[]::TEXT[]) AS likes FROM post_likes WHERE post_id = $1`, [postId]);
+    const likesRows = await query(`SELECT COALESCE(array_agg(user_id), ARRAY[]::INTEGER[]) AS likes FROM post_likes WHERE post_id = $1`, [postId]);
     const likes = likesRows[0]?.likes || [];
 
     return res.status(200).json({

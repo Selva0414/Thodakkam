@@ -61,6 +61,12 @@ router.get('/:studentId/profile', studentController.getStudentProfile);
 // GET /api/students/:studentId/referrals
 router.get('/:studentId/referrals', protectStudent, studentController.getReferrals);
 
+// GET /api/students/:studentId/saved-jobs
+router.get('/:studentId/saved-jobs', protectStudent, studentController.getSavedJobs);
+
+// POST /api/students/:studentId/saved-jobs
+router.post('/:studentId/saved-jobs', protectStudent, studentController.toggleSavedJob);
+
 // GET /api/students/:studentId/avatar
 router.get('/:studentId/avatar', studentController.getStudentAvatar);
 

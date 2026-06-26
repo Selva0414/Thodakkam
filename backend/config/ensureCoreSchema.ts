@@ -324,6 +324,7 @@ const SCHEMA_PATCHES: string[] = [
   `ALTER TABLE interviews ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'scheduled'`,
   `ALTER TABLE interviews ADD COLUMN IF NOT EXISTS scheduled_at TIMESTAMPTZ`,
   `ALTER TABLE interviews ADD COLUMN IF NOT EXISTS candidate_joined_at TIMESTAMPTZ`,
+  `ALTER TABLE interviews ADD COLUMN IF NOT EXISTS reminder_sent BOOLEAN DEFAULT FALSE`,
   `DO $$ BEGIN ALTER TABLE interviews DROP CONSTRAINT IF EXISTS interviews_status_check; EXCEPTION WHEN OTHERS THEN NULL; END $$`,
   `ALTER TABLE interviews ADD CONSTRAINT interviews_status_check CHECK (status IN ('scheduled','completed','cancelled','rejected_by_student','in_progress','accepted','rejected'))`,
   `DELETE FROM candidate_assessments WHERE id NOT IN (SELECT DISTINCT ON (assessment_id, student_id) id FROM candidate_assessments ORDER BY assessment_id, student_id, created_at DESC)`,
@@ -428,6 +429,13 @@ const SCHEMA_PATCHES: string[] = [
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     UNIQUE(post_id, user_id, user_type)
   )`,
+  `CREATE TABLE IF NOT EXISTS saved_jobs (
+    id SERIAL PRIMARY KEY,
+    student_id TEXT REFERENCES students(id) ON DELETE CASCADE,
+    job_id TEXT REFERENCES jobs(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(student_id, job_id)
+  )`,
   `ALTER TABLE students ADD COLUMN IF NOT EXISTS daily_streak INTEGER DEFAULT 0`,
   `ALTER TABLE students ADD COLUMN IF NOT EXISTS last_active_date VARCHAR(10)`,
   `ALTER TABLE students ADD COLUMN IF NOT EXISTS referral_points INTEGER DEFAULT 0`,
@@ -435,7 +443,18 @@ const SCHEMA_PATCHES: string[] = [
   `ALTER TABLE jobs ADD COLUMN IF NOT EXISTS field VARCHAR(20) DEFAULT 'IT'`,
   `ALTER TABLE assessments ADD COLUMN IF NOT EXISTS field VARCHAR(20) DEFAULT 'IT'`,
   `ALTER TABLE candidate_assessments ADD COLUMN IF NOT EXISTS task_file TEXT`,
-  `ALTER TABLE candidate_assessments ADD COLUMN IF NOT EXISTS task_completed_at TIMESTAMP`
+  `ALTER TABLE candidate_assessments ADD COLUMN IF NOT EXISTS task_completed_at TIMESTAMP`,
+  `ALTER TABLE candidate_assessments ADD COLUMN IF NOT EXISTS reminder_sent_round VARCHAR(20)`,
+  `ALTER TABLE students ADD COLUMN IF NOT EXISTS registration_source VARCHAR(20) DEFAULT 'web'`,
+  `ALTER TABLE startups ADD COLUMN IF NOT EXISTS registration_source VARCHAR(20) DEFAULT 'web'`,
+  `CREATE TABLE IF NOT EXISTS saved_jobs (
+    id SERIAL PRIMARY KEY,
+    student_id TEXT REFERENCES students(id) ON DELETE CASCADE,
+    job_id TEXT REFERENCES jobs(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(student_id, job_id)
+  )`,
+  `ALTER TABLE saved_jobs ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()`
 ];
 
 export async function ensureCoreSchema(): Promise<void> {

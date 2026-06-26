@@ -179,6 +179,7 @@ const AssessmentModel = {
       { name: "created_at", def: "TIMESTAMP DEFAULT NOW()" },
       { name: "task_file", def: "TEXT" },
       { name: "task_completed_at", def: "TIMESTAMP" },
+      { name: "reminder_sent_round", def: "INTEGER DEFAULT 0" },
     ];
     for (const col of columns) {
       try {

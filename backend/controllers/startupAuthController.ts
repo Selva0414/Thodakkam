@@ -31,7 +31,7 @@ const sendServiceQuotaError = (res: Response) =>
   });
 
 export const register = async (req: Request, res: Response): Promise<any> => {
-  const { founderName, companyName, companyRegId, email, password, category, linkedinUrl, websiteUrl, instagramUrl, githubUrl, regType, certificateId } = req.body;
+  const { founderName, companyName, companyRegId, email, password, category, linkedinUrl, websiteUrl, instagramUrl, githubUrl, regType, certificateId, source } = req.body;
   const files = req.files as { [fieldname: string]: Express.Multer.File[] };
   
   try {
@@ -101,7 +101,8 @@ export const register = async (req: Request, res: Response): Promise<any> => {
       iso_id: null,
       reg_type: regType,
       certificate_id: certificateId,
-      certificate_url: certificateUrlBase64
+      certificate_url: certificateUrlBase64,
+      source: source || 'web'
     });
 
     const otp = generateOtp();

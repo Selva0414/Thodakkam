@@ -347,8 +347,8 @@ export default function StartupCommunity() {
 // ─── Post Item Component ───────────────────────────────────────────────────────
 
 function PostItem({ post, companyName, companyLogo, colors, isDark }: { post: any, companyName: string, companyLogo: string | null, colors: any, isDark: boolean }) {
-  const initialLikesCount = post.likes ? post.likes.length : 0;
-  const initiallyLiked = post.likes ? post.likes.some((l: any) => l.startup?.companyName === companyName) : false;
+  const initialLikesCount = post.likes_count ?? (post.likes ? post.likes.length : 0);
+  const initiallyLiked = post.isLiked ?? (post.likes ? post.likes.some((l: any) => l.startup?.companyName === companyName) : false);
 
   const initialRepostsCount = post.reposts ? post.reposts.length : 0;
   const initiallyReposted = post.reposts ? post.reposts.some((r: any) => r.startup?.companyName === companyName) : false;

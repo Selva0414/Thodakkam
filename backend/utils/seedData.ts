@@ -117,19 +117,6 @@ async function seed() {
   `);
   console.log(`✅  Interviews inserted  (4 upcoming)`);
 
-  // ── 5. Posts ────────────────────────────────────────────────────────────────
-  const student1Id = meeraApp.id; // meera is a candidate, wait we need student ID
-  // Wait, applications table doesn't have student_id in the mock, it has candidate_email
-  // Let's just use the startup as author, or a fake student ID. 
-  // We can insert a post by the Startup itself.
-  await sql.query(`
-    INSERT INTO posts (author_id, author_name, author_role, author_avatar, author_type, content, tags)
-    VALUES
-      ('${startupId}', 'TechNova', 'Startup', 'https://ui-avatars.com/api/?name=TechNova&background=0F172A&color=fff', 'startup', 'We are excited to announce our new internship program for Frontend Developers and ML Researchers! Apply now on Thodakkam! 🚀', ARRAY['hiring', 'internship', 'tech']),
-      ('12', 'Demo Student', 'Student', 'https://ui-avatars.com/api/?name=Demo+Student', 'student', 'Just finished my first project in React! The component based architecture is amazing. #webdev', ARRAY['react', 'webdev', 'project'])
-  `);
-  console.log(`✅  Posts inserted`);
-
   console.log("\n🎉  Seed complete!");
   console.log("   Demo login → alice@technova.io / Password123!");
   process.exit(0);

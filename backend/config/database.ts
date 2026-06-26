@@ -145,7 +145,7 @@ export async function query(queryText: string, params: any[] = []): Promise<any[
     const result = await pool.query(queryText, params);
     return result.rows;
   } catch (error: any) {
-    console.error("Database query error:", error);
+    console.error("Database query error:", error.message);
     throw error;
   }
 }
@@ -162,7 +162,7 @@ export async function testConnection(): Promise<boolean> {
     console.log(`   PostgreSQL: ${result.rows[0].pg_version}`);
     return true;
   } catch (error: any) {
-    console.error("❌ Database connection failed:", error);
+    console.error("❌ Database connection failed:", error.message);
     return false;
   }
 }

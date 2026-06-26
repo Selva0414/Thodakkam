@@ -281,7 +281,7 @@ const handleBackgroundAIAnalysis = (
 
 export const registerStudent = async (req: Request, res: Response): Promise<any> => {
   try {
-    let { fullName, username, email, password, phone, location, profilePhoto, resumeFile, selectedSkills, educations, internships, websiteUrl, githubUrl, linkedinUrl, bio, referredBy } = req.body;
+    let { fullName, username, email, password, phone, location, profilePhoto, resumeFile, selectedSkills, educations, internships, websiteUrl, githubUrl, linkedinUrl, bio, referredBy, source } = req.body;
     let resumeData = null;
 
     if (req.files) {
@@ -324,7 +324,7 @@ export const registerStudent = async (req: Request, res: Response): Promise<any>
     const hashedPassword = await bcrypt.hash(password, salt);
 
     const newStudent = await studentModel.createStudent({
-      name: fullName, username, email, password: hashedPassword, phone, location, profilePhoto, resumeFile, selectedSkills, educations, internships, websiteUrl, githubUrl, linkedinUrl, bio: bio || "", referredBy,
+      name: fullName, username, email, password: hashedPassword, phone, location, profilePhoto, resumeFile, selectedSkills, educations, internships, websiteUrl, githubUrl, linkedinUrl, bio: bio || "", referredBy, source: source || 'web'
     });
 
     if (resumeData) {
@@ -1137,10 +1137,23 @@ export const getAssessmentQuestions = async (req: Request, res: Response): Promi
         totalRounds: rounds.length,
       });
     } else if (currentRound.type === "coding") {
+      let codingQuestions = [];
+      if (currentRound.questions && currentRound.questions.length > 0) {
+        codingQuestions = currentRound.questions;
+      } else {
+        codingQuestions = [{
+          id: 'q1',
+          name: currentRound.name || "Coding Challenge",
+          description: currentRound.description || "Complete the coding challenge below",
+          language: currentRound.language || "javascript",
+          starterCode: currentRound.starterCode || "// Write your code here\n",
+          testCases: currentRound.testCases || []
+        }];
+      }
       return res.json({
         success: true, roundType: "coding", assessment: { id: candidateAssessment.assessment_id, title: candidateAssessment.title, duration: currentRound.duration || 60 },
         rounds,
-        codingChallenge: { name: currentRound.name || "Coding Challenge", description: currentRound.description || "Complete the coding challenge below", language: currentRound.language || "javascript", starterCode: currentRound.starterCode || "// Write your code here\n", testCases: currentRound.testCases || [] },
+        codingQuestions,
         currentRound: candidateAssessment.current_round || 1, totalRounds: rounds.length,
       });
     } else if (currentRound.type === "interview") {
@@ -2002,3 +2015,53 @@ export const getReferrals = async (req: Request, res: Response): Promise<any> =>
   }
 };
 
+export const getSavedJobs = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const studentId = String(req.params.studentId);
+    if (!studentId) return res.status(400).json({ success: false, message: "Invalid student id." });
+
+    const savedJobs = await query(
+      `SELECT j.*, s.company_name, s.logo_url 
+       FROM saved_jobs sj
+       JOIN jobs j ON sj.job_id = j.id
+       LEFT JOIN startups s ON j.startup_id = s.id
+       WHERE sj.student_id = $1
+       ORDER BY sj.created_at DESC`,
+      [studentId]
+    );
+
+    res.json({ success: true, savedJobs });
+  } catch (error: any) {
+    console.error("Get saved jobs error:", error.message);
+    res.status(500).json({ success: false, message: "Failed to fetch saved jobs." });
+  }
+};
+
+export const toggleSavedJob = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const studentId = String(req.params.studentId);
+    const { jobId } = req.body;
+    if (!studentId || !jobId) return res.status(400).json({ success: false, message: "Invalid input." });
+
+    // Check if it's already saved
+    const existing = await query(
+      `SELECT id FROM saved_jobs WHERE student_id = $1 AND job_id = $2`,
+      [studentId, jobId]
+    );
+
+    let saved = false;
+    if (existing.length > 0) {
+      // Unsave it
+      await query(`DELETE FROM saved_jobs WHERE student_id = $1 AND job_id = $2`, [studentId, jobId]);
+    } else {
+      // Save it
+      await query(`INSERT INTO saved_jobs (student_id, job_id) VALUES ($1, $2)`, [studentId, jobId]);
+      saved = true;
+    }
+
+    res.json({ success: true, saved, message: saved ? "Job saved successfully" : "Job removed from saved list" });
+  } catch (error: any) {
+    console.error("Toggle saved job error:", error.message);
+    res.status(500).json({ success: false, message: "Failed to toggle saved job." });
+  }
+};

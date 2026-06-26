@@ -1,6 +1,6 @@
 import { query } from "../config/database";
 
-let schemaReady = false; // reset on each server start
+let schemaReady = false;
 
 const ensureSchema = async () => {
   if (schemaReady) return;
@@ -9,7 +9,6 @@ const ensureSchema = async () => {
   const postColPatches = [
     `ALTER TABLE posts DROP CONSTRAINT IF EXISTS posts_author_id_fkey`,
     `ALTER TABLE posts ALTER COLUMN author_id TYPE TEXT USING author_id::text`,
-    `ALTER TABLE posts ADD COLUMN IF NOT EXISTS author_name TEXT`,
     `ALTER TABLE posts ADD COLUMN IF NOT EXISTS shares_count INTEGER DEFAULT 0`,
     `ALTER TABLE posts ADD COLUMN IF NOT EXISTS likes_count INTEGER DEFAULT 0`,
     `ALTER TABLE posts ADD COLUMN IF NOT EXISTS comments_count INTEGER DEFAULT 0`,
@@ -166,25 +165,12 @@ const createPost = async (postData: any) => {
   await ensureSchema();
 
   const { author_id, author_name, author_role, author_avatar, content, tags, author_type, media_url, media_name } = postData;
-  
-  // Normalise tags: must be a JS string[] for pg to bind as TEXT[]
-  const tagsArray: string[] = Array.isArray(tags)
-    ? tags.map(String)
-    : typeof tags === 'string'
-      ? [tags]
-      : [];
-
-  try {
-    const result = await query(
-      `INSERT INTO posts (author_id, author_name, author_role, author_avatar, content, tags, author_type, media_url, media_name) 
-       VALUES ($1, $2, $3, $4, $5, $6::text[], $7, $8, $9) RETURNING *`,
-      [author_id, author_name, author_role, author_avatar, content, tagsArray, author_type, media_url || null, media_name || null]
-    );
-    return result[0];
-  } catch (err: any) {
-    console.error('[createPost] DB error:', err.message, '| code:', err.code, '| detail:', err.detail);
-    throw err;
-  }
+  const result = await query(
+    `INSERT INTO posts (author_id, author_name, author_role, author_avatar, content, tags, author_type, media_url, media_name) 
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+    [author_id, author_name, author_role, author_avatar, content, tags, author_type, media_url || null, media_name || null]
+  );
+  return result[0];
 };
 
 const getPostMedia = async (postId: number | string) => {

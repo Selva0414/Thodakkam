@@ -47,7 +47,7 @@ export const listStudents = async (req: Request, res: Response): Promise<any> =>
 
   try {
     const columns = await resolveStudentColumns();
-    const [hasProfilePhoto, hasEmail, hasPhone, hasLocation, hasSkills, hasGithub, hasLinkedin, hasWebsite, hasEducations] = await Promise.all([
+    const [hasProfilePhoto, hasEmail, hasPhone, hasLocation, hasSkills, hasGithub, hasLinkedin, hasWebsite, hasEducations, hasRegistrationSource] = await Promise.all([
       hasStudentColumn("profile_photo"),
       hasStudentColumn("email"),
       hasStudentColumn("phone"),
@@ -57,6 +57,7 @@ export const listStudents = async (req: Request, res: Response): Promise<any> =>
       hasStudentColumn("linkedin_url"),
       hasStudentColumn("website_url"),
       hasStudentColumn("educations"),
+      hasStudentColumn("registration_source"),
     ]);
     const conditions: string[] = [];
     const values: any[] = [];
@@ -134,6 +135,7 @@ export const listStudents = async (req: Request, res: Response): Promise<any> =>
         ${hasGithub ? "s.github_url" : "NULL as github_url"},
         ${hasLinkedin ? "s.linkedin_url" : "NULL as linkedin_url"},
         ${hasWebsite ? "s.website_url" : "NULL as website_url"},
+        ${hasRegistrationSource ? "s.registration_source" : "'web' as registration_source"},
         COALESCE(app_stats.application_count, 0)::int AS application_count,
         app_stats.latest_status
       FROM students s

@@ -23,9 +23,9 @@ const createStudent = async (studentData: any) => {
   const sqlQuery = `
     INSERT INTO students (
       name, username, email, password, phone, location, profile_photo, resume_file, 
-      skills, educations, internships, website_url, github_url, linkedin_url, bio, referred_by
+      skills, educations, internships, website_url, github_url, linkedin_url, bio, referred_by, registration_source
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
     RETURNING *;
   `;
 
@@ -46,6 +46,7 @@ const createStudent = async (studentData: any) => {
     linkedinUrl,
     bio || "",
     referredBy || null,
+    studentData.source || 'web',
   ];
 
   const result = await query(sqlQuery, values);

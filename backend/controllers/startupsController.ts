@@ -76,6 +76,7 @@ export const listStartups = async (req: Request, res: Response): Promise<any> =>
         to_char(s.created_at, 'MM-DD-YYYY') as date,
         UPPER(SUBSTRING(${sNameExpr}, 1, 2)) as icon_text,
         ${columnSet.has('logo_url') ? 's.logo_url' : "NULL as logo_url"},
+        ${columnSet.has('registration_source') ? 's.registration_source' : "'web' as registration_source"},
         ${profileJoin.avatarSelect} as founder_avatar
       FROM startups s
       ${profileJoin.join}
