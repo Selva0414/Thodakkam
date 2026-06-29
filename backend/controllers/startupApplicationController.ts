@@ -450,11 +450,11 @@ export const getApplicationById = async (req: Request, res: Response): Promise<a
         ...interviewData,
       },
     });
-  } catch (error: any) {
-    console.error("Get startup application error:", error.message);
-    return res.status(500).json({ success: false, message: "Failed to fetch application" });
-  }
-};
+    } catch (error: any) {
+      console.error("List applications error:", error);
+      res.status(500).json({ success: false, message: error.message || "Failed to fetch applications", stack: error.stack });
+    }
+  };
 
 export const updateApplicationStatus = async (req: Request, res: Response): Promise<any> => {
   const startupId = (req as any).user.id;

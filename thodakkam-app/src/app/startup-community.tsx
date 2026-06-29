@@ -353,7 +353,7 @@ function PostItem({ post, companyName, companyLogo, colors, isDark }: { post: an
   const initialRepostsCount = post.reposts ? post.reposts.length : 0;
   const initiallyReposted = post.reposts ? post.reposts.some((r: any) => r.startup?.companyName === companyName) : false;
 
-  const initiallySaved = post.savedBy ? post.savedBy.some((s: any) => s.startup?.companyName === companyName) : false;
+  const initiallySaved = post.isSaved || false;
 
   // Fallback to random if no likes field
   const [likesCount, setLikesCount] = useState(post.likes ? initialLikesCount : Math.floor(Math.random() * 100));
@@ -407,7 +407,7 @@ function PostItem({ post, companyName, companyLogo, colors, isDark }: { post: an
       const res = await fetch(`${baseUrl}/api/community/posts/${post.id}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: commentText, companyName })
+        body: JSON.stringify({ content: commentText, companyName })
       });
       const data = await res.json();
       if (data.success && data.comment) {
@@ -417,7 +417,7 @@ function PostItem({ post, companyName, companyLogo, colors, isDark }: { post: an
         // Fallback optimistic UI if server fails
         const tempComment = {
           id: Date.now().toString(),
-          text: commentText,
+          content: commentText,
           startup: { companyName, profilePhoto: companyLogo, companyLogo: companyLogo }
         };
         setComments([...comments, tempComment]);
@@ -428,7 +428,7 @@ function PostItem({ post, companyName, companyLogo, colors, isDark }: { post: an
       // Optimistic UI on error
       const tempComment = {
         id: Date.now().toString(),
-        text: commentText,
+        content: commentText,
         startup: { companyName, profilePhoto: companyLogo, companyLogo: companyLogo }
       };
       setComments([...comments, tempComment]);

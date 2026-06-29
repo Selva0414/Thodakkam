@@ -34,6 +34,9 @@ export default function StartupJobs() {
   const [globalCompanyLogo, setGlobalCompanyLogo] = useState<string | null>(null);
   const [activeStageView, setActiveStageView] = useState<string | null>(null);
   const [assessmentResults, setAssessmentResults] = useState<any[]>([]);
+  const [jobApplications, setJobApplications] = useState<any[]>([]);
+  const [loadingApps, setLoadingApps] = useState(false);
+  const [allApplicationsData, setAllApplicationsData] = useState<any[]>([]);
 
   const companyName = (params.companyName as string) || 'Echo Digital';
   const jobToTrack = selectedJob || (jobs && jobs.length > 0 ? jobs[0] : null);
@@ -42,6 +45,7 @@ export default function StartupJobs() {
     React.useCallback(() => {
       setActiveTab('Jobs');
       fetchJobs();
+      fetchAllApplications();
     }, [companyName])
   );
 
@@ -71,6 +75,18 @@ export default function StartupJobs() {
       console.error('Fetch Jobs Error:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAllApplications = async () => {
+    try {
+      const res = await fetch(`${BASE_URL}/api/startup/applications`, { headers: { "Authorization": `Bearer ${await AsyncStorage.getItem("startupToken")}` } });
+      const data = await res.json();
+      if (data.success && data.applications) {
+        setAllApplicationsData(data.applications);
+      }
+    } catch(e) {
+      console.error(e);
     }
   };
 
@@ -168,6 +184,40 @@ export default function StartupJobs() {
     }
   }, [selectedCandidate]);
 
+  useEffect(() => {
+    if (viewMode === 'Tracking' && jobToTrack) {
+      const fetchApps = async () => {
+        setLoadingApps(true);
+        try {
+          const res = await fetch(`${BASE_URL}/api/startup/jobs/${jobToTrack.id}/applications`, { 
+            headers: { "Authorization": `Bearer ${await AsyncStorage.getItem("startupToken")}` } 
+          });
+          const data = await res.json();
+          if (data.success && data.tracking) {
+             const formattedApps = data.tracking.map((t: any) => ({
+                id: t.applicationId,
+                userId: t.candidateId,
+                fullName: t.name,
+                email: t.email,
+                user: { profilePhoto: t.avatarUrl },
+                status: t.status,
+                appliedAt: t.appliedAt
+             }));
+             setJobApplications(formattedApps);
+          } else {
+             setJobApplications(jobToTrack.applications || []);
+          }
+        } catch(e) {
+          console.error(e);
+          setJobApplications(jobToTrack.applications || []);
+        } finally {
+          setLoadingApps(false);
+        }
+      };
+      fetchApps();
+    }
+  }, [viewMode, jobToTrack]);
+
   const handleUpdateApplicationStatus = async (newStatus: string) => {
     if (!selectedCandidate) return;
     try {
@@ -217,7 +267,7 @@ export default function StartupJobs() {
     { label: 'Closed', count: closedCount },
   ];
 
-  const allApplications = jobs.flatMap(j => j.applications || []);
+  const allApplications = allApplicationsData.length > 0 ? allApplicationsData : jobs.flatMap(j => j.applications || []);
   const totalApplications = allApplications.length;
   
   const interviewed = allApplications.filter(a => a.status === 'INTERVIEW SCHEDULED' || a.status === 'OFFERED' || a.status === 'HIRED').length;
@@ -411,7 +461,7 @@ export default function StartupJobs() {
                       <View style={{ flex: 1 }}>
                         <Text style={[styles.statLabel, { color: colors.textSecondary }]}>APPLICANTS</Text>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                          <Text style={[styles.statValue, { color: colors.text }]}>{job.applications?.length || 0}</Text>
+                          <Text style={[styles.statValue, { color: colors.text }]}>{job.applicant_count || job.applications?.length || 0}</Text>
                           <Text style={[styles.statTrend, { color: isDark ? colors.success : '#16a34a' }]}>↗ +0 today</Text>
                         </View>
                       </View>
@@ -572,8 +622,8 @@ export default function StartupJobs() {
                     <Users size={18} color="#3b82f6" />
                   </View>
                   <Text style={[styles.trackingLabel, { color: colors.textSecondary }]}>TOTAL APPLICANTS</Text>
-                  <Text style={[styles.trackingValue, { color: colors.text }]}>{jobToTrack.applications?.length || 0}</Text>
-                  <Text style={[styles.trackingSubtext, { color: '#3b82f6' }]}>+{(jobToTrack.applications?.length || 0) > 0 ? 1 : 0} this week</Text>
+                  <Text style={[styles.trackingValue, { color: colors.text }]}>{jobToTrack.applicant_count || jobToTrack.applications?.length || 0}</Text>
+                  <Text style={[styles.trackingSubtext, { color: '#3b82f6' }]}>+{(jobToTrack.applicant_count || jobToTrack.applications?.length || 0) > 0 ? 1 : 0} this week</Text>
                 </View>
 
                 {/* Shortlisted */}
@@ -609,10 +659,12 @@ export default function StartupJobs() {
 
               {/* Applicant List */}
               <View>
-                {!jobToTrack?.applications || jobToTrack.applications.length === 0 ? (
+                {loadingApps ? (
+                  <ActivityIndicator color={colors.primary} style={{ marginTop: 20 }} />
+                ) : jobApplications.length === 0 ? (
                   <Text style={{ textAlign: 'center', color: colors.textSecondary, marginTop: 20 }}>No applicants yet.</Text>
                 ) : (
-                  jobToTrack.applications.map((app: any) => (
+                  jobApplications.map((app: any) => (
                     <TouchableOpacity 
                       key={app.id} 
                       style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderWidth: 1, borderColor: colors.border, borderRadius: 12, marginBottom: 12, backgroundColor: colors.card }}

@@ -236,7 +236,7 @@ function PostItem({ post }: { post: any }) {
   const initialReposts = post.shares_count ?? (post.reposts ? post.reposts.length : 0);
   const initiallyReposted = post.isShared ?? (post.reposts ? post.reposts.some((r: any) => r.user?.email === userStore.email) : false);
 
-  const initiallySaved = post.savedBy ? post.savedBy.some((s: any) => s.user?.email === userStore.email) : false;
+  const initiallySaved = post.isSaved || false;
 
   const [likesCount, setLikesCount] = useState(initialLikes);
   const [liked, setLiked] = useState(initiallyLiked);

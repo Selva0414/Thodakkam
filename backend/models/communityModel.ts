@@ -148,6 +148,7 @@ const getPosts = async (userId: number | string | null = null, userType: string 
              ${ORIGINAL_POST_COLS},
              EXISTS(SELECT 1 FROM post_likes l WHERE l.post_id = COALESCE(p.repost_of, p.id) AND l.user_id = $1::text) as "isLiked",
              EXISTS(SELECT 1 FROM post_shares s WHERE s.post_id = COALESCE(p.repost_of, p.id) AND s.user_id = $1::text AND s.user_type = $2) as "isShared",
+             EXISTS(SELECT 1 FROM post_saves sv WHERE sv.post_id = COALESCE(p.repost_of, p.id) AND sv.user_id = $1::text AND sv.user_type = $2) as "isSaved",
              EXISTS(SELECT 1 FROM community_follows f
               WHERE f.follower_id = $1::text AND f.follower_type = $2
                 AND f.followed_id = p.author_id AND f.followed_type = p.author_type) as "isFollowing"

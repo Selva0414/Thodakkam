@@ -115,9 +115,9 @@ export default function SavedPosts() {
       const token = await AsyncStorage.getItem(role === 'startup' ? 'startupToken' : 'studentToken');
       const res = await fetch(`${baseUrl}/api/community/saved`, { headers: { "Authorization": `Bearer ${token}` } });
       const data = await res.json();
-      if (data.success) {
-        const processedPosts = data.posts.map((post: any) => {
-          let pImageUrl = post.imageUrl;
+      if (Array.isArray(data)) {
+        const processedPosts = data.map((post: any) => {
+          let pImageUrl = post.imageUrl || post.media_url || post.media;
           let parsedImages = [];
           if (pImageUrl) {
             try {
@@ -147,12 +147,12 @@ export default function SavedPosts() {
               }
             }
           }
-          let uPhoto = post.user?.profilePhoto;
+          let uPhoto = post.user?.profilePhoto || post.author_avatar;
           if (uPhoto && !uPhoto.startsWith('http') && !uPhoto.startsWith('data:image')) {
             const filename = uPhoto.split(/[\/\\]/).pop();
             uPhoto = `${baseUrl}/uploads/${filename}`;
           }
-          return { ...post, imageUrls: parsedImages, user: post.user ? { ...post.user, profilePhoto: uPhoto } : null };
+          return { ...post, imageUrls: parsedImages, user: post.user ? { ...post.user, profilePhoto: uPhoto } : { fullName: post.author_name, profilePhoto: uPhoto } };
         });
         setPosts(processedPosts);
       }
@@ -229,7 +229,7 @@ function PostItem({ post, role, identifier }: { post: any, role: string, identif
   const initialReposts = post.reposts ? post.reposts.length : 0;
   const initiallyReposted = post.reposts ? post.reposts.some((r: any) => role === 'startup' ? r.startup?.companyName === identifier : r.user?.email === identifier) : false;
 
-  const initiallySaved = post.savedBy ? post.savedBy.some((s: any) => role === 'startup' ? s.startup?.companyName === identifier : s.user?.email === identifier) : false;
+  const initiallySaved = post.isSaved !== undefined ? post.isSaved : true; // In saved posts, they are all saved by default
 
   const [likesCount, setLikesCount] = useState(initialLikes);
   const [liked, setLiked] = useState(initiallyLiked);
@@ -276,10 +276,10 @@ function PostItem({ post, role, identifier }: { post: any, role: string, identif
       const res = await fetch(`${baseUrl}/api/community/posts/${post.id}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: commentText, ...(role === 'startup' ? { companyName: identifier } : { email: identifier }) })
+        body: JSON.stringify({ content: commentText, ...(role === 'startup' ? { companyName: identifier } : { email: identifier }) })
       });
       const data = await res.json();
-      if (data.success && data.comment) {
+      if (!data.error && data.comment) {
         setComments([...comments, data.comment]);
         setCommentText('');
       }
@@ -320,7 +320,7 @@ function PostItem({ post, role, identifier }: { post: any, role: string, identif
         body: JSON.stringify(role === 'startup' ? { companyName: identifier } : { email: identifier })
       });
       const data = await res.json();
-      if (!data.success) {
+      if (data.error) {
         // Revert on failure
         setHasReposted(!newRepostedState);
         setRepostCount((prev: number) => newRepostedState ? prev - 1 : prev + 1);
@@ -349,7 +349,7 @@ function PostItem({ post, role, identifier }: { post: any, role: string, identif
         body: JSON.stringify(role === 'startup' ? { companyName: identifier } : { email: identifier })
       });
       const data = await res.json();
-      if (!data.success) {
+      if (data.error) {
         setHasSaved(!newSavedState);
       }
     } catch (err) {
