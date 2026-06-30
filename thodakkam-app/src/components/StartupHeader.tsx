@@ -160,6 +160,9 @@ export default function StartupHeader({ companyName = 'Echo Digital' }: { compan
               <TouchableOpacity style={styles.drawerMenuItem} onPress={() => { closeMenu(); router.push({ pathname: '/startup-jobs' as any, params: { companyName, mode: 'Tracking' } }); }}>
                 <Text style={[styles.drawerMenuText, { color: colors.text }]}>Tracking</Text>
               </TouchableOpacity>
+              <TouchableOpacity style={styles.drawerMenuItem} onPress={() => { closeMenu(); router.push('/startup-subscription'); }}>
+                <Text style={[styles.drawerMenuText, { color: colors.text }]}>Subscription</Text>
+              </TouchableOpacity>
               <TouchableOpacity style={styles.drawerMenuItem} onPress={() => { closeMenu(); setShowNetworkModal(true); }}>
                 <Text style={[styles.drawerMenuText, { color: colors.text }]}>My Network</Text>
               </TouchableOpacity>
