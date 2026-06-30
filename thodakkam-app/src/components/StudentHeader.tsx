@@ -116,7 +116,7 @@ export default function StudentHeader({ user }: { user?: { id?: string, name: st
               <TouchableOpacity style={navStyles.drawerMenuItem} onPress={() => { setShowProfileDropdown(false); router.push({ pathname: '/saved-posts' as any, params: { role: 'student', identifier: userStore.email } }); }}><Text style={[navStyles.drawerMenuText, { color: colors.text }]}>Saved posts</Text></TouchableOpacity>
               <TouchableOpacity style={navStyles.drawerMenuItem}><Text style={[navStyles.drawerMenuText, { color: colors.text }]}>My Network</Text></TouchableOpacity>
               <TouchableOpacity style={navStyles.drawerMenuItem}><Text style={[navStyles.drawerMenuText, { color: colors.text }]}>General</Text></TouchableOpacity>
-              <TouchableOpacity style={navStyles.drawerMenuItem}><Text style={[navStyles.drawerMenuText, { color: colors.text }]}>Practice</Text></TouchableOpacity>
+              <TouchableOpacity style={navStyles.drawerMenuItem} onPress={() => { setShowProfileDropdown(false); router.push('/student-practice'); }}><Text style={[navStyles.drawerMenuText, { color: colors.text }]}>Practice</Text></TouchableOpacity>
             </ScrollView>
 
             <View style={[navStyles.drawerDivider, { backgroundColor: colors.border }]} />

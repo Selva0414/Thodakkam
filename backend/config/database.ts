@@ -1,4 +1,5 @@
 import { Pool } from "pg";
+import { neon } from "@neondatabase/serverless";
 import dotenv from "dotenv";
 import path from "path";
 import fs from "fs";
@@ -95,7 +96,7 @@ function intFromEnv(name: string, fallback: number): number {
   return Number.isFinite(v) && v > 0 ? v : fallback;
 }
 
-export const pool = new Pool({
+const pgPool = new Pool({
   connectionString,
   ssl: sslConfig,
   lookup: customLookup,
@@ -110,9 +111,80 @@ export const pool = new Pool({
 } as any);
 
 // Prevent Node.js process crash when the database connection throws an error
-pool.on("error", (err: Error) => {
+pgPool.on("error", (err: Error) => {
   console.error("❌ Unexpected error on idle client", err);
 });
+
+// Setup Neon HTTP fallback driver
+const sqlHttp = neon(connectionString);
+let useHttpFallback = false;
+
+// Wrapped pool offering automatic transparent HTTP fallback
+export const pool = {
+  on: (event: any, callback: (...args: any[]) => void) => {
+    pgPool.on(event, callback);
+  },
+  query: async (queryText: string, params: any[] = []) => {
+    if (useHttpFallback) {
+      try {
+        const res = await sqlHttp.query(queryText, params);
+        return { rows: res, rowCount: res.length };
+      } catch (err: any) {
+        console.error("Database query error (HTTP):", err.message);
+        throw err;
+      }
+    }
+    try {
+      return await pgPool.query(queryText, params);
+    } catch (err: any) {
+      const isTimeout = err.code === "ETIMEDOUT" ||
+                        err.message.includes("timeout") ||
+                        err.message.includes("connect ETIMEDOUT") ||
+                        err.message.includes("Connection terminated due to connection timeout");
+      if (isTimeout) {
+        console.warn("⚠️  TCP connection failed or timed out. Falling back to HTTP driver...");
+        useHttpFallback = true;
+        const res = await sqlHttp.query(queryText, params);
+        return { rows: res, rowCount: res.length };
+      }
+      throw err;
+    }
+  },
+  connect: async () => {
+    if (useHttpFallback) {
+      return {
+        query: async (queryText: string, params: any[] = []) => {
+          const res = await sqlHttp.query(queryText, params);
+          return { rows: res, rowCount: res.length };
+        },
+        release: () => {}
+      };
+    }
+    try {
+      return await pgPool.connect();
+    } catch (err: any) {
+      const isTimeout = err.code === "ETIMEDOUT" ||
+                        err.message.includes("timeout") ||
+                        err.message.includes("connect ETIMEDOUT") ||
+                        err.message.includes("Connection terminated due to connection timeout");
+      if (isTimeout) {
+        console.warn("⚠️  TCP connection failed or timed out. Falling back to HTTP driver...");
+        useHttpFallback = true;
+        return {
+          query: async (queryText: string, params: any[] = []) => {
+            const res = await sqlHttp.query(queryText, params);
+            return { rows: res, rowCount: res.length };
+          },
+          release: () => {}
+        };
+      }
+      throw err;
+    }
+  },
+  end: async () => {
+    await pgPool.end();
+  }
+} as any;
 
 function buildParameterizedQuery(strings: TemplateStringsArray, values: any[]) {
   let text = "";
@@ -158,6 +230,11 @@ export async function testConnection(): Promise<boolean> {
   try {
     const result = await pool.query("SELECT NOW() AS current_time, version() AS pg_version");
     console.log("✅ Database connected successfully!");
+    if (useHttpFallback) {
+      console.log("   Mode: HTTP Fallback (port 443)");
+    } else {
+      console.log("   Mode: Standard TCP (port 5432)");
+    }
     console.log(`   Time: ${result.rows[0].current_time}`);
     console.log(`   PostgreSQL: ${result.rows[0].pg_version}`);
     return true;

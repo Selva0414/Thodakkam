@@ -326,6 +326,8 @@ import resumeAnonymizerRoutes from "./routes/resumeAnonymizerRoutes";
 import messageRoutes from "./routes/messageRoutes";
 import notificationRoutes from "./routes/notificationRoutes";
 import userProfileRoutes from "./routes/userProfileRoutes";
+import practiceRoutes from "./routes/practiceRoutes";
+import paymentRoutes from "./routes/paymentRoutes";
 
 app.use("/api/students", studentRoutes);
 app.use("/api/student", studentRoutes);
@@ -334,6 +336,8 @@ app.use("/api/jobs", jobRoutes);
 app.use("/api/applications", applicationRoutes);
 app.use("/api/community", communityRoutes);
 app.use("/api/aichat", aiChatRoutes);
+app.use("/api/practice", practiceRoutes);
+app.use("/api/payment", paymentRoutes);
 
 // ── AI Proxy: Job Description Generator (avoid browser CORS) ──────────────────
 app.post("/api/ai/generate-job-description", async (req: Request, res: Response) => {

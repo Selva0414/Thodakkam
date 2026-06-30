@@ -36,43 +36,56 @@ const CARDS = [
 ];
 
 function FloatingNavBar() {
+  const { width } = useWindowDimensions();
+  const isMobile = width < 768;
   const router = useRouter();
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [clickedTooltipId, setClickedTooltipId] = useState<string | null>(null);
 
-  const activeCard = CARDS.find(c => c.id === activeId);
+  const activeTooltipCard = CARDS.find(c => c.id === (clickedTooltipId || activeId));
 
   return (
     <View style={styles.floatingNavContainer}>
       {/* Tooltip Bubble */}
-      {activeCard && (
+      {activeTooltipCard && (
         <Animated.View
           entering={FadeInDown.duration(300).springify()}
           exiting={FadeOutDown.duration(200)}
           style={styles.tooltipBubble}
         >
-          <Text style={[styles.tooltipTitle, { color: activeCard.accent }]}>
-            {activeCard.title}
+          {clickedTooltipId && (
+            <Pressable
+              onPress={() => setClickedTooltipId(null)}
+              style={{
+                position: 'absolute',
+                top: 12,
+                right: 12,
+                zIndex: 10,
+              }}
+            >
+              <X size={16} color="#64748b" />
+            </Pressable>
+          )}
+          <Text style={[styles.tooltipTitle, { color: activeTooltipCard.accent }]}>
+            {activeTooltipCard.title}
           </Text>
-          <Text style={styles.tooltipDesc}>{activeCard.description}</Text>
+          <Text style={styles.tooltipDesc}>{activeTooltipCard.description}</Text>
           <View style={styles.tooltipArrow} />
         </Animated.View>
       )}
 
       {/* Navigation Icons */}
-      <View style={styles.navBar}>
+      <View style={[styles.navBar, isMobile && { paddingHorizontal: 16 }]}>
         {CARDS.map((card, index) => {
           const isActive = activeId === card.id;
+          const isTooltipActive = clickedTooltipId === card.id;
           return (
             <Pressable
               key={card.id}
               onHoverIn={() => setActiveId(card.id)}
               onHoverOut={() => setActiveId(null)}
               onPress={() => {
-                if (isActive) {
-                  router.push(card.route as any);
-                } else {
-                  setActiveId(card.id);
-                }
+                router.push(card.route as any);
               }}
               style={({ pressed }) => [
                 { alignItems: 'center', justifyContent: 'center' },
@@ -81,43 +94,89 @@ function FloatingNavBar() {
             >
               <View style={[
                 styles.navIconWrapper,
-                card.id === 'startup' && {
-                  width: 64,
-                  height: 64,
-                  borderRadius: 32,
-                  marginTop: -20,
+                {
+                  width: 90,
+                  height: 54,
+                  borderRadius: 12,
+                  marginTop: 0,
                   marginBottom: 0,
                   backgroundColor: '#ffffff',
                   borderWidth: 1,
                   borderColor: '#e2e8f0',
-                  boxShadow: `0 -4px 15px rgba(124, 58, 237, 0.15)`,
-                  elevation: 6,
+                  ...Platform.select({
+                    web: {
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+                    },
+                    default: {
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.05,
+                      shadowRadius: 8,
+                      elevation: 2,
+                    }
+                  })
                 },
-                isActive && card.id === 'startup' && {
-                  transform: [{ translateY: -4 }, { scale: 1.05 }],
-                  boxShadow: `0 -6px 25px rgba(124, 58, 237, 0.3)`,
-                },
-                isActive && card.id !== 'startup' && {
-                  transform: [{ translateY: -6 }, { scale: 1.1 }],
-                  backgroundColor: `${card.accent}15`,
-                  boxShadow: `0 0 20px ${card.accent}`,
-                  elevation: 8,
+                isActive && {
+                  borderColor: card.accent,
+                  backgroundColor: `${card.accent}05`,
+                  ...Platform.select({
+                    web: {
+                      boxShadow: `0 4px 12px ${card.accent}30`,
+                    },
+                    default: {
+                      shadowColor: card.accent,
+                      shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.3,
+                      shadowRadius: 8,
+                      elevation: 8,
+                    }
+                  })
                 }
               ]}>
                 <card.Icon
-                  size={card.id === 'startup' ? 32 : 24}
+                  size={26}
                   color={isActive ? card.accent : PRIMARY}
                   strokeWidth={isActive ? 2.5 : 2}
                 />
               </View>
-              <Text style={{
-                fontSize: 10,
-                marginTop: 4,
-                fontWeight: '600',
-                color: isActive ? card.accent : '#64748b'
-              }}>
-                {card.shortTitle}
-              </Text>
+              
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                <Text style={{
+                  fontSize: 10,
+                  fontWeight: '600',
+                  color: isActive ? card.accent : '#64748b'
+                }}>
+                  {card.shortTitle}
+                </Text>
+                
+                {/* Info button ("i" button) */}
+                <Pressable
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    setClickedTooltipId(clickedTooltipId === card.id ? null : card.id);
+                  }}
+                  style={{
+                    marginLeft: 6,
+                    width: 16,
+                    height: 16,
+                    borderRadius: 8,
+                    backgroundColor: isTooltipActive ? card.accent : '#f1f5f9',
+                    borderWidth: 1,
+                    borderColor: isTooltipActive ? card.accent : '#cbd5e1',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Text style={{
+                    fontSize: 9,
+                    fontWeight: '800',
+                    color: isTooltipActive ? '#ffffff' : '#64748b',
+                    lineHeight: 11,
+                  }}>
+                    i
+                  </Text>
+                </Pressable>
+              </View>
             </Pressable>
           );
         })}
@@ -127,8 +186,8 @@ function FloatingNavBar() {
 }
 
 function FeatureSection() {
-  const { width } = Dimensions.get('window');
-  // 750px is the total width required to comfortably show the 460px ring + 140px card overflows on each side
+  const { width } = useWindowDimensions();
+  const isMobile = width < 768;
   const scaleRatio = Math.min(1, width / 750);
 
   return (
@@ -406,6 +465,7 @@ function SuperchargeSection() {
 
 function OperationsSection() {
   const { width } = useWindowDimensions();
+  const isMobile = width < 768;
   const [activeIndex, setActiveIndex] = useState(1);
 
   const handlePrev = () => setActiveIndex((prev) => Math.max(0, prev - 1));
@@ -536,21 +596,24 @@ function OperationsSection() {
           if (index === activeIndex) {
             positionStyle = {
               zIndex: 3,
-              marginLeft: -160,
+              marginLeft: isMobile ? -140 : -160,
+              width: isMobile ? 280 : 320,
               transform: [{ scale: 1.05 }, { translateY: -10 }],
               ...Platform.select({ web: { boxShadow: '0 25px 50px rgba(0,0,0,0.15)' } })
             };
           } else if (index < activeIndex) {
             positionStyle = {
               zIndex: 1,
-              marginLeft: -300,
+              marginLeft: isMobile ? -200 : -300,
+              width: isMobile ? 280 : 320,
               transform: [{ scale: 0.9 }, { rotate: '-6deg' }, { translateY: 20 }],
               ...Platform.select({ web: { boxShadow: '0 15px 35px rgba(0,0,0,0.08)' } })
             };
           } else {
             positionStyle = {
               zIndex: 2,
-              marginLeft: -20,
+              marginLeft: isMobile ? 10 : -20,
+              width: isMobile ? 280 : 320,
               transform: [{ scale: 0.9 }, { rotate: '6deg' }, { translateY: 20 }],
               ...Platform.select({ web: { boxShadow: '0 15px 35px rgba(0,0,0,0.08)' } })
             };
@@ -1706,8 +1769,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 30,
     paddingVertical: Platform.OS === 'ios' ? 16 : 8,
     paddingBottom: Platform.OS === 'ios' ? 28 : 8, // Safe area padding
-    justifyContent: 'center',
-    gap: 80,
+    justifyContent: 'space-around',
     borderTopWidth: 1,
     borderTopColor: '#e2e8f0',
     boxShadow: '0 -4px 15px rgba(0, 0, 0, 0.2)',

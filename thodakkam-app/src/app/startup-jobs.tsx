@@ -41,6 +41,101 @@ export default function StartupJobs() {
   const companyName = (params.companyName as string) || 'Echo Digital';
   const jobToTrack = selectedJob || (jobs && jobs.length > 0 ? jobs[0] : null);
 
+  const [isLocked, setIsLocked] = useState(false);
+
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      const scriptId = 'razorpay-checkout-script';
+      if (!document.getElementById(scriptId)) {
+        const script = document.createElement('script');
+        script.id = scriptId;
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.async = true;
+        document.body.appendChild(script);
+      }
+    }
+  }, []);
+
+  const handlePayment = async () => {
+    if (Platform.OS !== 'web') {
+      alert('Payments are supported on the Web portal. Please log in to https://thodakkam.vercel.app to upgrade.');
+      return;
+    }
+
+    try {
+      const token = await AsyncStorage.getItem("startupToken");
+      
+      const res = await fetch(`${BASE_URL}/api/startup/subscription/create-order`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          student_count: 1,
+          domain_info: 'General'
+        })
+      });
+
+      const orderData = await res.json();
+      if (!orderData.success) {
+        alert(orderData.message || 'Failed to create payment order.');
+        return;
+      }
+
+      const options = {
+        key: orderData.razorpay_key,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'Thodakkam',
+        description: 'Unlock account for student hiring',
+        order_id: orderData.order_id,
+        handler: async function (response: any) {
+          try {
+            const verifyRes = await fetch(`${BASE_URL}/api/startup/subscription/verify`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              })
+            });
+
+            const verifyData = await verifyRes.json();
+            if (verifyData.success) {
+              alert('Payment successful! Your account has been unlocked.');
+              window.location.reload();
+            } else {
+              alert(verifyData.message || 'Payment verification failed.');
+            }
+          } catch (err: any) {
+            alert('Verification failed: ' + err.message);
+          }
+        },
+        prefill: {
+          name: companyName,
+        },
+        theme: {
+          color: '#662483',
+        },
+        modal: {
+          ondismiss: function () {
+            alert('Payment cancelled by user.');
+          }
+        }
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.open();
+    } catch (err: any) {
+      alert('Payment failed: ' + err.message);
+    }
+  };
+
   useFocusEffect(
     React.useCallback(() => {
       setActiveTab('Jobs');
@@ -52,7 +147,20 @@ export default function StartupJobs() {
   const fetchJobs = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${BASE_URL}/api/startup/jobs`, { headers: { "Authorization": `Bearer ${await AsyncStorage.getItem("startupToken")}` } });
+      const token = await AsyncStorage.getItem("startupToken");
+
+      // Fetch Subscription Status
+      const subRes = await fetch(`${BASE_URL}/api/startup/subscription/status`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (subRes.ok) {
+        const subData = await subRes.json();
+        if (subData.success) {
+          setIsLocked(subData.is_locked);
+        }
+      }
+
+      const response = await fetch(`${BASE_URL}/api/startup/jobs`, { headers: { "Authorization": `Bearer ${token}` } });
       
       if (!response.ok) {
         throw new Error(`Server returned ${response.status}`);
@@ -948,6 +1056,32 @@ export default function StartupJobs() {
           );
         })}
       </View>
+
+      <Modal
+        visible={isLocked}
+        transparent={true}
+        animationType="slide"
+      >
+        <View style={styles.lockOverlay}>
+          <View style={[styles.lockCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={[styles.lockTitle, { color: colors.text }]}>Account Locked 🔒</Text>
+            <Text style={[styles.lockText, { color: colors.textSecondary }]}>
+              Your free trial has ended. Please pay the subscription fee of ₹799 per student to unlock your account and continue hiring top talents.
+            </Text>
+            
+            <TouchableOpacity style={styles.payButton} onPress={handlePayment}>
+              <Text style={styles.payButtonText}>Pay ₹799 to Unlock</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.logoutButton} onPress={async () => {
+              await AsyncStorage.clear();
+              router.navigate('/startup-login');
+            }}>
+              <Text style={styles.logoutButtonText}>Log Out</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -1116,5 +1250,63 @@ const styles = StyleSheet.create({
   applicantName: { fontSize: 15, fontWeight: '700' },
   applicantContact: { fontSize: 12, marginTop: 4 },
   resumeBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
-  resumeBtnText: { fontSize: 12, fontWeight: '700' }
+  resumeBtnText: { fontSize: 12, fontWeight: '700' },
+  lockOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+    zIndex: 9999,
+  },
+  lockCard: {
+    width: '100%',
+    maxWidth: 400,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 24,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  lockTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    marginBottom: 12,
+  },
+  lockText: {
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  payButton: {
+    backgroundColor: '#662483',
+    width: '100%',
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  payButtonText: {
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  logoutButton: {
+    width: '100%',
+    paddingVertical: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ef4444',
+    alignItems: 'center',
+  },
+  logoutButtonText: {
+    color: '#ef4444',
+    fontSize: 15,
+    fontWeight: '600',
+  },
 });
