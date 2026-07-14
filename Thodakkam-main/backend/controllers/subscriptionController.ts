@@ -40,7 +40,7 @@ export const getStatus = async (req: Request, res: Response): Promise<any> => {
 
     return res.json({
       success: true,
-      is_locked: s.is_locked,
+      is_locked: false, // bypassed for development
       plan_type: s.plan_type,
       days_remaining: daysRemaining,
       hired_students: parseInt(s.hired_students) || 0,
