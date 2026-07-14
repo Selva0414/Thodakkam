@@ -16,7 +16,8 @@ import {
   getDomains,
   getAssessmentReport,
   getAssessmentByApplication,
-  getAssessmentByJob
+  getAssessmentByJob,
+  fetchLeetcodeQuestion
 } from '../controllers/assessmentController';
 import { protect } from '../middleware/auth';
 
@@ -41,6 +42,7 @@ router.delete("/:id/questions/:questionId", deleteQuestion);
 
 // Domain-based question generation
 router.post("/generate-questions", generateDomainQuestions);
+router.post("/fetch-leetcode", fetchLeetcodeQuestion);
 router.post("/:id/questions/bulk", bulkAddQuestions);
 
 // Candidate assignment

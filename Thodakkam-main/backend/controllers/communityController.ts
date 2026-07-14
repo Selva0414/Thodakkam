@@ -56,18 +56,6 @@ export const getMeta = async (req: Request, res: Response): Promise<any> => {
   }
 };
 
-export const getRecommendationsEndpoint = async (req: Request, res: Response): Promise<any> => {
-  try {
-    const viewerId = (req as any).user?.id;
-    const viewerType = (req as any).user?.role || "student";
-    const limit = parseInt(req.query.limit as string) || 20;
-    const recommendations = await Community.getRecommendations(viewerId, viewerType, limit);
-    res.json(recommendations);
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
 export const createNewPost = async (req: Request, res: Response): Promise<any> => {
   if (process.env.NODE_ENV !== "production") {
     console.log("[Community] createNewPost called by user:", (req as any).user?.id);

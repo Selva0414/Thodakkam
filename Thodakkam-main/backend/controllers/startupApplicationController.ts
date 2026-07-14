@@ -140,13 +140,13 @@ export const listApplications = async (req: Request, res: Response): Promise<any
 
     let applications;
     if (status && jobFilter) {
-      applications = await sql`SELECT a.*, j.title AS job_title, s.id AS resolved_student_id, s.name AS student_name, s.name AS candidate_name, s.profile_photo AS avatar_url, s.github_url, s.linkedin_url, s.website_url, s.skills, s.location AS student_location, s.bio AS student_bio, s.educations, s.internships, s.phone AS student_phone, s.resume_file FROM applications a JOIN jobs j ON j.id = a.job_id LEFT JOIN students s ON LOWER(s.email) = LOWER(a.candidate_email) WHERE j.startup_id::text = ${startupId}::text AND a.status = ${status} AND a.job_id = ${jobFilter} ORDER BY a.applied_at DESC`;
+      applications = await sql`SELECT a.*, j.title AS job_title, s.id AS resolved_student_id, s.profile_photo AS avatar_url, s.github_url, s.linkedin_url, s.website_url, s.skills, s.location AS student_location, s.bio AS student_bio, s.educations, s.internships, s.phone AS student_phone, s.resume_file FROM applications a JOIN jobs j ON j.id = a.job_id LEFT JOIN students s ON LOWER(s.email) = LOWER(a.candidate_email) WHERE j.startup_id::text = ${startupId}::text AND a.status = ${status} AND a.job_id = ${jobFilter} ORDER BY a.applied_at DESC`;
     } else if (status) {
-      applications = await sql`SELECT a.*, j.title AS job_title, s.id AS resolved_student_id, s.name AS student_name, s.name AS candidate_name, s.profile_photo AS avatar_url, s.github_url, s.linkedin_url, s.website_url, s.skills, s.location AS student_location, s.bio AS student_bio, s.educations, s.internships, s.phone AS student_phone, s.resume_file FROM applications a JOIN jobs j ON j.id = a.job_id LEFT JOIN students s ON LOWER(s.email) = LOWER(a.candidate_email) WHERE j.startup_id::text = ${startupId}::text AND a.status = ${status} ORDER BY a.applied_at DESC`;
+      applications = await sql`SELECT a.*, j.title AS job_title, s.id AS resolved_student_id, s.profile_photo AS avatar_url, s.github_url, s.linkedin_url, s.website_url, s.skills, s.location AS student_location, s.bio AS student_bio, s.educations, s.internships, s.phone AS student_phone, s.resume_file FROM applications a JOIN jobs j ON j.id = a.job_id LEFT JOIN students s ON LOWER(s.email) = LOWER(a.candidate_email) WHERE j.startup_id::text = ${startupId}::text AND a.status = ${status} ORDER BY a.applied_at DESC`;
     } else if (jobFilter) {
-      applications = await sql`SELECT a.*, j.title AS job_title, s.id AS resolved_student_id, s.name AS student_name, s.name AS candidate_name, s.profile_photo AS avatar_url, s.github_url, s.linkedin_url, s.website_url, s.skills, s.location AS student_location, s.bio AS student_bio, s.educations, s.internships, s.phone AS student_phone, s.resume_file FROM applications a JOIN jobs j ON j.id = a.job_id LEFT JOIN students s ON LOWER(s.email) = LOWER(a.candidate_email) WHERE j.startup_id::text = ${startupId}::text AND a.job_id = ${jobFilter} ORDER BY a.applied_at DESC`;
+      applications = await sql`SELECT a.*, j.title AS job_title, s.id AS resolved_student_id, s.profile_photo AS avatar_url, s.github_url, s.linkedin_url, s.website_url, s.skills, s.location AS student_location, s.bio AS student_bio, s.educations, s.internships, s.phone AS student_phone, s.resume_file FROM applications a JOIN jobs j ON j.id = a.job_id LEFT JOIN students s ON LOWER(s.email) = LOWER(a.candidate_email) WHERE j.startup_id::text = ${startupId}::text AND a.job_id = ${jobFilter} ORDER BY a.applied_at DESC`;
     } else {
-      applications = await sql`SELECT a.*, j.title AS job_title, s.id AS resolved_student_id, s.name AS student_name, s.name AS candidate_name, s.profile_photo AS avatar_url, s.github_url, s.linkedin_url, s.website_url, s.skills, s.location AS student_location, s.bio AS student_bio, s.educations, s.internships, s.phone AS student_phone, s.resume_file FROM applications a JOIN jobs j ON j.id = a.job_id LEFT JOIN students s ON LOWER(s.email) = LOWER(a.candidate_email) WHERE j.startup_id::text = ${startupId}::text ORDER BY a.applied_at DESC`;
+      applications = await sql`SELECT a.*, j.title AS job_title, s.id AS resolved_student_id, s.profile_photo AS avatar_url, s.github_url, s.linkedin_url, s.website_url, s.skills, s.location AS student_location, s.bio AS student_bio, s.educations, s.internships, s.phone AS student_phone, s.resume_file FROM applications a JOIN jobs j ON j.id = a.job_id LEFT JOIN students s ON LOWER(s.email) = LOWER(a.candidate_email) WHERE j.startup_id::text = ${startupId}::text ORDER BY a.applied_at DESC`;
     }
 
     const counts = jobFilter
@@ -450,11 +450,11 @@ export const getApplicationById = async (req: Request, res: Response): Promise<a
         ...interviewData,
       },
     });
-    } catch (error: any) {
-      console.error("List applications error:", error);
-      res.status(500).json({ success: false, message: error.message || "Failed to fetch applications", stack: error.stack });
-    }
-  };
+  } catch (error: any) {
+    console.error("Get startup application error:", error.message);
+    return res.status(500).json({ success: false, message: "Failed to fetch application" });
+  }
+};
 
 export const updateApplicationStatus = async (req: Request, res: Response): Promise<any> => {
   const startupId = (req as any).user.id;

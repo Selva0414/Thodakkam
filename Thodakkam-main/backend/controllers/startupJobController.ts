@@ -232,7 +232,7 @@ export const listJobs = async (req: Request, res: Response): Promise<any> => {
   const startupId = (req as any).user.id;
   const { status } = req.query;
   try {
-    let jobs = status && status !== "all"
+    const jobs = status && status !== "all"
       ? await sql`
           SELECT j.*,
             COALESCE(a.applicant_count, 0)::int AS applicant_count,
@@ -283,44 +283,6 @@ export const listJobs = async (req: Request, res: Response): Promise<any> => {
           ) r ON r.job_id = j.id
           WHERE j.startup_id::text = ${startupId}::text
           ORDER BY j.created_at DESC`;
-          
-    jobs = Array.from(jobs).map((j: any) => ({ ...j }));
-
-    if (jobs.length > 0) {
-      const jobIds = jobs.map((j: any) => j.id);
-      const applications = await query(`
-        SELECT a.*, 
-               s.name as full_name, s.email, s.phone,
-               COALESCE(s.profile_photo, '') as profile_photo,
-               s.location as student_location
-        FROM applications a
-        LEFT JOIN students s ON a.student_id = s.id
-        WHERE a.job_id = ANY($1::int[])
-      `, [jobIds]);
-      
-      const appMap: any = {};
-      applications.forEach((app: any) => {
-        if (!appMap[app.job_id]) appMap[app.job_id] = [];
-        appMap[app.job_id].push({
-          id: app.id,
-          userId: app.student_id,
-          fullName: app.candidate_name || app.full_name,
-          email: app.candidate_email || app.email,
-          phone: app.candidate_phone || app.phone,
-          status: app.status,
-          appliedAt: app.applied_at,
-          resumeUrl: app.resume_url,
-          user: {
-             profilePhoto: app.profile_photo,
-             location: app.student_location || 'India'
-          }
-        });
-      });
-      
-      jobs.forEach((j: any) => {
-        j.applications = appMap[j.id] || [];
-      });
-    }
 
     const countRows = await sql`SELECT status, count(*)::int AS count FROM jobs WHERE startup_id::text = ${startupId}::text GROUP BY status`;
 

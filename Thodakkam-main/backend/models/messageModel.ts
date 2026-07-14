@@ -207,10 +207,10 @@ const getConversations = async (userId: any, userType: string) => {
     LEFT JOIN latest_visible_messages m
       ON m.other_user_id = p.other_user_id
      AND m.other_user_type = p.other_user_type
-    LEFT JOIN students s ON s.id::text = p.other_user_id::text AND p.other_user_type = 'student'
-    LEFT JOIN startups st ON st.id::text = p.other_user_id::text AND p.other_user_type = 'startup'
-    LEFT JOIN startup_profile_single sp ON sp.startup_id = p.other_user_id::text AND p.other_user_type = 'startup'
-    LEFT JOIN master_admins ma ON ma.id::text = p.other_user_id::text AND p.other_user_type = 'admin'
+    LEFT JOIN students s ON s.id::text = p.other_user_id AND p.other_user_type = 'student'
+    LEFT JOIN startups st ON st.id::text = p.other_user_id AND p.other_user_type = 'startup'
+    LEFT JOIN startup_profile_single sp ON sp.startup_id = p.other_user_id AND p.other_user_type = 'startup'
+    LEFT JOIN master_admins ma ON ma.id::text = p.other_user_id AND p.other_user_type = 'admin'
     LEFT JOIN messages msg ON (
       (msg.sender_id = p.other_user_id AND msg.sender_type = p.other_user_type AND msg.receiver_id = $1::text AND msg.receiver_type = $2) OR
       (msg.sender_id = $1::text AND msg.sender_type = $2 AND msg.receiver_id = p.other_user_id AND msg.receiver_type = p.other_user_type)

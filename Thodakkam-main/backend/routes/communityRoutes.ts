@@ -6,7 +6,6 @@ import { protectAny } from '../middleware/auth';
 router.get('/posts', protectAny, communityController.getFeed);
 router.get('/posts/:postId/media', protectAny, communityController.getPostMedia);
 router.get('/meta', protectAny, communityController.getMeta);
-router.get('/recommendations', protectAny, communityController.getRecommendationsEndpoint);
 router.post('/posts', protectAny, communityController.createNewPost);
 router.post('/posts/:postId/like', protectAny, communityController.handleLike);
 router.get('/posts/:postId/comments', protectAny, communityController.getComments);

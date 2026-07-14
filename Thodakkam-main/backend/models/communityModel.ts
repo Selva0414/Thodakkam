@@ -148,7 +148,6 @@ const getPosts = async (userId: number | string | null = null, userType: string 
              ${ORIGINAL_POST_COLS},
              EXISTS(SELECT 1 FROM post_likes l WHERE l.post_id = COALESCE(p.repost_of, p.id) AND l.user_id = $1::text) as "isLiked",
              EXISTS(SELECT 1 FROM post_shares s WHERE s.post_id = COALESCE(p.repost_of, p.id) AND s.user_id = $1::text AND s.user_type = $2) as "isShared",
-             EXISTS(SELECT 1 FROM post_saves sv WHERE sv.post_id = COALESCE(p.repost_of, p.id) AND sv.user_id = $1::text AND sv.user_type = $2) as "isSaved",
              EXISTS(SELECT 1 FROM community_follows f
               WHERE f.follower_id = $1::text AND f.follower_type = $2
                 AND f.followed_id = p.author_id AND f.followed_type = p.author_type) as "isFollowing"
@@ -335,28 +334,26 @@ const getRecommendations = async (viewerId: number | string, viewerType: string,
   await ensureSchema();
 
   return await query(
-    `SELECT * FROM (
-      SELECT DISTINCT ON (p.author_id, p.author_type)
-          p.author_id,
-          p.author_type,
-          p.author_name,
-          p.author_role,
-          p.author_avatar,
-          p.created_at AS latest_post_at,
-          (SELECT COUNT(*) FROM posts p2 WHERE p2.author_id = p.author_id AND p2.author_type = p.author_type)::int AS posts_count,
-          EXISTS (
-              SELECT 1
-              FROM community_follows f
-              WHERE f.follower_id = $1
-                AND f.follower_type = $2
-                AND f.followed_id = p.author_id
-                AND f.followed_type = p.author_type
-          ) AS is_following
-       FROM posts p
-       WHERE NOT (p.author_id = $1 AND p.author_type = $2)
-       ORDER BY p.author_type, p.author_id, p.created_at DESC
-     ) sub
-     ORDER BY latest_post_at DESC
+    `SELECT
+        p.author_id,
+        p.author_type,
+        p.author_name,
+        p.author_role,
+        p.author_avatar,
+        MAX(p.created_at) AS latest_post_at,
+        COUNT(*)::int AS posts_count,
+        EXISTS (
+            SELECT 1
+            FROM community_follows f
+            WHERE f.follower_id = $1
+              AND f.follower_type = $2
+              AND f.followed_id = p.author_id
+              AND f.followed_type = p.author_type
+        ) AS is_following
+     FROM posts p
+     WHERE NOT (p.author_id = $1 AND p.author_type = $2)
+     GROUP BY p.author_id, p.author_type, p.author_name, p.author_role, p.author_avatar
+     ORDER BY MAX(p.created_at) DESC
      LIMIT $3`,
     [viewerId, viewerType, limit]
   );

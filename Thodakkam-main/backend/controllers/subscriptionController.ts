@@ -40,7 +40,7 @@ export const getStatus = async (req: Request, res: Response): Promise<any> => {
 
     return res.json({
       success: true,
-      is_locked: false, // bypassed for development
+      is_locked: s.is_locked,
       plan_type: s.plan_type,
       days_remaining: daysRemaining,
       hired_students: parseInt(s.hired_students) || 0,
@@ -60,6 +60,10 @@ export const createOrder = async (req: Request, res: Response): Promise<any> => 
     const startupId = (req as any).user?.id;
     const { student_count, domain_info } = req.body;
 
+    if (!startupId) {
+      return res.status(401).json({ success: false, message: 'Startup ID missing from token' });
+    }
+
     if (!student_count || student_count < 1) {
       return res.status(400).json({ success: false, message: 'student_count must be at least 1' });
     }
@@ -69,25 +73,81 @@ export const createOrder = async (req: Request, res: Response): Promise<any> => 
     }
 
     const amountPaise = student_count * PRICE_PER_STUDENT_PAISE;
+
+    // Validate Razorpay keys are configured
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+      console.error('[Subscription] createOrder: Razorpay keys not configured');
+      return res.status(500).json({ success: false, message: 'Payment gateway not configured. Please contact support.' });
+    }
+
     const razorpay = getRazorpay();
 
-    const order = await razorpay.orders.create({
-      amount: amountPaise,
-      currency: 'INR',
-      receipt: `sub_${startupId}_${Date.now()}`,
-      notes: {
-        startup_id: startupId,
-        student_count: String(student_count),
-        domain_info: domain_info || '',
-      },
-    });
+    let order: any;
+    try {
+      order = await razorpay.orders.create({
+        amount: amountPaise,
+        currency: 'INR',
+        receipt: `sub_${String(startupId).substring(0, 20)}_${Date.now()}`,
+        notes: {
+          startup_id: String(startupId),
+          student_count: String(student_count),
+          domain_info: domain_info || '',
+        },
+      });
+    } catch (rzpErr: any) {
+      // Log every detail so we can diagnose live-server failures
+      console.error('[Subscription] Razorpay order create failed:',
+        'message:', rzpErr.message,
+        'statusCode:', rzpErr.statusCode,
+        'error_code:', rzpErr.error?.code,
+        'description:', rzpErr.error?.description,
+        'field:', rzpErr.error?.field,
+        'KEY_ID present:', !!process.env.RAZORPAY_KEY_ID,
+        'KEY_ID prefix:', (process.env.RAZORPAY_KEY_ID || '').substring(0, 10),
+        'KEY_SECRET length:', (process.env.RAZORPAY_KEY_SECRET || '').length,
+        'full error:', JSON.stringify(rzpErr.error || rzpErr)
+      );
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to create payment order with Razorpay. Try again.',
+        debug_code: rzpErr.error?.code,
+        debug_description: rzpErr.error?.description,
+      });
+    }
+
+    // Ensure subscription_payments table exists before inserting
+    try {
+      await query(
+        `CREATE TABLE IF NOT EXISTS subscription_payments (
+           id                  SERIAL PRIMARY KEY,
+           startup_id          TEXT,
+           razorpay_order_id   TEXT,
+           razorpay_payment_id TEXT,
+           amount_paise        INTEGER,
+           student_count       INTEGER DEFAULT 0,
+           domain_info         TEXT,
+           access_days         INTEGER DEFAULT 10,
+           status              TEXT DEFAULT 'pending',
+           created_at          TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()
+         )`,
+        []
+      );
+    } catch (tableErr: any) {
+      console.error('[Subscription] Table ensure error (non-fatal):', tableErr.message);
+    }
 
     // Store pending payment record
-    await query(
-      `INSERT INTO subscription_payments (startup_id, razorpay_order_id, amount_paise, student_count, domain_info, access_days, status)
-       VALUES ($1, $2, $3, $4, $5, $6, 'pending')`,
-      [startupId, order.id, amountPaise, student_count, domain_info || '', PAID_ACCESS_DAYS]
-    );
+    try {
+      await query(
+        `INSERT INTO subscription_payments (startup_id, razorpay_order_id, amount_paise, student_count, domain_info, access_days, status)
+         VALUES ($1, $2, $3, $4, $5, $6, 'pending')`,
+        [String(startupId), order.id, amountPaise, student_count, domain_info || '', PAID_ACCESS_DAYS]
+      );
+    } catch (dbErr: any) {
+      // Non-fatal: the order was created in Razorpay — return the order so payment can proceed.
+      // The verify step will handle DB updates.
+      console.error('[Subscription] DB insert failed (non-fatal):', dbErr.message);
+    }
 
     return res.json({
       success: true,
@@ -97,8 +157,8 @@ export const createOrder = async (req: Request, res: Response): Promise<any> => 
       razorpay_key: process.env.RAZORPAY_KEY_ID || '',
     });
   } catch (err: any) {
-    console.error('[Subscription] createOrder error:', err.message);
-    return res.status(500).json({ success: false, message: 'Failed to create payment order' });
+    console.error('[Subscription] createOrder unexpected error:', err.message, err.stack);
+    return res.status(500).json({ success: false, message: 'Failed to create payment order. Please try again.' });
   }
 };
 

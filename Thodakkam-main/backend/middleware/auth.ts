@@ -155,8 +155,7 @@ export const startupStatusGuard = async (req: Request, res: Response, next: Next
     if (!startup) return res.status(404).json({ success: false, message: "Startup not found" });
 
     // Inline trial expiry check — auto-lock if expired, regardless of cron job schedule
-    let isLocked = false; // startup.is_locked;
-    /* Bypassed for dev
+    let isLocked = startup.is_locked;
     if (!isLocked) {
       const now = new Date();
       if (startup.plan_type === 'trial') {
@@ -174,7 +173,6 @@ export const startupStatusGuard = async (req: Request, res: Response, next: Next
         }
       }
     }
-    */
 
     // Check account lock (trial/paid expiry)
     if (isLocked) {

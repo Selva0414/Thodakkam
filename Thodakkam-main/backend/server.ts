@@ -4,6 +4,7 @@ import compression from "compression";
 import path from "path";
 import http from "http";
 import dns from "dns";
+import Razorpay from "razorpay";
 
 // Resolve DNS lookup order issue on Windows (Node 17+) by preferring IPv4 first
 if (typeof dns.setDefaultResultOrder === "function") {
@@ -20,7 +21,18 @@ import dotenv from "dotenv";
 import mockDataRouter from "./mock/mockDataRouter";
 import { resolveMediaUrl } from "./utils/mediaUrl";
 
-dotenv.config({ path: path.resolve(__dirname, '.env') });
+// Resolve .env from the backend/ root no matter where this file runs from
+// (handles both `ts-node server.ts` from backend/ and `node dist/server.js`)
+(function loadEnv() {
+  const fs = require('fs');
+  let dir = __dirname;
+  for (let i = 0; i < 5; i++) {
+    const candidate = path.join(dir, '.env');
+    if (fs.existsSync(candidate)) { dotenv.config({ path: candidate }); return; }
+    dir = path.dirname(dir);
+  }
+  dotenv.config(); // fallback: use cwd
+})();
 
 if (process.env.ALLOW_INSECURE_TLS === "1" || process.env.NODE_TLS_REJECT_UNAUTHORIZED === "0") {
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
@@ -326,8 +338,27 @@ import resumeAnonymizerRoutes from "./routes/resumeAnonymizerRoutes";
 import messageRoutes from "./routes/messageRoutes";
 import notificationRoutes from "./routes/notificationRoutes";
 import userProfileRoutes from "./routes/userProfileRoutes";
-import practiceRoutes from "./routes/practiceRoutes";
-import paymentRoutes from "./routes/paymentRoutes";
+import courseRoutes from "./routes/courseRoutes";
+
+// Mock endpoint to generate Razorpay order for Learning Hub frontend testing
+app.post("/api/mock-course-order", async (req: Request, res: Response) => {
+  try {
+    const { amount = 49900 } = req.body;
+    const razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID || '',
+      key_secret: process.env.RAZORPAY_KEY_SECRET || '',
+    });
+    const order = await razorpay.orders.create({
+      amount: amount,
+      currency: 'INR',
+      receipt: `course_${Date.now()}`
+    });
+    return res.json({ success: true, order_id: order.id });
+  } catch (error: any) {
+    console.error("Mock course order error:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
 
 app.use("/api/students", studentRoutes);
 app.use("/api/student", studentRoutes);
@@ -336,8 +367,7 @@ app.use("/api/jobs", jobRoutes);
 app.use("/api/applications", applicationRoutes);
 app.use("/api/community", communityRoutes);
 app.use("/api/aichat", aiChatRoutes);
-app.use("/api/practice", practiceRoutes);
-app.use("/api/payment", paymentRoutes);
+app.use("/api/courses", courseRoutes);
 
 // ── AI Proxy: Job Description Generator (avoid browser CORS) ──────────────────
 app.post("/api/ai/generate-job-description", async (req: Request, res: Response) => {
