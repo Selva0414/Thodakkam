@@ -256,9 +256,17 @@ export function JobItem({ job, router, initiallySavedStr }: { job: any, router: 
       </View>
       
       <View style={styles.tagsContainer}>
-        {(job.requirements || []).slice(0, 2).map((req: string, idx: number) => (
-          <View key={idx} style={[styles.tagPill, { backgroundColor: colors.inputBg }]}><Text style={[styles.tagPillText, { color: colors.text }]}>{req}</Text></View>
-        ))}
+        {(() => {
+          let reqs = job.requirements || [];
+          if (typeof reqs === 'string') {
+            try { reqs = JSON.parse(reqs); }
+            catch(e) { reqs = reqs.split(',').map((r: string) => r.trim()); }
+          }
+          if (!Array.isArray(reqs)) reqs = [];
+          return reqs.slice(0, 2).map((req: string, idx: number) => (
+            <View key={idx} style={[styles.tagPill, { backgroundColor: colors.inputBg }]}><Text style={[styles.tagPillText, { color: colors.text }]}>{req}</Text></View>
+          ));
+        })()}
         {job.type && (
           <View style={[styles.tagPill, { backgroundColor: colors.inputBg }]}><Text style={[styles.tagPillText, { color: colors.text }]}>{job.type}</Text></View>
         )}
@@ -342,9 +350,17 @@ export function JobItem({ job, router, initiallySavedStr }: { job: any, router: 
             {/* Skills */}
             <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 24 }]}>Skills Required</Text>
             <View style={styles.tagsContainer}>
-              {(job.requirements || []).map((req: string, idx: number) => (
-                <View key={idx} style={[styles.tagPill, { backgroundColor: colors.inputBg }]}><Text style={[styles.tagPillText, { color: colors.text }]}>{req}</Text></View>
-              ))}
+              {(() => {
+                let reqs = job.requirements || [];
+                if (typeof reqs === 'string') {
+                  try { reqs = JSON.parse(reqs); }
+                  catch(e) { reqs = reqs.split(',').map((r: string) => r.trim()); }
+                }
+                if (!Array.isArray(reqs)) reqs = [];
+                return reqs.map((req: string, idx: number) => (
+                  <View key={idx} style={[styles.tagPill, { backgroundColor: colors.inputBg }]}><Text style={[styles.tagPillText, { color: colors.text }]}>{req}</Text></View>
+                ));
+              })()}
             </View>
             <View style={{ height: 100 }} /> 
           </ScrollView>

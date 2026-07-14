@@ -19,9 +19,9 @@ export async function checkAndSendInterviewReminders(io?: any) {
         st.name AS student_name,
         st.email AS student_email
       FROM interviews i
-      JOIN applications a ON a.id::text = i.application_id::text
-      LEFT JOIN startups s ON s.id::text = i.startup_id::text
-      LEFT JOIN students st ON st.id::text = a.student_id::text
+      JOIN applications a ON a.id = i.application_id
+      LEFT JOIN startups s ON s.id = i.startup_id
+      LEFT JOIN students st ON st.id = a.student_id
       WHERE i.status = 'scheduled'
         AND i.reminder_sent = false
         AND i.scheduled_date IS NOT NULL

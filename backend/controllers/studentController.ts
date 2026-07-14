@@ -1041,9 +1041,12 @@ export const getAssessmentQuestions = async (req: Request, res: Response): Promi
     if (!studentId) return res.status(401).json({ error: "Student not authenticated" });
 
     const caRows = await query(
-      `SELECT ca.id, ca.assessment_id, ca.application_id, ca.student_id, ca.current_round, ca.status, ca.mcq_score, ca.mcq_total, ca.mcq_completed_at, ca.coding_score, ca.coding_completed_at, ca.started_at, ca.completed_at, ca.created_at, ca.overall_result, a.title, a.rounds, a.total_rounds
+      `SELECT ca.id, ca.assessment_id, ca.application_id, ca.student_id, ca.current_round, ca.status, ca.mcq_score, ca.mcq_total, ca.mcq_completed_at, ca.coding_score, ca.coding_completed_at, ca.started_at, ca.completed_at, ca.created_at, ca.overall_result, a.title, a.rounds, a.total_rounds, a.field,
+              app.role_applied, j.title as job_title
       FROM candidate_assessments ca 
       JOIN assessments a ON a.id::text = ca.assessment_id::text
+      LEFT JOIN applications app ON app.id::text = ca.application_id::text
+      LEFT JOIN jobs j ON j.id::text = app.job_id::text
       WHERE (
         ca.student_id::text = $1::text OR 
         ca.application_id::text IN (
@@ -1116,9 +1119,12 @@ export const getAssessmentQuestions = async (req: Request, res: Response): Promi
       }
     }
 
+    const jobTitleVal = candidateAssessment.job_title || candidateAssessment.role_applied || "";
+    const fieldVal = candidateAssessment.field || "IT";
+
     if (currentRound.type === "mcq") {
       const questions = await query(`SELECT id, question, options, difficulty FROM mcq_questions WHERE assessment_id::text = $1::text ORDER BY id ASC`, [assessmentId]);
-      return res.json({ success: true, roundType: "mcq", assessment: { id: candidateAssessment.assessment_id, title: candidateAssessment.title, duration: currentRound.duration || 30 }, rounds, questions, currentRound: candidateAssessment.current_round || 1, totalRounds: rounds.length });
+      return res.json({ success: true, roundType: "mcq", assessment: { id: candidateAssessment.assessment_id, title: candidateAssessment.title, duration: currentRound.duration || 30, field: fieldVal, jobTitle: jobTitleVal }, rounds, questions, currentRound: candidateAssessment.current_round || 1, totalRounds: rounds.length });
     } else if (currentRound.type === "task") {
       const taskInfo = {
         name: currentRound.name || "Task Round",
@@ -1126,11 +1132,12 @@ export const getAssessmentQuestions = async (req: Request, res: Response): Promi
         duration: currentRound.duration || 60,
         taskFile: currentRound.taskFile || null,
         taskFileName: currentRound.taskFileName || null,
+        taskDriveLink: currentRound.taskDriveLink || null,
       };
       return res.json({
         success: true,
         roundType: "task",
-        assessment: { id: candidateAssessment.assessment_id, title: candidateAssessment.title, duration: currentRound.duration || 60 },
+        assessment: { id: candidateAssessment.assessment_id, title: candidateAssessment.title, duration: currentRound.duration || 60, field: fieldVal, jobTitle: jobTitleVal },
         rounds,
         taskInfo,
         currentRound: candidateAssessment.current_round || 1,
@@ -1151,7 +1158,7 @@ export const getAssessmentQuestions = async (req: Request, res: Response): Promi
         }];
       }
       return res.json({
-        success: true, roundType: "coding", assessment: { id: candidateAssessment.assessment_id, title: candidateAssessment.title, duration: currentRound.duration || 60 },
+        success: true, roundType: "coding", assessment: { id: candidateAssessment.assessment_id, title: candidateAssessment.title, duration: currentRound.duration || 60, field: fieldVal, jobTitle: jobTitleVal },
         rounds,
         codingQuestions,
         currentRound: candidateAssessment.current_round || 1, totalRounds: rounds.length,

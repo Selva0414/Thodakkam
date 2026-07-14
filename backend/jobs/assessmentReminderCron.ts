@@ -26,10 +26,10 @@ export async function checkAndSendAssessmentReminders(io?: any) {
         j.title AS job_title
       FROM candidate_assessments ca
       JOIN assessments a ON a.id = ca.assessment_id
-      JOIN applications app ON app.id::text = ca.application_id::text
-      LEFT JOIN startups s ON s.id::text = a.startup_id::text
-      LEFT JOIN students st ON st.id::text = app.student_id::text
-      LEFT JOIN jobs j ON j.id::text = app.job_id::text
+      JOIN applications app ON app.id = ca.application_id
+      LEFT JOIN startups s ON s.id = a.startup_id
+      LEFT JOIN students st ON st.id = app.student_id
+      LEFT JOIN jobs j ON j.id = app.job_id
       WHERE ca.status IN ('pending', 'in_progress')
         AND ca.reminder_sent_round < ca.current_round
         AND a.rounds -> (ca.current_round - 1) ->> 'startTime' IS NOT NULL

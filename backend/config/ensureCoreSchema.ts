@@ -107,6 +107,12 @@ const CORE_TABLES_SQL: string[] = [
       requirements TEXT,
       experience  TEXT,
       domain      TEXT,
+      work_mode   TEXT,
+      education   TEXT,
+      openings    INTEGER,
+      application_deadline TEXT,
+      application_method TEXT,
+      external_url TEXT,
       status      TEXT DEFAULT 'active',
       created_at  TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()
     )`,
@@ -252,6 +258,18 @@ const CORE_TABLES_SQL: string[] = [
       created_at TIMESTAMP DEFAULT NOW(),
       updated_at TIMESTAMP DEFAULT NOW()
     )`,
+    `CREATE TABLE IF NOT EXISTS course_enrollments (
+      id SERIAL PRIMARY KEY,
+      student_id TEXT NOT NULL,
+      course_id TEXT NOT NULL,
+      course_name TEXT NOT NULL,
+      amount_paise INTEGER NOT NULL,
+      razorpay_order_id TEXT,
+      razorpay_payment_id TEXT,
+      razorpay_signature TEXT,
+      status TEXT NOT NULL,
+      enrolled_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    )`,
 ];
 
 /** Align older/partial DBs with what admin controllers expect (CREATE TABLE IF NOT EXISTS does not add new columns). */
@@ -331,6 +349,14 @@ const SCHEMA_PATCHES: string[] = [
   `CREATE UNIQUE INDEX IF NOT EXISTS uq_candidate_assessment ON candidate_assessments (assessment_id, student_id) WHERE student_id IS NOT NULL`,
   `CREATE INDEX IF NOT EXISTS idx_interviews_startup ON interviews(startup_id)`,
   `CREATE INDEX IF NOT EXISTS idx_interviews_application ON interviews(application_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_messages_sender_id_type ON messages(sender_id, sender_type)`,
+  `CREATE INDEX IF NOT EXISTS idx_messages_receiver_id_type ON messages(receiver_id, receiver_type)`,
+  `CREATE INDEX IF NOT EXISTS idx_messages_conversation_id ON messages(conversation_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_applications_student_id ON applications(student_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_applications_startup_id ON applications(startup_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_applications_job_id ON applications(job_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_candidate_assessments_application_id ON candidate_assessments(application_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_candidate_assessments_student_id ON candidate_assessments(student_id)`,
   `ALTER TABLE startups ADD COLUMN IF NOT EXISTS is_online BOOLEAN DEFAULT FALSE`,
   `ALTER TABLE students ADD COLUMN IF NOT EXISTS is_online BOOLEAN DEFAULT FALSE`,
   `ALTER TABLE interviews ADD COLUMN IF NOT EXISTS duration INTEGER DEFAULT 30`,
@@ -454,7 +480,15 @@ const SCHEMA_PATCHES: string[] = [
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     UNIQUE(student_id, job_id)
   )`,
-  `ALTER TABLE saved_jobs ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()`
+  `ALTER TABLE saved_jobs ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()`,
+  `ALTER TABLE jobs ADD COLUMN IF NOT EXISTS work_mode TEXT`,
+  `ALTER TABLE jobs ADD COLUMN IF NOT EXISTS experience TEXT`,
+  `ALTER TABLE jobs ADD COLUMN IF NOT EXISTS education TEXT`,
+  `ALTER TABLE jobs ADD COLUMN IF NOT EXISTS openings INTEGER`,
+  `ALTER TABLE jobs ADD COLUMN IF NOT EXISTS application_deadline TEXT`,
+  `ALTER TABLE jobs ADD COLUMN IF NOT EXISTS application_method TEXT`,
+  `ALTER TABLE jobs ADD COLUMN IF NOT EXISTS external_url TEXT`,
+  `ALTER TABLE jobs ADD COLUMN IF NOT EXISTS requirements TEXT`
 ];
 
 export async function ensureCoreSchema(): Promise<void> {

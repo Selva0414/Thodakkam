@@ -22,8 +22,8 @@ export async function checkNoShowInterviews(io?: any) {
         a.role_applied,
         s.company_name
       FROM interviews i
-      JOIN applications a ON a.id::text = i.application_id::text
-      LEFT JOIN startups s ON s.id::text = i.startup_id::text
+      JOIN applications a ON a.id = i.application_id
+      LEFT JOIN startups s ON s.id = i.startup_id
       WHERE i.status = 'scheduled'
         AND i.candidate_joined_at IS NULL
         AND i.scheduled_date IS NOT NULL
@@ -69,13 +69,13 @@ export async function checkNoShowInterviews(io?: any) {
           [row.interview_id]
         );
         await client.query(
-          `UPDATE applications SET status = 'rejected', rejected_at_stage = 'interview' WHERE id::text = $1::text`,
+          `UPDATE applications SET status = 'rejected', rejected_at_stage = 'interview' WHERE id = $1`,
           [row.application_id]
         );
         await client.query(
           `UPDATE candidate_assessments
            SET status = 'completed', overall_result = 'rejected'
-           WHERE application_id::text = $1::text AND status != 'completed'`,
+           WHERE application_id = $1 AND status != 'completed'`,
           [row.application_id]
         );
         await client.query("COMMIT");

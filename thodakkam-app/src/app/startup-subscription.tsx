@@ -28,21 +28,22 @@ export default function StartupSubscription() {
       }
 
       // Step 1: Create Order
-      const res = await fetch(`${BASE_URL}/api/startup/subscription/create-order`, {
+      const res = await fetch(`${BASE_URL}/api/payment/create-order`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ student_count: 1, domain_info: 'Premium Access' })
+        body: JSON.stringify({ amount: 79900 })
       });
-      const data = await res.json();
+      const resData = await res.json();
       
-      if (!data.success) {
-        setResult('Error creating order: ' + data.message);
+      if (!resData.success) {
+        setResult('Error creating order: ' + resData.message);
         setLoading(false);
         return;
       }
+      const data = resData.data;
 
       // Step 2: Inject script for Web
       if (Platform.OS === 'web' && !(window as any).Razorpay) {

@@ -65,26 +65,26 @@ export default function StartupJobs() {
     try {
       const token = await AsyncStorage.getItem("startupToken");
       
-      const res = await fetch(`${BASE_URL}/api/startup/subscription/create-order`, {
+      const res = await fetch(`${BASE_URL}/api/payment/create-order`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          student_count: 1,
-          domain_info: 'General'
+          amount: 79900
         })
       });
 
-      const orderData = await res.json();
-      if (!orderData.success) {
-        alert(orderData.message || 'Failed to create payment order.');
+      const orderDataRes = await res.json();
+      if (!orderDataRes.success) {
+        alert(orderDataRes.message || 'Failed to create payment order.');
         return;
       }
+      const orderData = orderDataRes.data;
 
       const options = {
-        key: orderData.razorpay_key,
+        key: process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID,
         amount: orderData.amount,
         currency: orderData.currency,
         name: 'Thodakkam',

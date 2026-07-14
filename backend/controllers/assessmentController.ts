@@ -763,3 +763,22 @@ export async function getAssessmentByJob(req: Request, res: Response): Promise<a
   }
 }
 
+export async function fetchLeetcodeQuestion(req: Request, res: Response): Promise<any> {
+  try {
+    const { topic, difficulty, lang } = req.body;
+    if (!topic || !difficulty) {
+      return res.status(400).json({ error: "Topic and difficulty are required" });
+    }
+
+    const response = await axios.get("https://leetcode-scrapper-p6az.onrender.com/question", {
+      params: { topic, difficulty, lang: lang || "python3" },
+      timeout: 60000
+    });
+
+    return res.json({ success: true, question: response.data });
+  } catch (err: any) {
+    console.error("[LeetCode Proxy] Error:", err.message);
+    return res.status(500).json({ error: "Failed to fetch question from LeetCode scraper: " + (err.response?.data?.detail || err.message) });
+  }
+}
+

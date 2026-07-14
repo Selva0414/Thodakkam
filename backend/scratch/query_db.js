@@ -6,9 +6,19 @@ const client = new Client({
 async function main() {
   await client.connect();
   
-  console.log("--- Assessments details ---");
-  const res = await client.query("SELECT id, startup_id, title, rounds, field FROM assessments WHERE id IN (5, 17)");
-  console.log(res.rows);
+  const tablesRes = await client.query(`
+    SELECT table_name 
+    FROM information_schema.tables 
+    WHERE table_schema='public' AND table_name LIKE '%course%'
+  `);
+  console.log("Matched Tables:", tablesRes.rows);
+
+  const columnsRes = await client.query(`
+    SELECT column_name, data_type, is_nullable
+    FROM information_schema.columns
+    WHERE table_schema='public' AND table_name='course_enrollments'
+  `);
+  console.log("Columns of course_enrollments:", columnsRes.rows);
 
   await client.end();
 }

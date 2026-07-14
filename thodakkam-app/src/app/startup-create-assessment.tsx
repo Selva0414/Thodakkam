@@ -7,6 +7,7 @@ import {
 import { ArrowLeft, ChevronDown, FileText, Code, Users, Briefcase, Upload, Download, Save, Clock, Trash2, Calendar, HelpCircle, Sparkles, Plus, Check, ChevronUp, Info, Zap } from 'lucide-react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAppTheme } from '../context/ThemeContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function StartupCreateAssessment() {
   const router = useRouter();
@@ -35,11 +36,16 @@ export default function StartupCreateAssessment() {
 
   const fetchJobs = async () => {
     try {
-      const response = await fetch(`${BASE_URL}/api/jobs/startup/${companyName}`);
+      const token = await AsyncStorage.getItem('startupToken');
+      const response = await fetch(`${BASE_URL}/api/startup/jobs`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       if (!response.ok) throw new Error(`Server returned ${response.status}`);
       const data = await response.json();
       if (data.success) {
-        setJobs(data.jobs);
+        setJobs(data.jobs || data.data || []);
+      } else if (Array.isArray(data)) {
+        setJobs(data);
       }
     } catch (err) {
       console.error('Fetch Jobs Error:', err);
@@ -48,7 +54,10 @@ export default function StartupCreateAssessment() {
 
   const fetchAssessmentForEdit = async () => {
     try {
-      const response = await fetch(`${BASE_URL}/api/assessments/single/${editId}`);
+      const token = await AsyncStorage.getItem('startupToken');
+      const response = await fetch(`${BASE_URL}/api/startup/assessments/${editId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       if (!response.ok) throw new Error(`Server returned ${response.status}`);
       const data = await response.json();
       if (data.success && data.assessment) {
@@ -321,17 +330,23 @@ User Message: Give me a starter code template for ${lang}`;
     }
     
     try {
-      const url = editId ? `${BASE_URL}/api/assessments/${editId}` : `${BASE_URL}/api/assessments`;
+      const token = await AsyncStorage.getItem('startupToken');
+      const url = editId ? `${BASE_URL}/api/startup/assessments/${editId}` : `${BASE_URL}/api/startup/assessments`;
       const method = editId ? 'PUT' : 'POST';
       const response = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({
+          title: selectedJobId ? (jobs.find(j => j.id === selectedJobId)?.title + ' Assessment') : (description.substring(0, 50) || 'New Assessment'),
+          description,
+          total_rounds: selectedRounds.length,
+          rounds: selectedRounds,
+          field: 'General',
           startupId: companyName,
           jobId: selectedJobId,
-          title: selectedJobId ? (jobs.find(j => j.id === selectedJobId)?.title + ' Assessment') : description.substring(0, 50),
-          description,
-          selectedRounds,
           selectedCandidates,
           mcqConfig: selectedRounds.includes('mcq') ? {
             durationMin: Number(mcqDuration),
@@ -363,11 +378,11 @@ User Message: Give me a starter code template for ${lang}`;
         })
       });
       const data = await response.json();
-      if (data.success) {
+      if (data.success || response.ok) {
         alert('Assessment Saved Successfully!');
         router.back();
       } else {
-        alert('Failed to save assessment: ' + data.message);
+        alert('Failed to save assessment: ' + (data.error || data.message || 'Unknown error'));
       }
     } catch (err) {
       console.error(err);
