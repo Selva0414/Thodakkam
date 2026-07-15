@@ -1,2 +1,0 @@
-ALTER TABLE students
-ADD COLUMN IF NOT EXISTS password TEXT;

@@ -48,5 +48,21 @@ const getRecommendedJobs = async (_skills: any) => {
   );
 };
 
+export const getJobsByStartupName = async (companyName: string) => {
+  return await query(
+    `
+    SELECT j.*, s.company_name,
+           COALESCE(NULLIF(sp.avatar_url, ''), NULLIF(s.logo_url, '')) as company_logo,
+           s.company_description, s.company_website, s.linkedin_url, s.twitter_url
+    FROM jobs j
+    JOIN startups s ON j.startup_id::text = s.id::text
+    LEFT JOIN startup_profiles sp ON sp.startup_id::text = s.id::text
+    WHERE TRIM(s.company_name) ILIKE TRIM($1)
+    ORDER BY j.created_at DESC
+  `,
+    [companyName]
+  );
+};
+
 export { getAllJobs, getJobById, getRecommendedJobs };
 
