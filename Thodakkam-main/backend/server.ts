@@ -339,6 +339,7 @@ import messageRoutes from "./routes/messageRoutes";
 import notificationRoutes from "./routes/notificationRoutes";
 import userProfileRoutes from "./routes/userProfileRoutes";
 import courseRoutes from "./routes/courseRoutes";
+import practiceRoutes from "./routes/practiceRoutes";
 
 // Mock endpoint to generate Razorpay order for Learning Hub frontend testing
 app.post("/api/mock-course-order", async (req: Request, res: Response) => {
@@ -368,6 +369,7 @@ app.use("/api/applications", applicationRoutes);
 app.use("/api/community", communityRoutes);
 app.use("/api/aichat", aiChatRoutes);
 app.use("/api/courses", courseRoutes);
+app.use("/api/practice", practiceRoutes);
 
 // ── AI Proxy: Job Description Generator (avoid browser CORS) ──────────────────
 app.post("/api/ai/generate-job-description", async (req: Request, res: Response) => {

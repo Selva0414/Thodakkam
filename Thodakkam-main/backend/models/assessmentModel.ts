@@ -55,6 +55,9 @@ const AssessmentModel = {
       if (!cols.has('field')) {
         await sql`ALTER TABLE assessments ADD COLUMN field VARCHAR(20) DEFAULT 'IT'`;
       }
+      if (!cols.has('job_id')) {
+        await sql`ALTER TABLE assessments ADD COLUMN job_id INTEGER`;
+      }
       console.log("✅ Assessments table schema verified");
     } catch (err: any) {
       console.error("⚠️ Failed to verify assessments schema:", err.message);
@@ -190,11 +193,12 @@ const AssessmentModel = {
     }
   },
 
-  async create({ startup_id, title, description, total_rounds, rounds, field }: any) {
+  async create({ startup_id, title, description, total_rounds, rounds, field, job_id }: any) {
     try {
+      await this.ensureAssessmentColumns();
       const result = await sql`
-        INSERT INTO assessments (startup_id, title, description, total_rounds, rounds, field)
-        VALUES (${String(startup_id)}, ${title}, ${description}, ${total_rounds}, ${JSON.stringify(rounds)}, ${field || 'IT'})
+        INSERT INTO assessments (startup_id, title, description, total_rounds, rounds, field, job_id)
+        VALUES (${String(startup_id)}, ${title}, ${description}, ${total_rounds}, ${JSON.stringify(rounds)}, ${field || 'IT'}, ${job_id || null})
         RETURNING *
       `;
       return result[0];

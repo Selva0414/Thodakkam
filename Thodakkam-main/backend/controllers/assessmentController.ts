@@ -58,7 +58,7 @@ AssessmentModel.createTable().then(() => {
 
 export async function createAssessment(req: Request, res: Response): Promise<any> {
   try {
-    const { title, description, total_rounds, rounds, field } = req.body;
+    const { title, description, total_rounds, rounds, field, jobId, job_id } = req.body;
     if (!title || !rounds || !Array.isArray(rounds)) return res.status(400).json({ error: "Title and rounds are required" });
     if (!(req as any).user || !(req as any).user.id) return res.status(401).json({ error: "User not authenticated" });
 
@@ -68,7 +68,8 @@ export async function createAssessment(req: Request, res: Response): Promise<any
       description,
       total_rounds: total_rounds || rounds.length,
       rounds,
-      field
+      field,
+      job_id: jobId || job_id
     });
     res.status(201).json({ success: true, assessment });
   } catch (err: any) {
@@ -91,7 +92,36 @@ export async function getAssessment(req: Request, res: Response): Promise<any> {
     if (!assessment) return res.status(404).json({ error: "Assessment not found" });
 
     const questions = await AssessmentModel.getQuestions(String(req.params.id));
-    res.json({ success: true, assessment, questions });
+    
+    // Fetch assigned candidates
+    const assignedRows = await query(
+      `SELECT application_id, student_id FROM candidate_assessments WHERE assessment_id = $1`,
+      [Number(req.params.id)]
+    );
+    
+    const assignedCandidates = assignedRows.map((r: any) => String(r.application_id || r.student_id)).filter(id => id && id !== 'null' && id !== 'undefined');
+    
+    // Attempt to infer jobId from the assigned applications
+    let jobId = null;
+    // We try to find the first valid application_id
+    const firstAppId = assignedRows.find((r: any) => r.application_id && r.application_id !== 'null')?.application_id;
+    if (firstAppId) {
+      const appRows = await query(
+        `SELECT job_id FROM applications WHERE id::text = $1::text LIMIT 1`,
+        [String(firstAppId)]
+      );
+      if (appRows.length > 0 && appRows[0].job_id) {
+        jobId = String(appRows[0].job_id);
+      }
+    }
+
+    const finalAssessment = {
+      ...assessment,
+      assignedCandidates,
+      jobId
+    };
+
+    res.json({ success: true, assessment: finalAssessment, questions });
   } catch (err: any) {
     res.status(500).json({ error: "Failed to fetch assessment" });
   }
@@ -99,20 +129,22 @@ export async function getAssessment(req: Request, res: Response): Promise<any> {
 
 export async function updateAssessment(req: Request, res: Response): Promise<any> {
   try {
-    const { title, description, total_rounds, rounds, is_active, field } = req.body;
+    const { title, description, total_rounds, rounds, is_active, field, jobId, job_id } = req.body;
     const assessmentId = String(req.params.id);
     const startupId = String((req as any).user?.id || "").trim();
-    const assessment = await AssessmentModel.update(assessmentId, { title, description, total_rounds, rounds, is_active, field });
+    const assessment = await AssessmentModel.update(assessmentId, { title, description, total_rounds, rounds, is_active, field, job_id: jobId || job_id });
     if (!assessment) return res.status(404).json({ error: "Assessment not found" });
 
-    // When assessment has an interview round, sync status & interview rows for all assigned candidates
-    try {
-      const roundsList = Array.isArray(rounds) ? rounds : [];
-      const interviewRound = roundsList.find((r: any) => r.type === 'interview');
-      const assignedCandidates = await query(
-        `SELECT ca.application_id FROM candidate_assessments ca WHERE ca.assessment_id::text = $1::text AND ca.application_id IS NOT NULL`,
-        [assessmentId]
-      );
+    // Only sync interview schedule if rounds were explicitly provided in the update
+    if (rounds !== undefined) {
+      // When assessment has an interview round, sync status & interview rows for all assigned candidates
+      try {
+        const roundsList = Array.isArray(rounds) ? rounds : [];
+        const interviewRound = roundsList.find((r: any) => r.type === 'interview');
+        const assignedCandidates = await query(
+          `SELECT ca.application_id FROM candidate_assessments ca WHERE ca.assessment_id::text = $1::text AND ca.application_id IS NOT NULL`,
+          [assessmentId]
+        );
 
       if (interviewRound) {
         let schedDate = interviewRound.scheduledDate || interviewRound.scheduled_date || null;
@@ -225,8 +257,9 @@ export async function updateAssessment(req: Request, res: Response): Promise<any
           }
         }
       }
-    } catch (syncErr: any) {
-      console.error("[updateAssessment] Interview sync error:", syncErr.message);
+      } catch (syncErr: any) {
+        console.error("[updateAssessment] Interview sync error:", syncErr.message);
+      }
     }
 
     res.json({ success: true, assessment });
@@ -252,6 +285,10 @@ export async function deleteAssessment(req: Request, res: Response): Promise<any
       [Number(assessmentId)]
     );
     const appIds = appRows.map((r: any) => String(r.application_id)).filter(Boolean);
+
+    // Explicitly delete child records to prevent foreign key constraint errors
+    await query(`DELETE FROM mcq_questions WHERE assessment_id = $1`, [Number(assessmentId)]);
+    await query(`DELETE FROM candidate_assessments WHERE assessment_id = $1`, [Number(assessmentId)]);
 
     const delResult = await query(
       `DELETE FROM assessments WHERE id = $1 AND startup_id::text = $2::text RETURNING id`,
@@ -782,3 +819,95 @@ export async function fetchLeetcodeQuestion(req: Request, res: Response): Promis
   }
 }
 
+import Groq from "groq-sdk";
+
+export async function generateMcqWithGroq(req: Request, res: Response): Promise<any> {
+  try {
+    const { prompt } = req.body;
+    if (!prompt) return res.status(400).json({ error: "Prompt is required" });
+
+    const apiKey = process.env.GROQ_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ error: "GROQ_API_KEY not configured" });
+    }
+
+    const groq = new Groq({ apiKey });
+    const completion = await groq.chat.completions.create({
+      messages: [
+        { role: "system", content: "You are Vetri, an AI question generator. You must return ONLY a JSON array of objects representing multiple choice questions. No markdown, no conversational text." },
+        { role: "user", content: prompt }
+      ],
+      model: "llama-3.1-8b-instant",
+      temperature: 0.7,
+    });
+
+    const aiReply = completion.choices[0]?.message?.content || "[]";
+    res.json({ reply: aiReply });
+  } catch (err: any) {
+    console.error("Groq generation error:", err.message);
+    res.status(500).json({ error: "Failed to generate AI questions" });
+  }
+}
+
+export async function evaluateCodeWithGroq(req: Request, res: Response): Promise<any> {
+  try {
+    const { code, language, question, testCases } = req.body;
+    if (!code || !language || !question) return res.status(400).json({ error: "Code, language, and question are required" });
+
+    const apiKey = process.env.GROQ_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ error: "GROQ_API_KEY not configured" });
+    }
+
+    const groq = new Groq({ apiKey });
+    
+    let testCasesPrompt = "";
+    if (testCases && testCases.length > 0) {
+      testCasesPrompt = `Here are the test cases it should pass:\n${testCases.map((tc: any, i: number) => `Test Case ${i+1}:\nInput: ${tc.input}\nExpected Output: ${tc.output}`).join("\n\n")}`;
+    }
+
+    const prompt = `You are an AI code evaluator. A student has submitted a solution for the following coding problem.
+    
+Problem:
+${question}
+
+${testCasesPrompt}
+
+Student's Code (${language}):
+\`\`\`${language}
+${code}
+\`\`\`
+
+Evaluate if the student's code correctly solves the problem and passes all expected test cases (and edge cases).
+You must return ONLY a JSON object with the following structure:
+{
+  "success": boolean (true if the code is correct, false otherwise),
+  "msg": string (a short feedback message, if false, explain what is wrong or which test case failed)
+}
+No markdown, no conversational text, return valid JSON only.`;
+
+    const completion = await groq.chat.completions.create({
+      messages: [
+        { role: "system", content: "You are an AI code evaluator. You must return ONLY a JSON object. No markdown formatting, just raw JSON." },
+        { role: "user", content: prompt }
+      ],
+      model: "llama-3.1-8b-instant",
+      temperature: 0.2,
+    });
+
+    let aiReply = completion.choices[0]?.message?.content || "{}";
+    aiReply = aiReply.replace(/```json/g, "").replace(/```/g, "").trim();
+    
+    let result;
+    try {
+      result = JSON.parse(aiReply);
+    } catch (e) {
+      result = { success: false, msg: "AI returned invalid response format: " + aiReply };
+    }
+
+    res.json(result);
+  } catch (err: any) {
+    console.error("Groq evaluation error:", err.message);
+    res.status(500).json({ error: "Failed to evaluate code" });
+  }
+}

@@ -17,9 +17,14 @@ import {
   getAssessmentReport,
   getAssessmentByApplication,
   getAssessmentByJob,
-  fetchLeetcodeQuestion
+  fetchLeetcodeQuestion,
+  generateMcqWithGroq,
+  evaluateCodeWithGroq
 } from '../controllers/assessmentController';
-import { protect } from '../middleware/auth';
+import { protect, protectAny } from '../middleware/auth';
+
+// Allow any user (including students) to view a single assessment by ID
+router.get("/single/:id", protectAny, getAssessment);
 
 router.use(protect);
 
@@ -42,6 +47,8 @@ router.delete("/:id/questions/:questionId", deleteQuestion);
 
 // Domain-based question generation
 router.post("/generate-questions", generateDomainQuestions);
+router.post("/generate-mcq-ai", generateMcqWithGroq);
+router.post("/evaluate-code", evaluateCodeWithGroq);
 router.post("/fetch-leetcode", fetchLeetcodeQuestion);
 router.post("/:id/questions/bulk", bulkAddQuestions);
 

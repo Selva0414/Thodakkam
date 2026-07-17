@@ -43,12 +43,14 @@ export const getJobsByStartupName = async (req: Request, res: Response): Promise
     const jobIds = jobs.map((j: any) => j.id);
     let applications: any[] = [];
     if (jobIds.length > 0) {
+      const placeholders = jobIds.map((_, i) => `$${i + 1}`).join(',');
       applications = await query(
         `SELECT a.id, a.job_id, a.status, a.applied_at as "appliedAt", 
-                s.full_name as "fullName", s.email, s.profile_photo as "profilePhoto"
+                s.name as "fullName", s.email, s.profile_photo as "profilePhoto"
          FROM applications a
          LEFT JOIN students s ON s.id::text = a.student_id::text OR LOWER(s.email) = LOWER(a.candidate_email)
-         WHERE a.job_id IN (${jobIds.join(',')})`
+         WHERE a.job_id IN (${placeholders})`,
+         jobIds
       );
     }
     
