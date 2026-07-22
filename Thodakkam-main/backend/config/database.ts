@@ -1,4 +1,5 @@
 import { Pool } from "pg";
+import { neon } from "@neondatabase/serverless";
 import dotenv from "dotenv";
 import path from "path";
 import fs from "fs";
@@ -25,6 +26,14 @@ dotenv.config({ path: findEnvPath() });
 // Only bypass TLS verification when explicitly enabled.
 if (process.env.ALLOW_INSECURE_TLS === "1") {
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+}
+
+let neonHttpClient: any = null;
+function getNeonHttp() {
+  if (!neonHttpClient && process.env.DATABASE_URL) {
+    neonHttpClient = neon(process.env.DATABASE_URL);
+  }
+  return neonHttpClient;
 }
 
 function getConnectionString(): string {
@@ -67,26 +76,10 @@ function customLookup(
     actualCallback = options;
     actualOptions = {};
   }
+  const opts = typeof actualOptions === "object" ? { ...actualOptions, family: 4 } : { family: 4 };
 
-  dns.lookup(hostname, actualOptions, (err, address, family) => {
-    if (!err) {
-      return actualCallback(null, address, family);
-    }
-
-    if (hostname.includes("neon.tech")) {
-      console.warn(`[DNS] Standard lookup failed for ${hostname} (${err.message}). Falling back to Google & Cloudflare DNS...`);
-      dnsResolver.resolve4(hostname, (dnsErr, addresses) => {
-        if (dnsErr || !addresses || addresses.length === 0) {
-          console.error(`[DNS] Fallback DNS lookup also failed for ${hostname}:`, dnsErr?.message);
-          return actualCallback(err, address, family);
-        }
-        const resolvedIp = addresses[0];
-        console.log(`[DNS] Fallback DNS successfully resolved ${hostname} to ${resolvedIp}`);
-        return actualCallback(null, resolvedIp, 4);
-      });
-    } else {
-      return actualCallback(err, address, family);
-    }
+  dns.lookup(hostname, opts, (err, address, family) => {
+    return actualCallback(err, address, family);
   });
 }
 
@@ -100,9 +93,9 @@ export const pool = new Pool({
   ssl: sslConfig,
   lookup: customLookup,
   max: intFromEnv("DB_POOL_MAX", 20),
-  min: intFromEnv("DB_POOL_MIN", 2),
+  min: intFromEnv("DB_POOL_MIN", 0),
   idleTimeoutMillis: intFromEnv("DB_POOL_IDLE_MS", 30_000),
-  connectionTimeoutMillis: intFromEnv("DB_POOL_CONN_MS", 5_000),
+  connectionTimeoutMillis: intFromEnv("DB_POOL_CONN_MS", 3000),
   // Server-side guards: kill runaway statements / dead connections
   statement_timeout: intFromEnv("DB_STATEMENT_TIMEOUT_MS", 60_000),
   query_timeout: intFromEnv("DB_QUERY_TIMEOUT_MS", 60_000),
@@ -111,7 +104,7 @@ export const pool = new Pool({
 
 // Prevent Node.js process crash when the database connection throws an error
 pool.on("error", (err: Error) => {
-  console.error("❌ Unexpected error on idle client", err);
+  console.error("❌ Unexpected error on idle client", err.message);
 });
 
 function buildParameterizedQuery(strings: TemplateStringsArray, values: any[]) {
@@ -125,13 +118,27 @@ function buildParameterizedQuery(strings: TemplateStringsArray, values: any[]) {
   return { text, values };
 }
 
+const isTransientError = (err: any): boolean => {
+  if (!err || !err.message) return false;
+  const msg = String(err.message).toLowerCase();
+  return (
+    msg.includes("timeout") ||
+    msg.includes("terminated") ||
+    msg.includes("etimedout") ||
+    msg.includes("econnreset") ||
+    msg.includes("closed") ||
+    err.code === "57P01" ||
+    err.code === "57P02" ||
+    err.code === "57P03"
+  );
+};
+
 export async function sql(strings: TemplateStringsArray, ...values: any[]): Promise<any[]> {
   if (!Array.isArray(strings) || !Object.prototype.hasOwnProperty.call(strings, "raw")) {
     throw new Error("sql must be used as a tagged template literal");
   }
   const { text, values: params } = buildParameterizedQuery(strings, values);
-  const result = await pool.query(text, params);
-  return result.rows;
+  return await query(text, params);
 }
 
 /**
@@ -141,6 +148,16 @@ export async function sql(strings: TemplateStringsArray, ...values: any[]): Prom
  * @returns Query results
  */
 export async function query(queryText: string, params: any[] = []): Promise<any[]> {
+  const client = getNeonHttp();
+  if (client) {
+    try {
+      const rows: any = await client.query(queryText, params);
+      return Array.isArray(rows) ? rows : (rows?.rows || []);
+    } catch (httpErr: any) {
+      console.warn("[Database] HTTPS query issue, falling back to pg pool:", httpErr.message);
+    }
+  }
+
   try {
     const result = await pool.query(queryText, params);
     return result.rows;
@@ -156,11 +173,14 @@ export async function query(queryText: string, params: any[] = []): Promise<any[
  */
 export async function testConnection(): Promise<boolean> {
   try {
-    const result = await pool.query("SELECT NOW() AS current_time, version() AS pg_version");
-    console.log("✅ Database connected successfully!");
-    console.log(`   Time: ${result.rows[0].current_time}`);
-    console.log(`   PostgreSQL: ${result.rows[0].pg_version}`);
-    return true;
+    const rows = await query("SELECT NOW() AS current_time, version() AS pg_version");
+    if (rows && rows.length > 0) {
+      console.log("✅ Database connected successfully!");
+      console.log(`   Time: ${rows[0].current_time}`);
+      console.log(`   PostgreSQL: ${rows[0].pg_version}`);
+      return true;
+    }
+    return false;
   } catch (error: any) {
     console.error("❌ Database connection failed:", error.message);
     return false;

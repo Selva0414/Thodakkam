@@ -57,6 +57,9 @@ const ensureApplicationStageSchema = async () => {
   await sql`ALTER TABLE applications ADD COLUMN IF NOT EXISTS rejected_at_stage VARCHAR(30)`;
   await sql`ALTER TABLE applications ADD COLUMN IF NOT EXISTS offer_letter TEXT`;
 
+  // Ensure startup_name column exists
+  await sql`ALTER TABLE jobs ADD COLUMN IF NOT EXISTS startup_name VARCHAR(255)`;
+
   // Backfill startup_name on jobs that were created before the column was populated
   await sql`
     UPDATE jobs j

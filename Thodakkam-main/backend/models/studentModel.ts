@@ -49,8 +49,25 @@ const createStudent = async (studentData: any) => {
     studentData.source || 'web',
   ];
 
-  const result = await query(sqlQuery, values);
-  return result[0];
+  try {
+    const result = await query(sqlQuery, values);
+    return result[0];
+  } catch (err: any) {
+    if (err.code === '42703' || (err.message && err.message.includes('registration_source'))) {
+      const fallbackQuery = `
+        INSERT INTO students (
+          name, username, email, password, phone, location, profile_photo, resume_file, 
+          skills, educations, internships, website_url, github_url, linkedin_url, bio, referred_by
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+        RETURNING *;
+      `;
+      const fallbackValues = values.slice(0, 16);
+      const result = await query(fallbackQuery, fallbackValues);
+      return result[0];
+    }
+    throw err;
+  }
 };
 
 const findStudentByEmail = async (email: string) => {

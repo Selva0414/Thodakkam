@@ -1,4 +1,6 @@
 import { Request, Response } from "express";
+import fs from "fs";
+import path from "path";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import * as studentModel from "../models/studentModel";
@@ -286,39 +288,94 @@ export const registerStudent = async (req: Request, res: Response): Promise<any>
 
     if (req.files) {
       const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+      const uploadsDir = path.join(__dirname, "..", "uploads");
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+
       if (files.profilePhoto) {
         const file = files.profilePhoto[0];
-        // memoryStorage: use buffer directly, no disk I/O
-        const base64 = file.buffer.toString("base64");
-        profilePhoto = `data:${file.mimetype};base64,${base64}`;
+        const fileName = `profile_${Date.now()}_${file.originalname.replace(/\s+/g, '_')}`;
+        fs.writeFileSync(path.join(uploadsDir, fileName), file.buffer);
+        profilePhoto = `/uploads/${fileName}`;
       }
       if (files.resumeFile) {
         const file = files.resumeFile[0];
-        const fileBuffer = file.buffer; // memoryStorage buffer
-        const base64 = fileBuffer.toString("base64");
-        resumeFile = `data:${file.mimetype};base64,${base64}`;
+        const fileBuffer = file.buffer;
+        const fileName = `resume_${Date.now()}_${file.originalname.replace(/\s+/g, '_')}`;
+        fs.writeFileSync(path.join(uploadsDir, fileName), fileBuffer);
+        resumeFile = `/uploads/${fileName}`;
         resumeData = { buffer: fileBuffer, name: file.originalname, mimetype: file.mimetype };
       }
     }
 
-    if (typeof selectedSkills === "string") selectedSkills = JSON.parse(selectedSkills);
-    if (!Array.isArray(selectedSkills)) selectedSkills = [];
-    if (typeof educations === "string") educations = JSON.parse(educations);
-    if (typeof internships === "string") internships = JSON.parse(internships);
+    // Support skills passed as selectedSkills, skills array, or single skills field
+    selectedSkills = selectedSkills || req.body.skills;
+    if (typeof selectedSkills === "string") {
+      try {
+        selectedSkills = JSON.parse(selectedSkills);
+      } catch {
+        selectedSkills = [selectedSkills];
+      }
+    }
+    if (!Array.isArray(selectedSkills)) selectedSkills = selectedSkills ? [selectedSkills] : [];
 
-    if (!fullName || !email || !username || !password) {
-      return res.status(400).json({ message: "Full Name, Email, Username and Password are required fields." });
+    // Support educations passed as JSON string, array, or individual form fields
+    if (typeof educations === "string") {
+      try { educations = JSON.parse(educations); } catch { educations = []; }
+    }
+    if (!Array.isArray(educations) || educations.length === 0) {
+      if (req.body.educationInstitution) {
+        educations = [{
+          institution: req.body.educationInstitution,
+          degree: req.body.educationDegree,
+          startYear: req.body.educationStartYear,
+          endYear: req.body.educationEndYear,
+          description: req.body.educationDescription
+        }];
+      } else {
+        educations = [];
+      }
+    }
+
+    // Support internships/experience passed as JSON string, array, or individual form fields
+    if (typeof internships === "string") {
+      try { internships = JSON.parse(internships); } catch { internships = []; }
+    }
+    if (!Array.isArray(internships) || internships.length === 0) {
+      if (req.body.experienceCompany) {
+        internships = [{
+          company: req.body.experienceCompany,
+          role: req.body.experienceRole,
+          startDate: req.body.experienceStartDate,
+          endDate: req.body.experienceEndDate,
+          description: req.body.experienceDescription
+        }];
+      } else {
+        internships = [];
+      }
+    }
+
+    websiteUrl = websiteUrl || req.body.portfolioUrl;
+
+    if (!fullName || !email || !password) {
+      return res.status(400).json({ success: false, message: "Full Name, Email, and Password are required fields." });
     }
 
     const emailStr = String(email).trim().toLowerCase();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(emailStr)) {
-      return res.status(400).json({ message: "Invalid email address." });
+      return res.status(400).json({ success: false, message: "Invalid email address." });
     }
     if (String(password).length < 8) {
-      return res.status(400).json({ message: "Password must be at least 8 characters." });
+      return res.status(400).json({ success: false, message: "Password must be at least 8 characters." });
     }
     email = emailStr;
+
+    // Auto-generate username if not supplied
+    if (!username) {
+      username = email.split('@')[0] + Math.floor(Math.random() * 10000);
+    }
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
@@ -375,15 +432,17 @@ export const registerStudent = async (req: Request, res: Response): Promise<any>
     }
 
     res.status(201).json({
+      success: true,
       message: "Student registered successfully",
       student: { id: newStudent.id, fullName: newStudent.name, email: newStudent.email, profilePhoto: newStudent.profile_photo, username: newStudent.username },
     });
   } catch (error: any) {
+    console.error("[Register] Error during student registration:", error);
     if (error.code === "23505") {
-      if (error.detail && error.detail.includes("username")) return res.status(409).json({ message: "A student with this username already exists." });
-      return res.status(409).json({ message: "A student with this email already exists." });
+      if (error.detail && error.detail.includes("username")) return res.status(409).json({ success: false, message: "A student with this username already exists." });
+      return res.status(409).json({ success: false, message: "A student with this email already exists." });
     }
-    res.status(500).json({ message: "An error occurred during registration.", error: error.message });
+    res.status(500).json({ success: false, message: error.message || "An error occurred during registration.", error: error.message });
   }
 };
 
